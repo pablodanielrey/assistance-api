@@ -86,7 +86,7 @@ class AssistanceModel:
         try:
             # ausr = session.query(Usuario).filter(Usuario.id == uid).one_or_none()
             ausr = None
-            if susr:
+            if ausr:
                 return {
                     'usuario': usr,
                     'asistencia': ausr
