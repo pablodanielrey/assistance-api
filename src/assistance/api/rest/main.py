@@ -38,6 +38,14 @@ def usuarios(uid=None):
         fecha = parser.parse(fecha_str) if fecha_str else None
         return AssistanceModel.usuarios(search=search, retornarClave=c, offset=offset, limit=limit, fecha=fecha)
 
+@app.route(API_BASE + '/usuarios/<uid>/reporte/', methods=['GET', 'OPTIONS'])
+@jsonapi
+def reporte(uid):
+    fecha_str = request.args.get('inicio', None)
+    inicio = parser.parse(fecha_str) if fecha_str else None
+    fecha_str = request.args.get('fin', None)
+    fin = parser.parse(fecha_str) if fecha_str else None
+    return AssistanceModel.reporte(uid=uid, inicio=inicio, fin=fin)
 
 @app.after_request
 def cors_after_request(response):

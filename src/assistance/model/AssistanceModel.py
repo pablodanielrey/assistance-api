@@ -98,3 +98,8 @@ class AssistanceModel:
 
         finally:
             session.close()
+
+
+        @classmethod
+        def reporte(cls, uid, inicio, fin):
+            return None
