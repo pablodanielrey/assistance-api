@@ -4,6 +4,8 @@ from model_utils import Base
 
 class Marcacion(Base):
 
+    __tablename__ = 'marcacion'
+
     marcacion = Column(DateTime)
     tipo = Column(Integer)
 
