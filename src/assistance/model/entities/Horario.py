@@ -13,4 +13,4 @@ class Horario(Base):
     eliminado = Column(DateTime)
 
     usuario_id = Column(String, ForeignKey('usuario.id'))
-    usuario = relationship('Usuario')
+    usuario = relationship('Usuario', back_populates="horarios")

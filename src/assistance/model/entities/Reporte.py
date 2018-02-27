@@ -1,6 +1,6 @@
 
 
-class RengloReporte:
+class RenglonReporte:
     '''
     fecha: Date;
     horario: Horario;
@@ -11,7 +11,7 @@ class RengloReporte:
     justifcacion: FechaJustificada;
     '''
     def __init__(self):
-        continue    
+        continue
 
 class Reporte:
 

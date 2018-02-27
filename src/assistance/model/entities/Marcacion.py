@@ -8,4 +8,4 @@ class Marcacion(Base):
     tipo = Column(Integer)
 
     reloj_id = Column(String, ForeignKey('reloj.id'))
-    reloj = relationship('Reloj')
+    reloj = relationship('Reloj', back_populates='marcaciones')
