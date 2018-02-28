@@ -154,6 +154,14 @@ class AssistanceModel:
     @classmethod
     def sincronizar(cls, session):
         q = session.query(Reloj).filter(Reloj.activo).all()
+        sincronizados = []
+        for reloj in q:
+            sincronizados.extend(cls.sincronizar_reloj(session, reloj))
+        return sincronizados
+
+    @classmethod
+    def sincronizar_reloj(cls, session, reloj):
+        q = session.query(Reloj).filter(Reloj.activo).all()
         zks = [{'reloj':r, 'api':ZkSoftware(host=r.ip, port=r.puerto, timezone=r.zona_horaria)} for r in q]
 
         token = cls._get_token()
@@ -167,7 +175,7 @@ class AssistanceModel:
 
             for l in logs:
                 dni = l['PIN'].strip().lower()
-                usuario = cls._sin_usuario_por_dni(session, dni, token=token)
+                usuario = cls._sinc_usuario_por_dni(session, dni, token=token)
                 marcacion = l['DateTime']
 
                 if session.query(Marcacion).filter(and_(Marcacion.usuario_id == usuario.id, Marcacion.marcacion == marcacion)).count() <= 0:
@@ -188,6 +196,7 @@ class AssistanceModel:
                     logging.warn('Marcación duplicada {} {} {}'.format(usuario.id, dni, marcacion))
 
         return sincronizados
+
 
     @classmethod
     def reporte(cls, uid, inicio, fin):
