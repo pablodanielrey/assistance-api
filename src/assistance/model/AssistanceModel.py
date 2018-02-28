@@ -115,43 +115,64 @@ class AssistanceModel:
         finally:
             session.close()
 
+
+    @classmethod
+    def _usuario_por_dni(cls, session, dni, retornarClave=False, token=None):
+        ''' usado internamente para obtener un usuario por dni '''
+        ausr = session.query(Usuario).filter(Usuario.dni == dni).one_or_none()
+        if ausr:
+            return ausr
+
+        query = cls.usuarios_url + '/usuarios/'
+        params = {}
+        if retornarClave:
+            params['c'] = True
+        params = {'q':dni}
+        r = cls.api(query,params=params,token=token)
+        if not r.ok:
+            raise Exception(r.text)
+        import json
+        logging.debug(r.json())
+        for usuario in r.json():
+            if usuario['dni'] == dni:
+                u = Usuario()
+                u.id = usuario['id']
+                u.dni = usuario['dni']
+                session.add(u)
+                return u
+        raise Exception('No se encuentra usuario con ese dni')
+
     @classmethod
     def relojes(cls, session):
         return session.query(Reloj).all()
 
     @classmethod
     def sincronizar(cls, session):
-        logger = logging.getLogger('sincronizar')
         q = session.query(Reloj).filter(Reloj.activo).all()
-        zks = [ZkSoftware(r.ip, r.puerto) for r in q]
+        zks = [{'reloj':r, 'api':ZkSoftware(host=r.ip, port=r.puerto, timezone=r.zona_horaria)} for r in q]
 
-        all_logs = []
+        token = cls._get_token()
+
+        aSincronizar = []
         for zk in zks:
-            logs = zk.getAttLog()
+            logs = zk['api'].getAttLog()
             if len(logs) <= 0:
-                logger.info(logs)
+                logging.info(logs)
                 continue
 
-            aSincronizar = []
             for l in logs:
-                dni = l['PIN']
-
-                ''' localizo la fecha '''
-                """
-                m = l['DateTime']
-                tz = pytz.timezone(zk.zona_horaria)
-
+                dni = l['PIN'].strip().lower()
+                usuario = cls._usuario_por_dni(session, dni, token=token)
 
                 log = Marcacion()
                 log.id = str(uuid.uuid4())
-                log.usuario_id = None
-                log.deviceId = zk.id
-                log.verifyMode = l['Verified']
-                log.log = utcaware
-                """
-            all_logs.extend(logs)
+                log.usuario_id = usuario.id
+                log.dispositivo_id = zk['reloj'].id
+                log.tipo = l['Verified']
+                log.marcacion = l['DateTime']
+                aSincronizar.append(log)
 
-        return all_logs
+        return aSincronizar
 
     @classmethod
     def reporte(cls, uid, inicio, fin):

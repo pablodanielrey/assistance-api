@@ -4,6 +4,7 @@ import http.client
 import re, logging
 import xmltodict
 import datetime
+import pytz
 
 class ZkSoftwareException(Exception):
 
@@ -17,23 +18,22 @@ class ZkSoftwareException(Exception):
 class ZkSoftware:
 
 
-    def __init__(self,host,port):
+    def __init__(self, host, port, timezone='America/Argentina/Buenos_Aires'):
         self.host = host
         self.port = port
-
+        self.logger = logging.getLogger(__name__)
+        self.timezone = pytz.timezone(timezone)
 
     """
         envía el mensaje y recibe una respuesta. parsea la respuesta a dictionary para poder procesarla despues
     """
     def _sendAndReceive(self,xml):
 
-        logging.debug(xml)
+        self.logger.debug(xml)
 
         conn = http.client.HTTPConnection(self.host,self.port)
         conn.request("POST", "/iWsService", body=xml, headers={"Content-type":"text/xml","SOAPAction":"uri:zksoftware"})
         r1 = conn.getresponse()
-
-        logging.debug(r1)
 
         if r1.status != 200:
             raise ZkSoftwareException(r1.reason)
@@ -42,7 +42,7 @@ class ZkSoftware:
         #print(r1.read().decode('iso-8859-1'))
 
         strresponse = r1.read().decode('iso-8859-1')
-        logging.debug(strresponse)
+        self.logger.debug(strresponse)
 
         response = xmltodict.parse(strresponse)
         return response
@@ -157,7 +157,8 @@ class ZkSoftware:
         response = self._sendAndReceive(method)
         date = response['GetDateResponse']['Row']
         pDate = datetime.datetime.strptime(date['Date'] + ' ' + date['Time'],'%Y-%m-%d %H:%M:%S')
-        return pDate
+        zpDate = self.timezone.localize(pDate)
+        return zpDate
 
 
     """
@@ -207,8 +208,6 @@ class ZkSoftware:
         methodWithParams = method.format('ALL' if pin is None else pin)
         response = self._sendAndReceive(methodWithParams)
 
-        logging.debug(response)
-
         if 'GetAttLogResponse' in response:
             if response['GetAttLogResponse'] is None:
                 return []
@@ -228,9 +227,11 @@ class ZkSoftware:
 
         datedResponse = []
         for r in rows:
+            pDate = datetime.datetime.strptime(r['DateTime'],'%Y-%m-%d %H:%M:%S').replace(microsecond=0,tzinfo=None)
+            zpDate = self.timezone.localize(pDate)
             d = {
                 'PIN':r['PIN'],
-                'DateTime':datetime.datetime.strptime(r['DateTime'],'%Y-%m-%d %H:%M:%S').replace(microsecond=0,tzinfo=None),
+                'DateTime': zpDate,
                 'Verified':r['Verified'],
                 'Status':r['Status'],
                 'WorkCode':r['WorkCode']

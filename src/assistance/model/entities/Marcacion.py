@@ -14,10 +14,9 @@ class Marcacion(Base):
     marcacion = Column(DateTime)
     tipo = Column(Integer)
     usuario_id = Column(String)
-    dispositivo_id = Column(String)
 
-    reloj_id = Column(String, ForeignKey('reloj.id'))
-    reloj = relationship('Reloj')
+    dispositivo_id = Column(String, ForeignKey('reloj.id'))
+    dispositivo = relationship('Reloj')
 
     usuario_id = Column(String, ForeignKey('usuario.id'))
     usuario = relationship('Usuario')
