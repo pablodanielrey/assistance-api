@@ -68,16 +68,25 @@ def logs_por_fecha(fecha):
 def logs_por_usuario(uid):
     if request.method == 'OPTIONS':
         return 204
-    return AssistanceModel.relojes()
-    #return None
+    session = Session()
+    try:
+        return AssistanceModel.relojes()
+    finally:
+        session.close()
 
 @app.route(API_BASE + '/relojes/sincronizar', methods=['GET', 'OPTIONS'])
 @jsonapi
 def logs_por_usuario(uid):
     if request.method == 'OPTIONS':
         return 204
-    return AssistanceModel.sincronizar()
-    #return None
+    session = Session()
+    try:
+        r = AssistanceModel.sincronizar(session)
+        session.commit()
+        return r
+
+    finally:
+        session.close()
 
 
 @app.after_request

@@ -114,5 +114,9 @@ class AssistanceModel:
         return session.query(Reloj).all()
 
     @classmethod
+    def sincronizar(cls, session):
+        return {}
+
+    @classmethod
     def reporte(cls, uid, inicio, fin):
         return None
