@@ -153,14 +153,15 @@ class AssistanceModel:
 
     @classmethod
     def sincronizar(cls, session):
-        q = session.query(Reloj).filter(Reloj.activo).all()
+        q = session.query(Reloj.id).filter(Reloj.activo).all()
         sincronizados = []
-        for reloj in q:
-            sincronizados.extend(cls.sincronizar_reloj(session, reloj))
+        for rid in q:
+            sincronizados.extend(cls.sincronizar_reloj(session, rid))
         return sincronizados
 
     @classmethod
-    def sincronizar_reloj(cls, session, reloj):
+    def sincronizar_reloj(cls, session, rid):
+        reloj = session.query(Reloj).filter(Reloj.id == rid).one()
         zk = {'reloj':reloj, 'api':ZkSoftware(host=reloj.ip, port=reloj.puerto, timezone=reloj.zona_horaria)}
         logs = zk['api'].getAttLog()
         if len(logs) <= 0:

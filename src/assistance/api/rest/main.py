@@ -95,10 +95,24 @@ def relojes_sincronizar():
         r = AssistanceModel.sincronizar(session)
         session.commit()
         return r
-    
+
     finally:
         session.close()
 
+@app.route(API_BASE + '/relojes/<rid>/sincronizar', methods=['GET', 'OPTIONS'])
+@jsonapi
+def reloj_sincronizar(rid):
+    assert rid is not None
+    if request.method == 'OPTIONS':
+        return 204
+    session = Session()
+    try:
+        r = AssistanceModel.sincronizar_reloj(session, rid)
+        session.commit()
+        return r
+
+    finally:
+        session.close()
 
 @app.after_request
 def cors_after_request(response):
