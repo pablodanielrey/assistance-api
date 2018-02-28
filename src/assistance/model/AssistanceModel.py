@@ -109,6 +109,10 @@ class AssistanceModel:
             session.close()
 
 
-        @classmethod
-        def reporte(cls, uid, inicio, fin):
-            return None
+    @classmethod
+    def relojes(cls, session):
+        return session.query(Reloj).all()
+
+    @classmethod
+    def reporte(cls, uid, inicio, fin):
+        return None

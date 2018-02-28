@@ -63,6 +63,14 @@ def logs_por_fecha(fecha):
     #return AssistanceModel.reporte(uid=uid, inicio=inicio, fin=fin)
     return None
 
+@app.route(API_BASE + '/relojes', methods=['GET', 'OPTIONS'])
+@jsonapi
+def logs_por_usuario(uid):
+    if request.method == 'OPTIONS':
+        return 204
+    return AssistanceModel.relojes()
+    #return None
+
 @app.route(API_BASE + '/relojes/sincronizar', methods=['GET', 'OPTIONS'])
 @jsonapi
 def logs_por_usuario(uid):
