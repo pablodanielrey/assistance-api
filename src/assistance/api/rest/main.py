@@ -47,6 +47,48 @@ def reporte(uid):
     fin = parser.parse(fecha_str).date() if fecha_str else None
     return AssistanceModel.reporte(uid=uid, inicio=inicio, fin=fin)
 
+@app.route(API_BASE + '/usuarios/<uid>/logs', methods=['GET', 'OPTIONS'])
+@jsonapi
+def logs_por_usuario(uid):
+    if request.method == 'OPTIONS':
+        return 204
+    #return AssistanceModel.reporte(uid=uid, inicio=inicio, fin=fin)
+    return None
+
+@app.route(API_BASE + '/logs/<fecha>', methods=['GET', 'OPTIONS'])
+@jsonapi
+def logs_por_fecha(fecha):
+    if request.method == 'OPTIONS':
+        return 204
+    #return AssistanceModel.reporte(uid=uid, inicio=inicio, fin=fin)
+    return None
+
+@app.route(API_BASE + '/relojes', methods=['GET', 'OPTIONS'])
+@jsonapi
+def logs_por_usuario(uid):
+    if request.method == 'OPTIONS':
+        return 204
+    session = Session()
+    try:
+        return AssistanceModel.relojes()
+    finally:
+        session.close()
+
+@app.route(API_BASE + '/relojes/sincronizar', methods=['GET', 'OPTIONS'])
+@jsonapi
+def logs_por_usuario(uid):
+    if request.method == 'OPTIONS':
+        return 204
+    session = Session()
+    try:
+        r = AssistanceModel.sincronizar(session)
+        session.commit()
+        return r
+
+    finally:
+        session.close()
+
+
 @app.after_request
 def cors_after_request(response):
     response.headers.add('Access-Control-Allow-Origin', '*')

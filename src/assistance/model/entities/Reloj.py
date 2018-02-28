@@ -11,6 +11,7 @@ class Reloj(Base):
     modelo = Column(String)
     marca = Column(String)
     ip = Column(String)
+    puerto = Column(Integer)
     mascara = Column(String)
     router = Column(String)
     algoritmo = Column(String)
