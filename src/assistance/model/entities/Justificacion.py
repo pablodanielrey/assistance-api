@@ -12,6 +12,8 @@ class Justificacion(Base):
     codigo = Column(String)
     general = Column(Boolean)
 
+    justificaciones = relationship('FechaJustificada')
+    
 
 class FechaJustificada(Base):
 
@@ -20,7 +22,7 @@ class FechaJustificada(Base):
     fecha = Column(DateTime)
 
     usuario_id = Column(String, ForeignKey('usuario.id'))
-    usuario = relationship('Usuario', back_populates='justificaciones')
+    usuario = relationship('Usuario')
 
     justificacion_id = Column(String, ForeignKey('justificacion.id'))
-    justificacion = relationship('Justificacion', back_populates='tipo_justificaciones')
+    justificacion = relationship('Justificacion', back_populates='justificaciones')

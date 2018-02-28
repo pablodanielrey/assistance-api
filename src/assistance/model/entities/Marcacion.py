@@ -17,10 +17,10 @@ class Marcacion(Base):
     dispositivo_id = Column(String)
 
     reloj_id = Column(String, ForeignKey('reloj.id'))
-    reloj = relationship('Reloj', back_populates='marcaciones')
+    reloj = relationship('Reloj')
 
     usuario_id = Column(String, ForeignKey('usuario.id'))
-    usuario = relationship('Usuario', back_populates='marcaciones')
+    usuario = relationship('Usuario')
 
 
     def obtenerMarcaciones(cls, session, horario, uid, actual):

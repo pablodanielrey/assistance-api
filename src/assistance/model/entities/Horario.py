@@ -17,7 +17,7 @@ class Horario(Base):
     eliminado = Column(DateTime)
 
     usuario_id = Column(String, ForeignKey('usuario.id'))
-    usuario = relationship('Usuario', back_populates="horarios")
+    usuario = relationship('Usuario')
 
     def esDiario(self):
         return self.hora_salida < (24 * 60 * 60)
