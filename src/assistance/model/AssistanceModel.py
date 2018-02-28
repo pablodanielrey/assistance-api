@@ -107,12 +107,37 @@ class AssistanceModel:
 
     @classmethod
     def sincronizar(cls, session):
+        logger = logging.getLogger('sincronizar')
         q = session.query(Reloj).filter(Reloj.activo).all()
         zks = [ZkSoftware(r.host, r.port) for r in q]
-        logs = {}
+
+        all_logs = []
         for zk in zks:
-            logs[zk.host] = zk.getAttLog()
-        return logs
+            logs = zk.getAttLog()
+            if len(logs) <= 0:
+                logger.info(logs)
+                continue
+
+            aSincronizar = []
+            for l in logs:
+                dni = l['PIN']
+
+                ''' localizo la fecha '''
+                """
+                m = l['DateTime']
+                tz = pytz.timezone(zk.zona_horaria)
+
+
+                log = Marcacion()
+                log.id = str(uuid.uuid4())
+                log.usuario_id = None
+                log.deviceId = zk.id
+                log.verifyMode = l['Verified']
+                log.log = utcaware
+                """
+            all_logs.extend(logs)
+
+        return all_logs
 
     @classmethod
     def reporte(cls, uid, inicio, fin):

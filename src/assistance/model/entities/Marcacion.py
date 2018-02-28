@@ -8,6 +8,8 @@ class Marcacion(Base):
 
     marcacion = Column(DateTime)
     tipo = Column(Integer)
+    usuario_id = Column(String)
+    dispositivo_id = Column(String)
 
     reloj_id = Column(String, ForeignKey('reloj.id'))
     reloj = relationship('Reloj', back_populates='marcaciones')
