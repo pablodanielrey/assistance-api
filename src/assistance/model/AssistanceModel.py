@@ -124,6 +124,10 @@ class AssistanceModel:
         return session.query(Reloj).all()
 
     @classmethod
+    def reloj(cls, session, rid):
+        return session.query(Reloj).filter(Reloj.id == rid).one()
+
+    @classmethod
     def usuarios_por_reloj(cls, session, rid):
         reloj = session.query(Reloj).filter(Reloj.id == rid).one()
         zk = {'reloj':reloj, 'api':ZkSoftware(host=reloj.ip, port=reloj.puerto, timezone=reloj.zona_horaria)}

@@ -99,6 +99,20 @@ def relojes_sincronizar():
     finally:
         session.close()
 
+@app.route(API_BASE + '/relojes/<rid>', methods=['GET', 'OPTIONS'])
+@jsonapi
+def reloj(rid):
+    assert rid is not None
+    if request.method == 'OPTIONS':
+        return 204
+    session = Session()
+    try:
+        r = AssistanceModel.reloj(session, rid)
+        return r
+
+    finally:
+        session.close()
+
 @app.route(API_BASE + '/relojes/<rid>/sincronizar', methods=['GET', 'OPTIONS'])
 @jsonapi
 def reloj_sincronizar(rid):
