@@ -19,14 +19,6 @@ class AssistanceModel:
     client_id = os.environ['OIDC_CLIENT_ID']
     client_secret = os.environ['OIDC_CLIENT_SECRET']
 
-    @classmethod
-    def sincronizar(cls, session):
-        q = session.query(Reloj).filter(Reloj.activo).all()
-        zks = [ZkSoftware(r.host, r.port) for r in q]
-        logs = {}
-        for zk in zks:
-            logs[zk.host] = zk.getAttLog()
-        return logs
 
     @classmethod
     def _get_token(cls):
@@ -115,7 +107,12 @@ class AssistanceModel:
 
     @classmethod
     def sincronizar(cls, session):
-        return {}
+        q = session.query(Reloj).filter(Reloj.activo).all()
+        zks = [ZkSoftware(r.host, r.port) for r in q]
+        logs = {}
+        for zk in zks:
+            logs[zk.host] = zk.getAttLog()
+        return logs
 
     @classmethod
     def reporte(cls, uid, inicio, fin):
