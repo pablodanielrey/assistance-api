@@ -65,18 +65,18 @@ def logs_por_fecha(fecha):
 
 @app.route(API_BASE + '/relojes', methods=['GET', 'OPTIONS'])
 @jsonapi
-def logs_por_usuario(uid):
+def relojes():
     if request.method == 'OPTIONS':
         return 204
     session = Session()
     try:
-        return AssistanceModel.relojes()
+        return AssistanceModel.relojes(session)
     finally:
         session.close()
 
 @app.route(API_BASE + '/relojes/sincronizar', methods=['GET', 'OPTIONS'])
 @jsonapi
-def logs_por_usuario(uid):
+def relojes_sincronizar():
     if request.method == 'OPTIONS':
         return 204
     session = Session()
