@@ -1,6 +1,6 @@
 from sqlalchemy import or_
 from sqlalchemy.orm import joinedload, with_polymorphic
-import datetime
+from datetime import datetime, date, timedelta
 import requests
 import os
 import logging
@@ -73,6 +73,20 @@ class AssistanceModel:
         logging.debug(r)
         return r
 
+    @classmethod
+    def reporte(cls, uid, inicio, fin):
+        assert uid is not None
+        fin = fin if fin else date.today()
+        inicio = inicio if inicio else fin - timedelta(days=7)
+
+        session = Session()
+
+        try:
+            u = session.query(Usuario).filter(Usuario.id == uid).one_or_one()
+            Reporte.generarReporte(session, u, inicio, fin)
+
+        finally:
+            session.close()
 
     @classmethod
     def usuario(cls, uid, retornarClave=False):
@@ -99,7 +113,6 @@ class AssistanceModel:
 
         finally:
             session.close()
-
 
     @classmethod
     def relojes(cls, session):
