@@ -95,7 +95,7 @@ def relojes_sincronizar():
         r = AssistanceModel.sincronizar(session)
         session.commit()
         return r
-
+    
     finally:
         session.close()
 

@@ -1,4 +1,4 @@
-from sqlalchemy import or_
+from sqlalchemy import or_, and_
 from sqlalchemy.orm import joinedload, with_polymorphic
 from datetime import datetime, date, timedelta
 import requests
@@ -117,8 +117,15 @@ class AssistanceModel:
 
 
     @classmethod
-    def _usuario_por_dni(cls, session, dni, retornarClave=False, token=None):
-        ''' usado internamente para obtener un usuario por dni '''
+    def relojes(cls, session):
+        return session.query(Reloj).all()
+
+    @classmethod
+    def _sinc_usuario_por_dni(cls, session, dni, retornarClave=False, token=None):
+        '''
+            Usado internamente para obtener un usuario por dni
+            NOTA: AGREGA AL USUARIO A LAS TABLAS DE ASISTENCIA SI ES QUE NO EXISTE!!!!
+        '''
         ausr = session.query(Usuario).filter(Usuario.dni == dni).one_or_none()
         if ausr:
             return ausr
@@ -135,16 +142,14 @@ class AssistanceModel:
         logging.debug(r.json())
         for usuario in r.json():
             if usuario['dni'] == dni:
-                u = Usuario()
-                u.id = usuario['id']
-                u.dni = usuario['dni']
-                session.add(u)
+                u = session.query(Usuario).filter(Usuario.dni == dni).one_or_none()
+                if not u:
+                    u = Usuario()
+                    u.id = usuario['id']
+                    u.dni = usuario['dni']
+                    session.add(u)
                 return u
         raise Exception('No se encuentra usuario con ese dni')
-
-    @classmethod
-    def relojes(cls, session):
-        return session.query(Reloj).all()
 
     @classmethod
     def sincronizar(cls, session):
@@ -153,7 +158,7 @@ class AssistanceModel:
 
         token = cls._get_token()
 
-        aSincronizar = []
+        sincronizados = []
         for zk in zks:
             logs = zk['api'].getAttLog()
             if len(logs) <= 0:
@@ -162,17 +167,27 @@ class AssistanceModel:
 
             for l in logs:
                 dni = l['PIN'].strip().lower()
-                usuario = cls._usuario_por_dni(session, dni, token=token)
+                usuario = cls._sin_usuario_por_dni(session, dni, token=token)
+                marcacion = l['DateTime']
 
-                log = Marcacion()
-                log.id = str(uuid.uuid4())
-                log.usuario_id = usuario.id
-                log.dispositivo_id = zk['reloj'].id
-                log.tipo = l['Verified']
-                log.marcacion = l['DateTime']
-                aSincronizar.append(log)
+                if session.query(Marcacion).filter(and_(Marcacion.usuario_id == usuario.id, Marcacion.marcacion == marcacion)).count() <= 0:
+                    log = Marcacion()
+                    log.id = str(uuid.uuid4())
+                    log.usuario_id = usuario.id
+                    log.dispositivo_id = zk['reloj'].id
+                    log.tipo = l['Verified']
+                    log.marcacion = marcacion
+                    session.add(log)
 
-        return aSincronizar
+                    ''' para que no tire error el serializador de json le hago un expunge '''
+                    r = session.query(Marcacion).filter(Marcacion.id == log.id).options(joinedload('usuario')).one()
+                    session.expunge(r.usuario)
+                    session.expunge(r)
+                    sincronizados.append(r)
+                else:
+                    logging.warn('Marcación duplicada {} {} {}'.format(usuario.id, dni, marcacion))
+
+        return sincronizados
 
     @classmethod
     def reporte(cls, uid, inicio, fin):
