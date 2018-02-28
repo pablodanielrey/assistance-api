@@ -20,6 +20,15 @@ class AssistanceModel:
     client_secret = os.environ['OIDC_CLIENT_SECRET']
 
     @classmethod
+    def sincronizar(cls, session):
+        q = session.query(Reloj).filter(Reloj.activo).all()
+        zks = [ZkSoftware(r.host, r.port) for r in q]
+        logs = {}
+        for zk in zks:
+            logs[zk.host] = zk.getAttLog()
+        return logs
+
+    @classmethod
     def _get_token(cls):
         ''' obtengo un token mediante el flujo client_credentials para poder llamar a la api de usuarios '''
         grant = ClientCredentialsGrant(cls.client_id, cls.client_secret)
@@ -100,6 +109,10 @@ class AssistanceModel:
             session.close()
 
 
-        @classmethod
-        def reporte(cls, uid, inicio, fin):
-            return None
+    @classmethod
+    def relojes(cls, session):
+        return session.query(Reloj).all()
+
+    @classmethod
+    def reporte(cls, uid, inicio, fin):
+        return None
