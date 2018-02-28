@@ -161,39 +161,35 @@ class AssistanceModel:
 
     @classmethod
     def sincronizar_reloj(cls, session, reloj):
-        q = session.query(Reloj).filter(Reloj.activo).all()
-        zks = [{'reloj':r, 'api':ZkSoftware(host=r.ip, port=r.puerto, timezone=r.zona_horaria)} for r in q]
+        zk = {'reloj':reloj, 'api':ZkSoftware(host=reloj.ip, port=reloj.puerto, timezone=reloj.zona_horaria)}
+        logs = zk['api'].getAttLog()
+        if len(logs) <= 0:
+            logging.info(logs)
+            return []
 
         token = cls._get_token()
-
         sincronizados = []
-        for zk in zks:
-            logs = zk['api'].getAttLog()
-            if len(logs) <= 0:
-                logging.info(logs)
-                continue
+        for l in logs:
+            dni = l['PIN'].strip().lower()
+            usuario = cls._sinc_usuario_por_dni(session, dni, token=token)
+            marcacion = l['DateTime']
 
-            for l in logs:
-                dni = l['PIN'].strip().lower()
-                usuario = cls._sinc_usuario_por_dni(session, dni, token=token)
-                marcacion = l['DateTime']
+            if session.query(Marcacion).filter(and_(Marcacion.usuario_id == usuario.id, Marcacion.marcacion == marcacion)).count() <= 0:
+                log = Marcacion()
+                log.id = str(uuid.uuid4())
+                log.usuario_id = usuario.id
+                log.dispositivo_id = zk['reloj'].id
+                log.tipo = l['Verified']
+                log.marcacion = marcacion
+                session.add(log)
 
-                if session.query(Marcacion).filter(and_(Marcacion.usuario_id == usuario.id, Marcacion.marcacion == marcacion)).count() <= 0:
-                    log = Marcacion()
-                    log.id = str(uuid.uuid4())
-                    log.usuario_id = usuario.id
-                    log.dispositivo_id = zk['reloj'].id
-                    log.tipo = l['Verified']
-                    log.marcacion = marcacion
-                    session.add(log)
-
-                    ''' para que no tire error el serializador de json le hago un expunge '''
-                    r = session.query(Marcacion).filter(Marcacion.id == log.id).options(joinedload('usuario')).one()
-                    session.expunge(r.usuario)
-                    session.expunge(r)
-                    sincronizados.append(r)
-                else:
-                    logging.warn('Marcación duplicada {} {} {}'.format(usuario.id, dni, marcacion))
+                ''' para que no tire error el serializador de json le hago un expunge '''
+                r = session.query(Marcacion).filter(Marcacion.id == log.id).options(joinedload('usuario')).one()
+                session.expunge(r.usuario)
+                session.expunge(r)
+                sincronizados.append(r)
+            else:
+                logging.warn('Marcación duplicada {} {} {}'.format(usuario.id, dni, marcacion))
 
         return sincronizados
 
