@@ -115,10 +115,15 @@ class AssistanceModel:
         finally:
             session.close()
 
-
     @classmethod
     def relojes(cls, session):
         return session.query(Reloj).all()
+
+    @classmethod
+    def usuarios_por_reloj(cls, session, rid):
+        reloj = session.query(Reloj).filter(Reloj.id == rid).one()
+        zk = {'reloj':reloj, 'api':ZkSoftware(host=reloj.ip, port=reloj.puerto, timezone=reloj.zona_horaria)}
+        return zk['api'].getUserInfo()
 
     @classmethod
     def _sinc_usuario_por_dni(cls, session, dni, retornarClave=False, token=None):
@@ -193,8 +198,3 @@ class AssistanceModel:
                 logging.warn('Marcación duplicada {} {} {}'.format(usuario.id, dni, marcacion))
 
         return sincronizados
-
-
-    @classmethod
-    def reporte(cls, uid, inicio, fin):
-        return None
