@@ -115,6 +115,10 @@ class AssistanceModel:
         finally:
             session.close()
 
+    '''
+        APIs de los relojes
+    '''
+
     @classmethod
     def relojes(cls, session):
         return session.query(Reloj).all()
@@ -124,6 +128,18 @@ class AssistanceModel:
         reloj = session.query(Reloj).filter(Reloj.id == rid).one()
         zk = {'reloj':reloj, 'api':ZkSoftware(host=reloj.ip, port=reloj.puerto, timezone=reloj.zona_horaria)}
         return zk['api'].getUserInfo()
+
+    @classmethod
+    def templates_por_reloj(cls, session, rid):
+        reloj = session.query(Reloj).filter(Reloj.id == rid).one()
+        zk = {'reloj':reloj, 'api':ZkSoftware(host=reloj.ip, port=reloj.puerto, timezone=reloj.zona_horaria)}
+        return zk['api'].getUserTemplate()
+
+    @classmethod
+    def marcaciones_por_reloj(cls, session, rid):
+        reloj = session.query(Reloj).filter(Reloj.id == rid).one()
+        zk = {'reloj':reloj, 'api':ZkSoftware(host=reloj.ip, port=reloj.puerto, timezone=reloj.zona_horaria)}
+        return zk['api'].getAttLog()
 
     @classmethod
     def _sinc_usuario_por_dni(cls, session, dni, retornarClave=False, token=None):

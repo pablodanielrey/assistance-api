@@ -114,6 +114,20 @@ def reloj_sincronizar(rid):
     finally:
         session.close()
 
+@app.route(API_BASE + '/relojes/<rid>/marcaciones', methods=['GET', 'OPTIONS'])
+@jsonapi
+def reloj_marcaciones(rid):
+    assert rid is not None
+    if request.method == 'OPTIONS':
+        return 204
+    session = Session()
+    try:
+        r = AssistanceModel.marcaciones_por_reloj(session, rid)
+        return r
+
+    finally:
+        session.close()
+
 @app.route(API_BASE + '/relojes/<rid>/usuarios', methods=['GET', 'OPTIONS'])
 @jsonapi
 def reloj_usuarios(rid):
@@ -127,6 +141,21 @@ def reloj_usuarios(rid):
 
     finally:
         session.close()
+
+@app.route(API_BASE + '/relojes/<rid>/huellas', methods=['GET', 'OPTIONS'])
+@jsonapi
+def reloj_huellas(rid):
+    assert rid is not None
+    if request.method == 'OPTIONS':
+        return 204
+    session = Session()
+    try:
+        r = AssistanceModel.templates_por_reloj(session, rid)
+        return r
+
+    finally:
+        session.close()
+
 
 @app.after_request
 def cors_after_request(response):
