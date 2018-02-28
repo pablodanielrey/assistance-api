@@ -109,7 +109,7 @@ class AssistanceModel:
     def sincronizar(cls, session):
         logger = logging.getLogger('sincronizar')
         q = session.query(Reloj).filter(Reloj.activo).all()
-        zks = [ZkSoftware(r.host, r.port) for r in q]
+        zks = [ZkSoftware(r.ip, r.puerto) for r in q]
 
         all_logs = []
         for zk in zks:
