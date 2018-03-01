@@ -75,22 +75,17 @@ class AssistanceModel:
         return r
 
     @classmethod
-    def reporte(cls, uid, inicio, fin):
+    def reporte(cls, session, uid, inicio, fin):
         assert uid is not None
         fin = fin if fin else date.today()
         inicio = inicio if inicio else fin - timedelta(days=7)
 
-        session = Session()
+        u = session.query(Usuario).filter(Usuario.id == uid).one_or_one()
+        return Reporte.generarReporte(session, u, inicio, fin)
 
-        try:
-            u = session.query(Usuario).filter(Usuario.id == uid).one_or_one()
-            Reporte.generarReporte(session, u, inicio, fin)
-
-        finally:
-            session.close()
 
     @classmethod
-    def usuario(cls, uid, retornarClave=False):
+    def usuario(cls, session, uid, retornarClave=False):
         query = cls.usuarios_url + '/usuarios/' + uid
         query = query + '?c=True' if retornarClave else query
         r = cls.api(query)
@@ -98,22 +93,18 @@ class AssistanceModel:
             return []
 
         usr = r.json()
-        session = Session()
-        try:
-            # ausr = session.query(Usuario).filter(Usuario.id == uid).one_or_none()
-            ausr = None
-            if ausr:
-                return {
-                    'usuario': usr,
-                    'asistencia': ausr
-                }
-            else:
-                return {
-                    'usuario': usr
-                }
+        # ausr = session.query(Usuario).filter(Usuario.id == uid).one_or_none()
+        ausr = None
+        if ausr:
+            return {
+                'usuario': usr,
+                'asistencia': ausr
+            }
+        else:
+            return {
+                'usuario': usr
+            }
 
-        finally:
-            session.close()
 
     '''
         APIs de los relojes

@@ -37,26 +37,39 @@ API_BASE = os.environ['API_BASE']
 @app.route(API_BASE + '/usuarios/<uid>', methods=['GET', 'OPTIONS'])
 @jsonapi
 def usuarios(uid=None):
+    if request.method == 'OPTIONS':
+        return 204
+
     search = request.args.get('q',None)
     offset = request.args.get('offset',None,int)
     limit = request.args.get('limit',None,int)
     c = request.args.get('c',False,bool)
-
-    if uid:
-        return AssistanceModel.usuario(uid, retornarClave=c)
-    else:
-        fecha_str = request.args.get('f', None)
-        fecha = parser.parse(fecha_str) if fecha_str else None
-        return AssistanceModel.usuarios(search=search, retornarClave=c, offset=offset, limit=limit, fecha=fecha)
+    session = Session()
+    try:
+        if uid:
+            return AssistanceModel.usuario(session, uid, retornarClave=c)
+        else:
+            fecha_str = request.args.get('f', None)
+            fecha = parser.parse(fecha_str) if fecha_str else None
+            return AssistanceModel.usuarios(session, search=search, retornarClave=c, offset=offset, limit=limit, fecha=fecha)
+    finally:
+        session.close()
 
 @app.route(API_BASE + '/usuarios/<uid>/reporte/', methods=['GET', 'OPTIONS'])
 @jsonapi
 def reporte(uid):
+    if request.method == 'OPTIONS':
+        return 204
+
     fecha_str = request.args.get('inicio', None)
     inicio = parser.parse(fecha_str).date() if fecha_str else None
     fecha_str = request.args.get('fin', None)
     fin = parser.parse(fecha_str).date() if fecha_str else None
-    return AssistanceModel.reporte(uid=uid, inicio=inicio, fin=fin)
+    session = Session()
+    try:
+        return AssistanceModel.reporte(session, uid, inicio, fin)
+    finally:
+        session.close()
 
 @app.route(API_BASE + '/usuarios/<uid>/logs', methods=['GET', 'OPTIONS'])
 @jsonapi
