@@ -80,7 +80,9 @@ class AssistanceModel:
         fin = fin if fin else date.today()
         inicio = inicio if inicio else fin - timedelta(days=7)
 
-        u = session.query(Usuario).filter(Usuario.id == uid).one_or_one()
+        u = session.query(Usuario).filter(Usuario.id == uid).one_or_none()
+        if u is None:
+            return []
         return Reporte.generarReporte(session, u, inicio, fin)
 
 
@@ -93,8 +95,7 @@ class AssistanceModel:
             return []
 
         usr = r.json()
-        # ausr = session.query(Usuario).filter(Usuario.id == uid).one_or_none()
-        ausr = None
+        ausr = session.query(Usuario).filter(Usuario.id == uid).one_or_none()
         if ausr:
             return {
                 'usuario': usr,
@@ -105,6 +106,62 @@ class AssistanceModel:
                 'usuario': usr
             }
 
+    @classmethod
+    def usuarios(cls, session, search, retornarClave, offset, limit, fecha):
+        logging.debug(fecha)
+        query = cls.usuarios_url + '/usuarios/'
+        params = {}
+        if search:
+            params['q'] = search
+        if offset:
+            params['offset'] = offset
+        if limit:
+            params['limit'] = limit
+        if fecha:
+            params['f'] = fecha
+        if retornarClave:
+            params['c'] = True
+
+        logging.debug(query)
+        r = cls.api(query, params)
+        if not r.ok:
+            return []
+
+        usrs = r.json()
+        idsProcesados = {}
+
+        rusers = []
+        for u in usrs:
+            uid = u['id']
+            idsProcesados[uid] = u
+            susrs = session.query(Usuario).filter(Usuario.id == uid).one_or_none()
+            rusers.append({
+                'usuario': u,
+                'asistencia': susrs
+            })
+
+        if not fecha:
+            return rusers
+
+
+        """ tengo en cuenta los que se pudieron haber agregado a asistencia despues """
+        token = cls._get_token()
+        q = None
+        q = session.query(Usuario).filter(or_(Usuario.creado >= fecha, Usuario.actualizado >= fecha)).all()
+        for u in q:
+            if u.id not in idsProcesados.keys():
+                query = '{}/{}/{}'.format(cls.usuarios_url, 'usuarios', u.id)
+                r = cls.api(query, params={'c':True}, token=token)
+                if not r.ok:
+                    continue
+                usr = r.json()
+                if usr:
+                    rusers.append({
+                        'agregado': True,
+                        'usuario': usr,
+                        'asistencia': u
+                    })
+        return rusers
 
     '''
         APIs de los relojes

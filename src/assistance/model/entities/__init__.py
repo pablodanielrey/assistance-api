@@ -3,6 +3,7 @@ from .Reloj import Reloj
 from .Marcacion import Marcacion
 from .Justificacion import Justificacion, FechaJustificada
 from .Horario import Horario
+from .Reporte import Reporte, RenglonReporte, Detalle
 
 __all__ = [
     'Usuario',
@@ -10,5 +11,8 @@ __all__ = [
     'Marcacion',
     'Justificacion',
     'FechaJustificada',
-    'Horario'
+    'Horario',
+    'Reporte',
+    'RenglonReporte',
+    'Detalle'
 ]

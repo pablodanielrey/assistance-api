@@ -22,6 +22,7 @@ class Marcacion(Base):
     usuario = relationship('Usuario')
 
 
+    @classmethod
     def obtenerMarcaciones(cls, session, horario, uid, actual):
         if horario is None:
             return None

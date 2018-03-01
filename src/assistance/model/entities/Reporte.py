@@ -1,4 +1,6 @@
-
+from datetime import datetime, timedelta
+from .Horario import Horario
+from .Marcacion import Marcacion
 
 class RenglonReporte:
     '''
@@ -40,11 +42,11 @@ class Reporte:
         self.detalle = None
 
     @classmethod
-    def generarReporte(cls, session, inicio, fin, usuario):
+    def generarReporte(cls, session, usuario, inicio, fin):
         if inicio > fin:
             return []
 
-        rep = Reporte(u, inicio, fin)
+        rep = Reporte(usuario, inicio, fin)
 
         for i in range(0, int((fin - inicio).days + 1)):
             actual = inicio + timedelta(days=i)
@@ -61,7 +63,7 @@ class Reporte:
 
             r = RenglonReporte(actual, horario, marcaciones, justificacion)
 
-            rep.append(r)
+            rep.reportes.append(r)
 
         return rep
 
@@ -70,4 +72,4 @@ class Reporte:
 class Detalle:
 
     def __init__(self):
-        continue
+        self.justifiaciones = None
