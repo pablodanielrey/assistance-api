@@ -62,9 +62,14 @@ def reporte(uid):
         return 204
 
     fecha_str = request.args.get('inicio', None)
+    logging.info("==========================================");
     inicio = parser.parse(fecha_str).date() if fecha_str else None
+    logging.info(inicio)
+
     fecha_str = request.args.get('fin', None)
     fin = parser.parse(fecha_str).date() if fecha_str else None
+    logging.info(fin)
+    
     session = Session()
     try:
         return AssistanceModel.reporte(session, uid, inicio, fin)

@@ -27,7 +27,7 @@ class Marcacion(Base):
         if horario is None:
             return None
 
-        inicio, fin = horario.obtenerHorario(fecha)
+        inicio, fin = horario.obtenerHorario(actual)
 
         tolerancia = timedelta(minutes=cls.TOLERANCIA_DUPLICADA)
         toleranciaDiaria = timedelta() if horario.esDiario() else timedelta(minutes=cls.TOLERANCIA_DIARIA)
