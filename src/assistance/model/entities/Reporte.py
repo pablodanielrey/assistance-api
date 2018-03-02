@@ -2,6 +2,9 @@ from datetime import datetime, timedelta
 from .Horario import Horario
 from .Marcacion import Marcacion
 
+from flask_jsontools import JsonSerializableBase
+
+
 class RenglonReporte:
     '''
     fecha: Date;
@@ -23,6 +26,9 @@ class RenglonReporte:
 
     def calcularHorasTrabajadas(self):
         return 0
+
+    def __json__(self):
+        return self.__dict__
 
 class Reporte:
 
@@ -67,9 +73,14 @@ class Reporte:
 
         return rep
 
+    def __json__(self):
+        return self.__dict__
 
 
 class Detalle:
 
     def __init__(self):
         self.justifiaciones = None
+
+    def __json__(self):
+        return self.__dict__        
