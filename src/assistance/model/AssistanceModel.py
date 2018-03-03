@@ -197,7 +197,11 @@ class AssistanceModel:
     def templates_por_usuario_por_reloj(cls, session, rid, ruid):
         reloj = session.query(Reloj).filter(Reloj.id == rid).one()
         zk = {'reloj':reloj, 'api':ZkSoftware(host=reloj.ip, port=reloj.puerto, timezone=reloj.zona_horaria)}
-        return zk['api'].getUserTemplate(ruid)
+        r = zk['api'].getUserTemplate(ruid)
+        if type(r) != list:
+            return [r]
+        else:
+            return r
 
 
     @classmethod
