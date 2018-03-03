@@ -182,10 +182,23 @@ class AssistanceModel:
         return zk['api'].getUserInfo()
 
     @classmethod
+    def usuario_por_reloj(cls, session, rid, ruid):
+        reloj = session.query(Reloj).filter(Reloj.id == rid).one()
+        zk = {'reloj':reloj, 'api':ZkSoftware(host=reloj.ip, port=reloj.puerto, timezone=reloj.zona_horaria)}
+        return zk['api'].getUserInfo(ruid)
+
+    @classmethod
     def templates_por_reloj(cls, session, rid):
         reloj = session.query(Reloj).filter(Reloj.id == rid).one()
         zk = {'reloj':reloj, 'api':ZkSoftware(host=reloj.ip, port=reloj.puerto, timezone=reloj.zona_horaria)}
         return zk['api'].getUserTemplate()
+
+    @classmethod
+    def templates_por_usuario_por_reloj(cls, session, rid, ruid):
+        reloj = session.query(Reloj).filter(Reloj.id == rid).one()
+        zk = {'reloj':reloj, 'api':ZkSoftware(host=reloj.ip, port=reloj.puerto, timezone=reloj.zona_horaria)}
+        return zk['api'].getUserTemplate(ruid)
+
 
     @classmethod
     def marcaciones_por_reloj(cls, session, rid):

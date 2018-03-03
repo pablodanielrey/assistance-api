@@ -69,7 +69,7 @@ def reporte(uid):
     fecha_str = request.args.get('fin', None)
     fin = parser.parse(fecha_str).date() if fecha_str else None
     logging.info(fin)
-    
+
     session = Session()
     try:
         return AssistanceModel.reporte(session, uid, inicio, fin)
@@ -169,6 +169,26 @@ def reloj_usuarios(rid):
     session = Session()
     try:
         r = AssistanceModel.usuarios_por_reloj(session, rid)
+        return r
+
+    finally:
+        session.close()
+
+@app.route(API_BASE + '/relojes/<rid>/usuarios/<ruid>', methods=['GET', 'OPTIONS'])
+@jsonapi
+def reloj_usuario(rid, ruid):
+    assert rid is not None
+    assert ruid is not None
+    if request.method == 'OPTIONS':
+        return 204
+    session = Session()
+    try:
+        u = AssistanceModel.usuario_por_reloj(session, rid, ruid)
+        t = AssistanceModel.templates_por_usuario_por_reloj(session, rid, ruid)
+        r = {
+            'usuario': u,
+            'huellas': t
+        }
         return r
 
     finally:
