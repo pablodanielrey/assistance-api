@@ -203,6 +203,23 @@ class AssistanceModel:
         else:
             return r
 
+    @classmethod
+    def eliminar_huellas_reloj(cls, session, rid):
+        ''' debo verificar que las huellas a eliminar existan en la base del sistema!!! '''
+        reloj = session.query(Reloj).filter(Reloj.id == rid).one()
+        zk = {'reloj':reloj, 'api':ZkSoftware(host=reloj.ip, port=reloj.puerto, timezone=reloj.zona_horaria)}
+        #r = zk['api'].clearTemplates()
+        #return r
+        return {}
+
+    @classmethod
+    def eliminar_usuarios_reloj(cls, session, rid):
+        ''' debo verificar que los usuarios a eliminar existan en la base del sistema!!! '''
+        reloj = session.query(Reloj).filter(Reloj.id == rid).one()
+        zk = {'reloj':reloj, 'api':ZkSoftware(host=reloj.ip, port=reloj.puerto, timezone=reloj.zona_horaria)}
+        #r = zk['api'].clearUsers()
+        #return r
+        return {}
 
     @classmethod
     def marcaciones_por_reloj(cls, session, rid):

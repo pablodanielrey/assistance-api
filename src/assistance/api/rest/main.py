@@ -160,6 +160,35 @@ def reloj_marcaciones(rid):
     finally:
         session.close()
 
+
+@app.route(API_BASE + '/relojes/<rid>/eliminar_huellas', methods=['GET', 'OPTIONS'])
+@jsonapi
+def reloj_eliminar_huellas(rid):
+    assert rid is not None
+    if request.method == 'OPTIONS':
+        return 204
+    session = Session()
+    try:
+        r = AssistanceModel.eliminar_huellas_reloj(session, rid)
+        return r
+
+    finally:
+        session.close()
+
+@app.route(API_BASE + '/relojes/<rid>/eliminar_usuarios', methods=['GET', 'OPTIONS'])
+@jsonapi
+def reloj_eliminar_usuarios(rid):
+    assert rid is not None
+    if request.method == 'OPTIONS':
+        return 204
+    session = Session()
+    try:
+        r = AssistanceModel.eliminar_usuarios_reloj(session, rid)
+        return r
+
+    finally:
+        session.close()
+
 @app.route(API_BASE + '/relojes/<rid>/usuarios', methods=['GET', 'OPTIONS'])
 @jsonapi
 def reloj_usuarios(rid):

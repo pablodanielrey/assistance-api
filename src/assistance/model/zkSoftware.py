@@ -266,13 +266,13 @@ class ZkSoftware:
         result = response['ClearDataResponse']['Row']['Result']
         if result != '1':
             raise ZkSoftwareException('ClearDataResponse == {}'.format(result))
-
+        return result
 
     def clearTemplates(self):
-        self._clearData(2)
+        return self._clearData(2)
 
     def clearAttLogs(self):
-        self._clearData(3)
+        return self._clearData(3)
 
     def clearUsers(self):
-        self._clearData(1)
+        return self._clearData(1)
