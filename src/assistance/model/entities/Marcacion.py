@@ -1,6 +1,8 @@
-from sqlalchemy import Column, String, ForeignKey, DateTime, Integer, TIMESTAMP
+from sqlalchemy import Column, String, ForeignKey, DateTime, Integer, TIMESTAMP, desc
 from sqlalchemy.orm import relationship
 from model_utils import Base
+import logging
+logging.getLogger().setLevel(logging.DEBUG)
 
 from datetime import datetime, timedelta
 
@@ -37,13 +39,16 @@ class Marcacion(Base):
         ls = []
 
         ''' agrupo por tolerancia duplicada los logs '''
-        marcaciones = session.query(Marcacion).filter(Marcacion.usuario_id == uid, Marcacion.marcacion >= tinicio, Marcacion.marcacion <= tfin).all()
+        marcaciones = session.query(Marcacion).filter(Marcacion.usuario_id == uid, Marcacion.marcacion >= tinicio, Marcacion.marcacion <= tfin).order_by(Marcacion.marcacion).all()
         for m in marcaciones:
             try:
                 ultimo = ls[-1]
                 ultimo = ultimo.marcacion + tolerancia
+                logging.info(ultimo)
+                logging.info(m.marcacion))
                 if m.marcacion <= ultimo:
                     continue
                 ls.append(m)
             except IndexError as e:
                 ls.append(m)
+        return ls

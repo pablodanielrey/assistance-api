@@ -20,7 +20,7 @@ class RenglonReporte:
         self.horario = horario
         self.marcaciones = marcaciones
         self.entrada = marcaciones[0] if len(marcaciones) > 0 else None
-        self.entrada = marcaciones[-1] if len(marcaciones) > 0 else None
+        self.salida = marcaciones[-1] if len(marcaciones) > 0 else None
         self.justificacion = justificacion
         self.cantidad_horas_trabajadas = self.calcularHorasTrabajadas()
 
@@ -83,4 +83,4 @@ class Detalle:
         self.justifiaciones = None
 
     def __json__(self):
-        return self.__dict__        
+        return self.__dict__
