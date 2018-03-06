@@ -4,6 +4,8 @@ from .Marcacion import Marcacion
 
 from flask_jsontools import JsonSerializableBase
 
+import logging
+logging.getLogger().setLevel(logging.DEBUG)
 
 class RenglonReporte:
     '''
@@ -25,7 +27,15 @@ class RenglonReporte:
         self.cantidad_horas_trabajadas = self.calcularHorasTrabajadas()
 
     def calcularHorasTrabajadas(self):
-        return 0
+        seconds = 0
+        for k in range(0, len(self.marcaciones), 2):
+            try:
+                e = self.marcaciones[k].marcacion
+                s = self.marcaciones[ k + 1].marcacion
+                seconds = seconds + (s - e).seconds
+            except IndexError as e:
+                continue
+        return seconds
 
     def __json__(self):
         return self.__dict__

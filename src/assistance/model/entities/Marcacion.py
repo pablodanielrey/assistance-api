@@ -45,7 +45,7 @@ class Marcacion(Base):
                 ultimo = ls[-1]
                 ultimo = ultimo.marcacion + tolerancia
                 logging.info(ultimo)
-                logging.info(m.marcacion))
+                logging.info(m.marcacion)
                 if m.marcacion <= ultimo:
                     continue
                 ls.append(m)
