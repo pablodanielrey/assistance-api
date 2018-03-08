@@ -113,6 +113,8 @@ class AssistanceModel:
             q = q.order_by(Horario.fecha_valido.desc())
             horario = q.limit(1).one_or_none()
 
+            if horario is None:
+                continue
             horarios.append(horario)
 
 
