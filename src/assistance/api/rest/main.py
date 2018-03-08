@@ -62,17 +62,29 @@ def reporte(uid):
         return 204
 
     fecha_str = request.args.get('inicio', None)
-    logging.info("==========================================");
     inicio = parser.parse(fecha_str).date() if fecha_str else None
-    logging.info(inicio)
 
     fecha_str = request.args.get('fin', None)
     fin = parser.parse(fecha_str).date() if fecha_str else None
-    logging.info(fin)
 
     session = Session()
     try:
         return AssistanceModel.reporte(session, uid, inicio, fin)
+    finally:
+        session.close()
+
+@app.route(API_BASE + '/usuarios/<uid>/horario/', methods=['GET', 'OPTIONS'])
+@jsonapi
+def horario(uid):
+    if request.method == 'OPTIONS':
+        return 204
+
+    fecha_str = request.args.get('fecha', None)
+    fecha = parser.parse(fecha_str).date() if fecha_str else None
+
+    session = Session()
+    try:
+        return AssistanceModel.horario(session, uid, fecha)
     finally:
         session.close()
 

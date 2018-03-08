@@ -87,6 +87,41 @@ class AssistanceModel:
 
 
     @classmethod
+    def horario(cls, session, uid, fecha):
+        assert uid is not None
+        fecha = fecha if fecha else date.today()
+
+        u = session.query(Usuario).filter(Usuario.id == uid).one_or_none()
+        if u is None:
+            return {}
+
+
+        query = cls.usuarios_url + '/usuarios/' + u.id
+        r = cls.api(query)
+        if not r.ok:
+            return []
+
+        usr = r.json()
+
+        horarios = []
+
+        for i in range(0, 7):
+            actual = fecha + timedelta(days=i)
+
+            q = session.query(Horario)
+            q = q.filter(Horario.usuario_id == u.id, Horario.dia_semanal == actual.weekday(), Horario.fecha_valido <= actual)
+            q = q.order_by(Horario.fecha_valido.desc())
+            horario = q.limit(1).one_or_none()
+
+            horarios.append(horario)
+
+
+        return {
+                'horarios': horarios,
+                'usuario':usr
+                }
+
+    @classmethod
     def usuario(cls, session, uid, retornarClave=False):
         query = cls.usuarios_url + '/usuarios/' + uid
         query = query + '?c=True' if retornarClave else query
@@ -184,7 +219,7 @@ class AssistanceModel:
     @classmethod
     def usuario_por_reloj(cls, session, rid, ruid):
         reloj = session.query(Reloj).filter(Reloj.id == rid).one()
-        zk = {'reloj':reloj, 'api':ZkSoftware(host=reloj.ip, port=reloj.puerto, timezone=reloj.zona_horaria)}
+        zk = {'reloj':reloj, 'api':ZkSoftware( host=reloj.ip, port=reloj.puerto, timezone=reloj.zona_horaria)}
         return zk['api'].getUserInfo(ruid)
 
     @classmethod
