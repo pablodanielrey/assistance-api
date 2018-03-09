@@ -88,6 +88,16 @@ def horario(uid):
     finally:
         session.close()
 
+@app.route(API_BASE + '/usuarios/<uid>/horario/', methods=['PUT'])
+@jsonapi
+def crear_horario(uid):
+    logging.debug(horarios)
+    session = Session()
+    try:
+        return None
+    finally:
+        session.close()
+
 @app.route(API_BASE + '/usuarios/<uid>/logs', methods=['GET', 'OPTIONS'])
 @jsonapi
 def logs_por_usuario(uid):
