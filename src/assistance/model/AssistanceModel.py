@@ -104,6 +104,7 @@ class AssistanceModel:
         usr = r.json()
 
         horarios = []
+        hsSemanales = 0
 
         for i in range(0, 7):
             actual = fecha + timedelta(days=i)
@@ -116,10 +117,14 @@ class AssistanceModel:
             if horario is None:
                 continue
             horarios.append(horario)
+            hsSemanales = hsSemanales + (horario.hora_salida - horario.hora_entrada)
 
 
+        minSem = (hsSemanales /60)  % 60
+        hsSem = int((hsSemanales /60)  / 60)
         return {
                 'horarios': horarios,
+                'horasSemanales': {'horas': hsSem, 'minSem': minSem},
                 'usuario':usr
                 }
 
