@@ -311,6 +311,8 @@ class AssistanceModel:
     @classmethod
     def sincronizar_reloj(cls, session, rid):
         reloj = session.query(Reloj).filter(Reloj.id == rid).one()
+        if not reloj:
+            raise Exception('rid == no existente')
         zk = {'reloj':reloj, 'api':ZkSoftware(host=reloj.ip, port=reloj.puerto, timezone=reloj.zona_horaria)}
         logs = zk['api'].getAttLog()
         if len(logs) <= 0:
