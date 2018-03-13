@@ -88,13 +88,16 @@ def horario(uid):
     finally:
         session.close()
 
-@app.route(API_BASE + '/usuarios/<uid>/horario/', methods=['PUT'])
+@app.route(API_BASE + '/horario/', methods=['PUT'])
 @jsonapi
-def crear_horario(uid):
+def crear_horario():
+    horarios = request.get_json()
     logging.debug(horarios)
     session = Session()
     try:
-        return None
+        AssistanceModel.crearHorario(session, horarios)
+        session.commit()
+        return  True
     finally:
         session.close()
 

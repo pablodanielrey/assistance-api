@@ -5,7 +5,7 @@ import requests
 import os
 import logging
 import uuid
-
+from dateutil import parser
 import oidc
 from oidc.oidc import ClientCredentialsGrant
 
@@ -115,7 +115,11 @@ class AssistanceModel:
             horario = q.limit(1).one_or_none()
 
             if horario is None:
-                continue
+                horario = Horario()
+                horario.dia_semanal = actual.weekday()
+                horario.hora_entrada = 0
+                horario.hora_salida = 0
+
             horarios.append(horario)
             hsSemanales = hsSemanales + (horario.hora_salida - horario.hora_entrada)
 
@@ -127,6 +131,20 @@ class AssistanceModel:
                 'horasSemanales': {'horas': hsSem, 'minSem': minSem},
                 'usuario':usr
                 }
+
+    @classmethod
+    def crearHorario(cls, session, horarios):
+        for h in horarios:
+            horario = Horario()
+
+            horario.fecha_valido = parser.parse(h['fecha_valido']).date() if h['fecha_valido'] else None
+            horario.dia_semanal = h['dia_semanal']
+            horario.hora_entrada = h['hora_entrada']
+            horario.hora_salida = h['hora_salida']
+            horario.usuario_id = h['usuario_id']
+            horario.id = str(uuid.uuid4())
+            session.add(horario)
+
 
     @classmethod
     def usuario(cls, session, uid, retornarClave=False):
