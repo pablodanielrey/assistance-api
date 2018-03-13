@@ -83,7 +83,13 @@ class AssistanceModel:
         u = session.query(Usuario).filter(Usuario.id == uid).one_or_none()
         if u is None:
             return []
-        return Reporte.generarReporte(session, u, inicio, fin)
+        query = cls.usuarios_url + '/usuarios/' + uid
+        r = cls.api(query)
+        if not r.ok:
+            return []
+
+        usr = r.json()
+        return Reporte.generarReporte(session, usr, inicio, fin)
 
 
     @classmethod

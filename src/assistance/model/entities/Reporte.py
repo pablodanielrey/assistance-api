@@ -68,11 +68,11 @@ class Reporte:
             actual = inicio + timedelta(days=i)
 
             q = session.query(Horario)
-            q = q.filter(Horario.usuario_id == usuario.id, Horario.dia_semanal == actual.weekday(), Horario.fecha_valido <= actual)
+            q = q.filter(Horario.usuario_id == usuario['id'], Horario.dia_semanal == actual.weekday(), Horario.fecha_valido <= actual)
             q = q.order_by(Horario.fecha_valido.desc())
             horario = q.limit(1).one_or_none()
 
-            marcaciones = Marcacion.obtenerMarcaciones(session, horario, usuario.id, actual)
+            marcaciones = Marcacion.obtenerMarcaciones(session, horario, usuario['id'], actual)
             marcaciones = [] if marcaciones is None else marcaciones
 
             justificacion = None
