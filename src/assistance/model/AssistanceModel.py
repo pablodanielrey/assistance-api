@@ -237,6 +237,34 @@ class AssistanceModel:
     def justificaciones(cls, session):
         return session.query(Justificacion).all()
 
+
+    @classmethod
+    def justificacion(cls, session, jid):
+        return session.query(Justificacion).filter(Justificacion.id == jid).one()
+
+    @classmethod
+    def crear_justificacion(cls, session, justificacion):
+        if session.query(Justificacion).filter(or_(Justificacion.nombre == justificacion["nombre"], Justificacion.codigo == justificacion["codigo"])).count() > 0:
+            raise Exception('Justificacion existente')
+
+        j = Justificacion()
+        j.id = str(uuid.uuid4())
+        j.nombre = justificacion["nombre"]
+        j.descripcion = justificacion["descripcion"]
+        j.codigo = justificacion["codigo"]
+        j.general = justificacion["general"]
+
+        session.add(j)
+        return j.id
+
+    @classmethod
+    def actualizar_justificacion(cls, session, jid, datos):
+        justificacion = session.query(Justificacion).filter(Justificacion.id == jid).one()
+        justificacion.nombre = datos["nombre"]
+        justificacion.descripcion = datos["descripcion"]
+        justificacion.codigo = datos["codigo"]
+        justificacion.general = datos["general"]
+
     '''
         APIs de los relojes
     '''

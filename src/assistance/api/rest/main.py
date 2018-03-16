@@ -263,6 +263,17 @@ def reloj_huellas(rid):
         session.close()
 
 
+@app.route(API_BASE + '/justificaciones/<jid>', methods=['GET', 'OPTIONS'])
+@jsonapi
+def justificacion(jid):
+    if request.method == 'OPTIONS':
+        return 204
+    session = Session()
+    try:
+        return AssistanceModel.justificacion(session, jid)
+    finally:
+        session.close()
+
 @app.route(API_BASE + '/justificaciones', methods=['GET', 'OPTIONS'])
 @jsonapi
 def justificaciones():
@@ -274,6 +285,33 @@ def justificaciones():
     finally:
         session.close()
 
+@app.route(API_BASE + '/justificaciones', methods=['PUT','OPTIONS'])
+@jsonapi
+def crear_justificacion():
+    if request.method == 'OPTIONS':
+        return 204
+    justificacion = request.get_json()
+    logging.debug(justificacion)
+    session = Session()
+    try:
+        jid = AssistanceModel.crear_justificacion(session, justificacion)
+        session.commit()
+        return jid
+
+    finally:
+        session.close()
+
+@app.route(API_BASE + '/justificaciones/<jid>', methods=['POST'])
+@jsonapi
+def actualizar_justificacion(jid):
+    datos = request.get_json()
+    session = Session()
+    try:
+        AssistanceModel.actualizar_justificacion(session, jid, datos)
+        session.commit()
+
+    finally:
+        session.close()
 
 @app.after_request
 def cors_after_request(response):

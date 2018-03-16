@@ -7,13 +7,12 @@ class Justificacion(Base):
     __tablename__ = 'justificacion'
 
     nombre = Column(String)
-    tipo = Column(String)
     descripcion = Column(String)
     codigo = Column(String)
     general = Column(Boolean)
 
     justificaciones = relationship('FechaJustificada')
-    
+
 
 class FechaJustificada(Base):
 
