@@ -230,6 +230,14 @@ class AssistanceModel:
         return rusers
 
     '''
+        APIs de justificaciones
+    '''
+
+    @classmethod
+    def justificaciones(cls, session):
+        return session.query(Justificacion).all()
+
+    '''
         APIs de los relojes
     '''
 

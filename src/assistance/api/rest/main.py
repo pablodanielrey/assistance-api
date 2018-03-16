@@ -263,6 +263,18 @@ def reloj_huellas(rid):
         session.close()
 
 
+@app.route(API_BASE + '/justificaciones', methods=['GET', 'OPTIONS'])
+@jsonapi
+def justificaciones():
+    if request.method == 'OPTIONS':
+        return 204
+    session = Session()
+    try:
+        return AssistanceModel.justificaciones(session)
+    finally:
+        session.close()
+
+
 @app.after_request
 def cors_after_request(response):
     response.headers.add('Access-Control-Allow-Origin', '*')
