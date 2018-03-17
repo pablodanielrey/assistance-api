@@ -43,7 +43,7 @@ def usuarios(uid=None):
     search = request.args.get('q',None)
     offset = request.args.get('offset',None,int)
     limit = request.args.get('limit',None,int)
-    only_internal = request.args.get('internal',False,bool)
+    only_internal = request.args.get('assistance',False,bool)
     c = request.args.get('c',False,bool)
     session = Session()
     try:
@@ -52,12 +52,12 @@ def usuarios(uid=None):
         else:
             fecha_str = request.args.get('f', None)
             fecha = parser.parse(fecha_str) if fecha_str else None
-            users = AssistanceModel.usuarios(session, search=search, retornarClave=c, offset=offset, limit=limit, fecha=fecha)
+            usuarios = AssistanceModel.usuarios(session, search=search, retornarClave=c, offset=offset, limit=limit, fecha=fecha)
             if not only_internal:
-                return users
+                return usuarios
             else:
                 ''' retorno solo los usuarios que tienen algun registro de asistencia '''
-                return [u for u if u['asistencia'] != None]
+                return [u for u in usuarios if 'asistencia' in u and u['asistencia'] is not None]
     finally:
         session.close()
 
