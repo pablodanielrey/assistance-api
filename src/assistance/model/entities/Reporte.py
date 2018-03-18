@@ -24,6 +24,10 @@ class Detalle:
         self.minutos_justificados = 0
         self.minutos_injustificados = 0
 
+        self.minutos_minimos_hora_extra_no_lab = 0
+        self.minutos_bloque_hora_extra_no_lab = 0
+        self.minutos_minimos_hora_extra_lab = 0
+        self.minutos_bloque_hora_extra_lab = 0
 
         self.minutos_extra_en_dias_laborables = 0
         self.minutos_extra_descartados_en_dias_laborables = 0
@@ -71,6 +75,12 @@ class Detalle:
         '''
 
         self.dias_seleccionados = int((reporte.fecha_final - reporte.fecha_inicial).days) + 1
+        self.minutos_minimos_hora_extra_no_lab = 0
+        self.minutos_bloque_hora_extra_no_lab = 0
+        self.minutos_minimos_hora_extra_lab = minutos_minimos_para_hora_extra
+        self.minutos_bloque_hora_extra_lab = bloque_de_minutos_para_hora_extra
+
+
 
         for renglon in reporte.reportes:
             minutos_trabajados = renglon.cantidad_segundos_trabajados / 60
@@ -91,7 +101,7 @@ class Detalle:
                         self.minutos_trabajados = self.minutos_trabajados + minutos_trabajados
                     else:
                         self.minutos_trabajados = self.minutos_trabajados + minutos_a_trabajar
-                        minutos_extra, extra_descartados = self._calcularMinutosExtra(minutos_trabajados, minutos_a_trabajar, minutos_minimos_para_hora_extra, bloque_de_minutos_para_hora_extra)
+                        minutos_extra, extra_descartados = self._calcularMinutosExtra(minutos_trabajados, minutos_a_trabajar, self.minutos_minimos_hora_extra_lab, self.minutos_bloque_hora_extra_lab)
                         self.minutos_extra_en_dias_laborables = self.minutos_extra_en_dias_laborables + minutos_extra
                         self.minutos_extra_descartados_en_dias_laborables = self.minutos_extra_descartados_en_dias_laborables + extra_descartados
 
@@ -133,7 +143,7 @@ class Detalle:
 
             else:
                 ''' calculo horas extras '''
-                minutos_extra, extra_descartados = self._calcularMinutosExtra(minutos_trabajados, minutos_a_trabajar, 0, 0)
+                minutos_extra, extra_descartados = self._calcularMinutosExtra(minutos_trabajados, minutos_a_trabajar, self.minutos_minimos_hora_extra_no_lab, self.minutos_bloque_hora_extra_no_lab)
                 self.minutos_extra = self.minutos_extra + minutos_extra
                 self.minutos_extra_descartados = self.minutos_extra_descartados + extra_descartados
                 if minutos_extra > 0 or extra_descartados > 0:
@@ -147,6 +157,8 @@ class Detalle:
                     self.justificaciones[k] = self.justificaciones[k] + 1
                 except KeyError as e:
                     self.justificaciones[k] = 1
+
+
 
         self.dias_totales_trabajados = self.dias_trabajados + self.dias_extra_trabajados
         self.minutos_totales_trabajados = self.minutos_trabajados + self.minutos_extra + self.minutos_extra_descartados + self.minutos_extra_en_dias_laborables + self.minutos_extra_descartados_en_dias_laborables
