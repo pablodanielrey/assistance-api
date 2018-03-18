@@ -60,6 +60,10 @@ class Reporte:
 
     @classmethod
     def _agregar_marcaciones_sin_horario(cls, session, reportes, uid, inicio, fin):
+        """
+            Las marcaciones sin horario se toman como diarias. o sea dentro del mismo día de marcado
+        """
+        
         ''' obtengo las marcaciones que faltan '''
         ids_marcaciones_registradas = []
         for r in reportes:
