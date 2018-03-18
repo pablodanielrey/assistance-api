@@ -148,10 +148,11 @@ class RenglonReporte:
     cantidad_horas_trabajadas: number;
     justifcacion: FechaJustificada;
     '''
-    def __init__(self, fecha, horario, marcaciones, justificacion):
+    def __init__(self, fecha, horario, marcaciones, duplicadas, justificacion):
         self.fecha = fecha
         self.horario = horario
         self.marcaciones = marcaciones
+        self.duplicadas = duplicadas
         self.entrada = marcaciones[0] if len(marcaciones) > 0 else None
         self.salida = marcaciones[-1] if len(marcaciones) > 0 and len(marcaciones) % 2 == 0 else None
         self.justificacion = justificacion
@@ -205,6 +206,7 @@ class Reporte:
         ids_marcaciones_registradas = []
         for r in reportes:
             ids_marcaciones_registradas.extend([m.id for m in r.marcaciones])
+            ids_marcaciones_registradas.extend([m.id for m in r.duplicadas])
         sin_horario = session.query(Marcacion).filter(Marcacion.usuario_id == uid, Marcacion.marcacion >= inicio, Marcacion.marcacion <= fin, ~Marcacion.id.in_(ids_marcaciones_registradas)).all()
         if len(sin_horario) <= 0:
             return reportes
@@ -225,7 +227,7 @@ class Reporte:
         ''' elimino los RenglonReporte a ser reemplazados '''
         reportes_filtrados = [r for r in reportes if r.fecha not in por_fecha]
         for k in por_fecha:
-            r = RenglonReporte(k, None, por_fecha[k], None)
+            r = RenglonReporte(k, None, por_fecha[k], [], None)
             reportes_filtrados.append(r)
         return sorted(reportes_filtrados, key=lambda x: x.fecha)
 
@@ -244,10 +246,10 @@ class Reporte:
             q = q.order_by(Horario.fecha_valido.desc())
             horario = q.limit(1).one_or_none()
 
-            marcaciones = Marcacion.obtenerMarcaciones(session, horario, usuario['id'], actual, tzone)
+            marcaciones, duplicadas = Marcacion.obtenerMarcaciones(session, horario, usuario['id'], actual, tzone)
             marcaciones = [] if marcaciones is None else marcaciones
             justificacion = None
-            r = RenglonReporte(actual, horario, marcaciones, justificacion)
+            r = RenglonReporte(actual, horario, marcaciones, duplicadas, justificacion)
             reportes.append(r)
 
         rep = Reporte(usuario, inicio, fin)

@@ -43,7 +43,7 @@ class Marcacion(Base):
     @classmethod
     def obtenerMarcaciones(cls, session, horario, uid, fecha, tz='America/Argentina/Buenos_Aires'):
         if horario is None:
-            return None
+            return None, []
 
         inicio, fin = horario.obtenerHorario(fecha,timezone=tz)
 
@@ -53,6 +53,7 @@ class Marcacion(Base):
         tinicio, tfin = inicio - toleranciaDiaria, fin + toleranciaDiaria
 
         ls = []
+        duplicadas = []
 
         ''' agrupo por tolerancia duplicada los logs '''
         marcaciones = session.query(Marcacion).filter(Marcacion.usuario_id == uid, Marcacion.marcacion >= tinicio, Marcacion.marcacion <= tfin).order_by(Marcacion.marcacion).all()
@@ -60,8 +61,9 @@ class Marcacion(Base):
             try:
                 ultimo = ls[-1]
                 if ultimo.esIgual(m,tolerancia):
+                    duplicadas.append(m)
                     continue
                 ls.append(m)
             except IndexError as e:
                 ls.append(m)
-        return ls
+        return ls, duplicadas
