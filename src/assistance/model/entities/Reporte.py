@@ -1,4 +1,5 @@
-from datetime import datetime, timedelta
+from datetime import datetime, time, timedelta
+import pytz
 from .Horario import Horario
 from .Marcacion import Marcacion
 
@@ -59,10 +60,15 @@ class Reporte:
 
 
     @classmethod
-    def _agregar_marcaciones_sin_horario(cls, session, reportes, uid, inicio, fin):
+    def _agregar_marcaciones_sin_horario(cls, session, reportes, uid, inicio, fin, tzone='America/Argentina/Buenos_Aires'):
         """
-            Las marcaciones sin horario se toman como diarias. o sea dentro del mismo día de marcado
+            Las marcaciones sin horario se toman como diarias. o sea dentro del mismo día de marcado.
+            hay que tener en cuenta que cuando se saca el date() debe ser relativo a la zona horaria del cliente
+            se supone America/Argentina/Buenos_Aires
         """
+        timezone = pytz.timezone(tzone)
+        inicio = datetime.combine(inicio,time(0)).replace(tzinfo=timezone)
+        fin = datetime.combine(fin,time(0)).replace(tzinfo=timezone) + timedelta(days=1)
 
         ''' obtengo las marcaciones que faltan '''
         ids_marcaciones_registradas = []
@@ -77,13 +83,13 @@ class Reporte:
         tolerancia = timedelta(minutes=Marcacion.TOLERANCIA_DUPLICADA)
         por_fecha = {}
         for m in sin_horario:
-            fecha = m.marcacion.date()
+            fecha = m.obtenerFechaRelativa(tzone)
             if fecha in por_fecha:
                 ''' tengo en cuenta la tolerancia '''
                 if not por_fecha[fecha][-1].esIgual(m,tolerancia):
-                    por_fecha[m.marcacion.date()].append(m)
+                    por_fecha[fecha].append(m)
             else:
-                por_fecha[m.marcacion.date()] = [m]
+                por_fecha[fecha] = [m]
 
         ''' elimino los RenglonReporte a ser reemplazados '''
         reportes_filtrados = [r for r in reportes if r.fecha not in por_fecha]
@@ -94,7 +100,7 @@ class Reporte:
 
 
     @classmethod
-    def generarReporte(cls, session, usuario, inicio, fin):
+    def generarReporte(cls, session, usuario, inicio, fin, tzone='America/Argentina/Buenos_Aires'):
         if inicio > fin:
             return []
 
@@ -107,14 +113,14 @@ class Reporte:
             q = q.order_by(Horario.fecha_valido.desc())
             horario = q.limit(1).one_or_none()
 
-            marcaciones = Marcacion.obtenerMarcaciones(session, horario, usuario['id'], actual)
+            marcaciones = Marcacion.obtenerMarcaciones(session, horario, usuario['id'], actual, tzone)
             marcaciones = [] if marcaciones is None else marcaciones
             justificacion = None
             r = RenglonReporte(actual, horario, marcaciones, justificacion)
             reportes.append(r)
 
         rep = Reporte(usuario, inicio, fin)
-        rep.reportes = cls._agregar_marcaciones_sin_horario(session, reportes, usuario['id'], inicio, fin)
+        rep.reportes = cls._agregar_marcaciones_sin_horario(session, reportes, usuario['id'], inicio, fin, tzone)
         return rep
 
     def __json__(self):

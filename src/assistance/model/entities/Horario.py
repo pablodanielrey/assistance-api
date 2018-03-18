@@ -3,6 +3,7 @@ from sqlalchemy.orm import relationship
 from model_utils import Base
 
 from dateutil.tz import tzlocal
+import pytz
 
 from datetime import datetime, time, timedelta
 
@@ -22,7 +23,11 @@ class Horario(Base):
     def esDiario(self):
         return self.hora_salida < (24 * 60 * 60)
 
-    def obtenerHorario(self, fecha, timezone=tzlocal()):
+    def obtenerHorario(self, fecha, timezone=None):
+        if not timezone:
+            timezone = tzlocal()
+        else:
+            timezone = pytz.timezone(timezone)
         dt = datetime.combine(fecha, time(0), timezone)
         # verifico que la salida sea en el mismo dia
         if self.esDiario():

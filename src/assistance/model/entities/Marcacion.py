@@ -4,6 +4,7 @@ from model_utils import Base
 import logging
 logging.getLogger().setLevel(logging.DEBUG)
 
+import pytz
 from datetime import datetime, timedelta
 
 class Marcacion(Base):
@@ -23,6 +24,10 @@ class Marcacion(Base):
     usuario_id = Column(String, ForeignKey('usuario.id'))
     usuario = relationship('Usuario')
 
+    def obtenerFechaRelativa(self, tz='America/Argentina/Buenos_Aires'):
+        timezone = pytz.timezone(tz)
+        return self.marcacion.astimezone(timezone).date()
+
     def esIgual(self, otra=None, tolerancia=None):
         ''' tiene en cuenta la tolerancia para decidir si reprecentan la misma marcacion '''
         if not otra:
@@ -36,11 +41,11 @@ class Marcacion(Base):
 
 
     @classmethod
-    def obtenerMarcaciones(cls, session, horario, uid, actual):
+    def obtenerMarcaciones(cls, session, horario, uid, fecha, tz='America/Argentina/Buenos_Aires'):
         if horario is None:
             return None
 
-        inicio, fin = horario.obtenerHorario(actual)
+        inicio, fin = horario.obtenerHorario(fecha,timezone=tz)
 
         tolerancia = timedelta(minutes=cls.TOLERANCIA_DUPLICADA)
         toleranciaDiaria = timedelta() if horario.esDiario() else timedelta(minutes=cls.TOLERANCIA_DIARIA)
