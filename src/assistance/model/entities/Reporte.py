@@ -57,13 +57,38 @@ class Reporte:
         self.reportes = []
         self.detalle = None
 
+
+    @classmethod
+    def _agregar_marcaciones_sin_horario(cls, session, reportes, uid, inicio, fin):
+        ''' obtengo las marcaciones que faltan '''
+        ids_marcaciones_registradas = []
+        for r in reportes:
+            ids_marcaciones_registradas.extend([m.id for m in r.marcaciones])
+        sin_horario = session.query(Marcacion).filter(Marcacion.usuario_id == uid, Marcacion.marcacion >= inicio, Marcacion.marcacion <= fin, ~Marcacion.id.in_(ids_marcaciones_registradas)).all()
+        sin_horario = sorted(sin_horario, key=lambda x: x.marcacion)
+
+        ''' las agrupo por fecha '''
+        por_fecha = {}
+        for m in sin_horario:
+            if m.marcacion.date() in por_fecha:
+                por_fecha[m.marcacion.date()].append(m)
+            else:
+                por_fecha[m.marcacion.date()] = [m]
+
+        ''' elimino los RenglonReporte a ser reemplazados '''
+        reportes_filtrados = [r for r in reportes if r.fecha not in por_fecha]
+        for k in por_fecha:
+            r = RenglonReporte(k, None, por_fecha[k], None)
+            reportes_filtrados.append(r)
+        return sorted(reportes_filtrados, key=lambda x: x.fecha)
+
+
     @classmethod
     def generarReporte(cls, session, usuario, inicio, fin):
         if inicio > fin:
             return []
 
-        rep = Reporte(usuario, inicio, fin)
-
+        reportes = []
         for i in range(0, int((fin - inicio).days + 1)):
             actual = inicio + timedelta(days=i)
 
@@ -74,13 +99,12 @@ class Reporte:
 
             marcaciones = Marcacion.obtenerMarcaciones(session, horario, usuario['id'], actual)
             marcaciones = [] if marcaciones is None else marcaciones
-
             justificacion = None
-
             r = RenglonReporte(actual, horario, marcaciones, justificacion)
+            reportes.append(r)
 
-            rep.reportes.append(r)
-
+        rep = Reporte(usuario, inicio, fin)
+        rep.reportes = cls._agregar_marcaciones_sin_horario(session, reportes, usuario['id'], inicio, fin)
         return rep
 
     def __json__(self):
