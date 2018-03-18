@@ -24,9 +24,14 @@ class Detalle:
         self.minutos_justificados = 0
         self.minutos_injustificados = 0
 
+
+        self.minutos_extra_en_dias_laborables = 0
+        self.minutos_extra_descartados_en_dias_laborables = 0
         self.dias_extra_trabajados = 0
         self.minutos_extra_descartados = 0
         self.minutos_extra = 0
+        self.minutos_extra_totales = 0
+        self.minutos_extra_descartados_totales = 0
 
         self.dias_totales_trabajados = 0
         self.minutos_totales_trabajados = 0
@@ -41,9 +46,25 @@ class Detalle:
         self.minutos_entradas_tempranas = 0
         self.minutos_entradas_tardes = 0
 
+    def _calcularMinutosExtra(self, minutos_trabajados, minutos_a_trabajar, minutos_minimos_para_hora_extra, bloque_de_minutos_para_hora_extra):
+        me = minutos_trabajados - minutos_a_trabajar
+        if me <= 0:
+            return 0, 0
+        minutos_extra_descartados = 0
+        minutos_extra = 0
+        if me < minutos_minimos_para_hora_extra:
+            minutos_extra_descartados = me
+        else:
+            if bloque_de_minutos_para_hora_extra:
+                cantidad_bloques = int(me / bloque_de_minutos_para_hora_extra)
+                minutos_extra = cantidad_bloques * bloque_de_minutos_para_hora_extra
+                minutos_extra_descartados = (me % bloque_de_minutos_para_hora_extra)
+            else:
+                minutos_extra = me
 
+        return minutos_extra, minutos_extra_descartados
 
-    def calcular(self, reporte, minutos_minimos_para_hora_extra=0, bloque_de_minutos_para_hora_extra=60):
+    def calcular(self, reporte, minutos_minimos_para_hora_extra=30, bloque_de_minutos_para_hora_extra=30):
         '''
             minutos_minimos_para_hora_extra == los minutos necesarios minimos adicionales -- si es 0 entnoces cada minuto extra ya contabiliza
             bloque_de_minutos_para_hora_extra == minutos necesarios para contabilizar para hora extra -- si es None cada minuto cuenta para hora extra.
@@ -66,7 +87,13 @@ class Detalle:
                 ''' dias trabajados '''
                 if renglon.entrada or minutos_trabajados > 0:
                     self.dias_trabajados = self.dias_trabajados + 1
-                    self.minutos_trabajados = self.minutos_trabajados + minutos_trabajados
+                    if minutos_trabajados <= minutos_a_trabajar:
+                        self.minutos_trabajados = self.minutos_trabajados + minutos_trabajados
+                    else:
+                        self.minutos_trabajados = self.minutos_trabajados + minutos_a_trabajar
+                        minutos_extra, extra_descartados = self._calcularMinutosExtra(minutos_trabajados, minutos_a_trabajar, minutos_minimos_para_hora_extra, bloque_de_minutos_para_hora_extra)
+                        self.minutos_extra_en_dias_laborables = self.minutos_extra_en_dias_laborables + minutos_extra
+                        self.minutos_extra_descartados_en_dias_laborables = self.minutos_extra_descartados_en_dias_laborables + extra_descartados
 
                 ''' calculo los minutos sin trabajar '''
                 if minutos_a_trabajar > 0 and minutos_trabajados < minutos_a_trabajar:
@@ -83,7 +110,7 @@ class Detalle:
                         self.faltas_injustificadas = self.faltas_injustificadas + 1
 
 
-                inicio, fin = renglon.horario.obtenerHorario(renglon.fecha)
+                inicio, fin = renglon.horario.obtenerInicioFin(renglon.fecha)
 
                 ''' salidas '''
                 salida = renglon.salida.marcacion if renglon.salida else None
@@ -92,7 +119,7 @@ class Detalle:
                     self.minutos_salidas_tempranas = self.minutos_salidas_tempranas + int((fin - salida).seconds / 60)
                 if salida and salida > fin:
                     self.salidas_tardes = self.salidas_tardes + 1
-                    self.minutos_salidas_tardes = self.minutos_salidas_tardes + int((fin - salida).seconds / 60)
+                    self.minutos_salidas_tardes = self.minutos_salidas_tardes + int((salida - fin).seconds / 60)
 
                 ''' entradas '''
                 entrada = renglon.entrada.marcacion if renglon.entrada else None
@@ -106,20 +133,12 @@ class Detalle:
 
             else:
                 ''' calculo horas extras '''
-                minutos_extra = minutos_trabajados - minutos_a_trabajar
-                if minutos_extra > 0:
+                minutos_extra, extra_descartados = self._calcularMinutosExtra(minutos_trabajados, minutos_a_trabajar, 0, 0)
+                self.minutos_extra = self.minutos_extra + minutos_extra
+                self.minutos_extra_descartados = self.minutos_extra_descartados + extra_descartados
+                if minutos_extra > 0 or extra_descartados > 0:
                     self.dias_extra_trabajados = self.dias_extra_trabajados + 1
 
-                    if minutos_extra < minutos_minimos_para_hora_extra:
-                        self.minutos_extra_descartados = self.minutos_extra_descartados + minutos_extra
-                    else:
-                        if bloque_de_minutos_para_hora_extra:
-                            cantidad_bloques = int(minutos_extra / bloque_de_minutos_para_hora_extra)
-                            minutos_bloques = cantidad_bloques * bloque_de_minutos_para_hora_extra
-                            self.minutos_extra = self.minutos_extra + minutos_bloques
-                            self.minutos_extra_descartados = self.minutos_extra_descartados + (minutos_extra % bloque_de_minutos_para_hora_extra)
-                        else:
-                            self.minutos_extra = self.minutos_extra + minutos_extra
 
             ''' calculo las justificaciones '''
             if renglon.justificacion:
@@ -130,8 +149,9 @@ class Detalle:
                     self.justificaciones[k] = 1
 
         self.dias_totales_trabajados = self.dias_trabajados + self.dias_extra_trabajados
-        self.minutos_totales_trabajados = self.minutos_trabajados + self.minutos_extra + self.minutos_extra_descartados
-
+        self.minutos_totales_trabajados = self.minutos_trabajados + self.minutos_extra + self.minutos_extra_descartados + self.minutos_extra_en_dias_laborables + self.minutos_extra_descartados_en_dias_laborables
+        self.minutos_extra_totales = self.minutos_extra + self.minutos_extra_en_dias_laborables
+        self.minutos_extra_descartados_totales = self.minutos_extra_descartados + self.minutos_extra_descartados_en_dias_laborables
 
 
     def __json__(self):
