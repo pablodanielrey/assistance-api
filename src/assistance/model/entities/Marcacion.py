@@ -23,6 +23,17 @@ class Marcacion(Base):
     usuario_id = Column(String, ForeignKey('usuario.id'))
     usuario = relationship('Usuario')
 
+    def esIgual(self, otra=None, tolerancia=None):
+        ''' tiene en cuenta la tolerancia para decidir si reprecentan la misma marcacion '''
+        if not otra:
+            return False
+        if not tolerancia:
+            return self.marcacion == otra.marcacion
+        if self.marcacion > otra.marcacion:
+            return otra.marcacion + tolerancia >= self.marcacion
+        else:
+            return self.marcacion + tolerancia >= otra.marcacion
+
 
     @classmethod
     def obtenerMarcaciones(cls, session, horario, uid, actual):
@@ -43,10 +54,7 @@ class Marcacion(Base):
         for m in marcaciones:
             try:
                 ultimo = ls[-1]
-                ultimo = ultimo.marcacion + tolerancia
-                logging.debug(ultimo)
-                logging.debug(m.marcacion)
-                if m.marcacion <= ultimo:
+                if ultimo.esIgual(m,tolerancia):
                     continue
                 ls.append(m)
             except IndexError as e:

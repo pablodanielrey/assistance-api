@@ -63,19 +63,25 @@ class Reporte:
         """
             Las marcaciones sin horario se toman como diarias. o sea dentro del mismo día de marcado
         """
-        
+
         ''' obtengo las marcaciones que faltan '''
         ids_marcaciones_registradas = []
         for r in reportes:
             ids_marcaciones_registradas.extend([m.id for m in r.marcaciones])
         sin_horario = session.query(Marcacion).filter(Marcacion.usuario_id == uid, Marcacion.marcacion >= inicio, Marcacion.marcacion <= fin, ~Marcacion.id.in_(ids_marcaciones_registradas)).all()
+        if len(sin_horario) <= 0:
+            return reportes
         sin_horario = sorted(sin_horario, key=lambda x: x.marcacion)
 
         ''' las agrupo por fecha '''
+        tolerancia = timedelta(minutes=Marcacion.TOLERANCIA_DUPLICADA)
         por_fecha = {}
         for m in sin_horario:
-            if m.marcacion.date() in por_fecha:
-                por_fecha[m.marcacion.date()].append(m)
+            fecha = m.marcacion.date()
+            if fecha in por_fecha:
+                ''' tengo en cuenta la tolerancia '''
+                if not por_fecha[fecha][-1].esIgual(m,tolerancia):
+                    por_fecha[m.marcacion.date()].append(m)
             else:
                 por_fecha[m.marcacion.date()] = [m]
 
