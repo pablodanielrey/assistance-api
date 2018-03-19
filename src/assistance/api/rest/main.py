@@ -307,6 +307,15 @@ def crear_justificacion():
     finally:
         session.close()
 
+@app.route(API_BASE + '/justificaciones/<jid>', methods=['DELETE'])
+@jsonapi
+def eliminar_justificacion(jid):
+    session = Session()
+    try:
+        AssistanceModel.eliminarJustificacion(session, jid)
+        session.commit()
+    finally:
+        session.close()
 @app.route(API_BASE + '/justificaciones/<jid>', methods=['POST'])
 @jsonapi
 def actualizar_justificacion(jid):

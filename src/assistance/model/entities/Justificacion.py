@@ -10,6 +10,7 @@ class Justificacion(Base):
     descripcion = Column(String)
     codigo = Column(String)
     general = Column(Boolean)
+    eliminado = Column(DateTime)
 
     justificaciones = relationship('FechaJustificada')
 

@@ -239,7 +239,7 @@ class AssistanceModel:
 
     @classmethod
     def justificaciones(cls, session):
-        return session.query(Justificacion).all()
+        return session.query(Justificacion).filter(Justificacion.eliminado == None).all()
 
 
     @classmethod
@@ -254,12 +254,17 @@ class AssistanceModel:
         j = Justificacion()
         j.id = str(uuid.uuid4())
         j.nombre = justificacion["nombre"]
-        j.descripcion = justificacion["descripcion"]
+        j.descripcion = justificacion["descripcion"] if "descripcion" in justificacion else None
         j.codigo = justificacion["codigo"]
         j.general = justificacion["general"]
 
         session.add(j)
         return j.id
+
+    @classmethod
+    def eliminarJustificacion(cls, session, jid):
+        justificacion = session.query(Justificacion).filter(Justificacion.id == jid).one()
+        justificacion.eliminado = datetime.now()
 
     @classmethod
     def actualizar_justificacion(cls, session, jid, datos):
