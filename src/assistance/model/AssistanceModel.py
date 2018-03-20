@@ -274,6 +274,26 @@ class AssistanceModel:
         justificacion.codigo = datos["codigo"]
         justificacion.general = datos["general"]
 
+
+    @classmethod
+    def justificar(cls, session, fj):
+        fj["fechaInicio"] = parser.parse(fj["fechaInicio"]) if fj["fechaInicio"] else None
+        if fj["fechaInicio"] is None:
+            raise Exception("Debe poseer fecha de inicio")
+
+        fj["fechaFin"] = parser.parse(fj["fechaFin"]) if fj["fechaFin"] else None
+
+        just = fj["justificacion"]
+        j = FechaJustificada()
+        j.id = str(uuid.uuid4())
+        j.fechaInicio = fj["fechaInicio"]
+        j.fechaFin = fj["fechaFin"]
+        j.usuario_id = fj["usuario_id"]
+        j.justificacion_id = just["id"]
+
+        session.add(j)
+        return j.id
+
     '''
         APIs de los relojes
     '''

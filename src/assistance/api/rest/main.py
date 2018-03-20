@@ -328,6 +328,23 @@ def actualizar_justificacion(jid):
     finally:
         session.close()
 
+
+
+@app.route(API_BASE + '/justificar', methods=['PUT','OPTIONS'])
+@jsonapi
+def justificar():
+    if request.method == 'OPTIONS':
+        return 204
+    fechaJustificada = request.get_json()
+    logging.debug(fechaJustificada)
+    session = Session()
+    try:
+        id = AssistanceModel.justificar(session, fechaJustificada)
+        session.commit()
+        return id
+
+    finally:
+        session.close()
 @app.after_request
 def cors_after_request(response):
     response.headers.add('Access-Control-Allow-Origin', '*')

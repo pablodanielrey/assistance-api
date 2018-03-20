@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, ForeignKey, Boolean, DateTime
+from sqlalchemy import Column, String, ForeignKey, Boolean, DateTime, TIMESTAMP
 from sqlalchemy.orm import relationship
 from model_utils import Base
 
@@ -19,7 +19,8 @@ class FechaJustificada(Base):
 
     __tablename__ = 'fecha_justificada'
 
-    fecha = Column(DateTime)
+    fechaInicio = Column(TIMESTAMP(timezone=True))
+    fechaFin = Column(TIMESTAMP(timezone=True))
 
     usuario_id = Column(String, ForeignKey('usuario.id'))
     usuario = relationship('Usuario')
