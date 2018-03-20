@@ -387,7 +387,7 @@ class AssistanceModel:
                     u.dni = usuario['dni']
                     session.add(u)
                 return u
-        raise Exception('No se encuentra usuario con ese dni')
+        raise Exception('No se encuentra usuario con dni {}'.format(dni))
 
     @classmethod
     def sincronizar(cls, session):
