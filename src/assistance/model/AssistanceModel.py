@@ -277,17 +277,17 @@ class AssistanceModel:
 
     @classmethod
     def justificar(cls, session, fj):
-        fj["fechaInicio"] = parser.parse(fj["fechaInicio"]) if fj["fechaInicio"] else None
-        if fj["fechaInicio"] is None:
+        fj["fecha_inicio"] = parser.parse(fj["fecha_inicio"]) if fj["fecha_inicio"] else None
+        if fj["fecha_inicio"] is None:
             raise Exception("Debe poseer fecha de inicio")
 
-        fj["fechaFin"] = parser.parse(fj["fechaFin"]) if fj["fechaFin"] else None
+        fj["fecha_fin"] = parser.parse(fj["fecha_fin"]) if fj["fecha_fin"] else None
 
         just = fj["justificacion"]
         j = FechaJustificada()
         j.id = str(uuid.uuid4())
-        j.fechaInicio = fj["fechaInicio"]
-        j.fechaFin = fj["fechaFin"]
+        j.fecha_inicio = fj["fecha_inicio"]
+        j.fecha_fin = fj["fecha_fin"]
         j.usuario_id = fj["usuario_id"]
         j.justificacion_id = just["id"]
 

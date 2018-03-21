@@ -1,8 +1,12 @@
 from datetime import datetime, time, timedelta
+from dateutil.tz import tzlocal
+
 import pytz
 from .Horario import Horario
 from .Marcacion import Marcacion
-
+from .Justificacion import FechaJustificada, Justificacion
+from sqlalchemy import or_, and_, func
+from sqlalchemy.orm import joinedload
 from flask_jsontools import JsonSerializableBase
 
 import logging
@@ -107,14 +111,14 @@ class Detalle:
 
                 ''' calculo los minutos sin trabajar '''
                 if minutos_a_trabajar > 0 and minutos_trabajados < minutos_a_trabajar:
-                    if renglon.justificacion:
+                    if renglon.justificaciones and len(renglon.justificaciones) > 0:
                         self.minutos_justificados = self.minutos_justificados + (minutos_a_trabajar - minutos_trabajados)
                     else:
                         self.minutos_injustificados = self.minutos_injustificados + (minutos_a_trabajar - minutos_trabajados)
 
                 ''' calculo las faltas '''
                 if minutos_a_trabajar > 0 and not renglon.entrada:
-                    if renglon.justificacion:
+                    if renglon.justificaciones and len(renglon.justificaciones) > 0:
                         self.faltas_justificadas = self.faltas_justificadas + 1
                     else:
                         self.faltas_injustificadas = self.faltas_injustificadas + 1
@@ -151,8 +155,9 @@ class Detalle:
 
 
             ''' calculo las justificaciones '''
-            if renglon.justificacion:
-                k = renglon.justificacion.nombre
+            ''' TODO: falta hacer los calculos correctamente '''
+            if renglon.justificaciones and len(renglon.justificaciones) > 0:
+                k = renglon.justificaciones[0].justificacion.nombre
                 try:
                     self.justificaciones[k] = self.justificaciones[k] + 1
                 except KeyError as e:
@@ -180,14 +185,14 @@ class RenglonReporte:
     cantidad_horas_trabajadas: number;
     justifcacion: FechaJustificada;
     '''
-    def __init__(self, fecha, horario, marcaciones, duplicadas, justificacion):
+    def __init__(self, fecha, horario, marcaciones, duplicadas, justificaciones):
         self.fecha = fecha
         self.horario = horario
         self.marcaciones = marcaciones
         self.duplicadas = duplicadas
         self.entrada = marcaciones[0] if len(marcaciones) > 0 else None
         self.salida = marcaciones[-1] if len(marcaciones) > 0 and len(marcaciones) % 2 == 0 else None
-        self.justificacion = justificacion
+        self.justificaciones = justificaciones
         self.cantidad_segundos_trabajados = self._calcularSegundosTrabajados()
         self.cantidad_horas_trabajadas = self.cantidad_segundos_trabajados
 
@@ -280,8 +285,23 @@ class Reporte:
 
             marcaciones, duplicadas = Marcacion.obtenerMarcaciones(session, horario, usuario['id'], actual, tzone)
             marcaciones = [] if marcaciones is None else marcaciones
-            justificacion = None
-            r = RenglonReporte(actual, horario, marcaciones, duplicadas, justificacion)
+
+            # convierto la fecha a datetime para compararlo en la base
+            # timezone = tzlocal() if tzone is None else pytz.timezone(tzone)
+            timezone = tzlocal()
+            fi = datetime.combine(actual, time(0), timezone)
+            ff = datetime.combine(actual, time(23,59,59,999999), timezone)
+
+            q = session.query(FechaJustificada)
+            q = q.filter(FechaJustificada.usuario_id == usuario['id'])
+            # q = q.filter(or_(func.DATE(FechaJustificada.fecha_inicio) >= actual, func.DATE(FechaJustificada.fecha_inicio) <= actual), (func.DATE(FechaJustificada.fecha_inicio) <= actual, func.DATE(FechaJustificada.fecha_fin) >= actual ))
+            q = q.filter(or_(and_(FechaJustificada.fecha_inicio >= fi, FechaJustificada.fecha_inicio <= ff),and_(FechaJustificada.fecha_inicio <= ff, FechaJustificada.fecha_fin >= fi)))
+            q = q.options(joinedload('justificacion'))
+            justificaciones = q.all()
+            for j in justificaciones:
+                j.eliminable = j.fecha_inicio.date() == actual
+
+            r = RenglonReporte(actual, horario, marcaciones, duplicadas, justificaciones)
             reportes.append(r)
 
         rep = Reporte(usuario, inicio, fin)

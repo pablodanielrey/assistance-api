@@ -19,8 +19,8 @@ class FechaJustificada(Base):
 
     __tablename__ = 'fecha_justificada'
 
-    fechaInicio = Column(TIMESTAMP(timezone=True))
-    fechaFin = Column(TIMESTAMP(timezone=True))
+    fecha_inicio = Column(TIMESTAMP(timezone=True))
+    fecha_fin = Column(TIMESTAMP(timezone=True))
 
     usuario_id = Column(String, ForeignKey('usuario.id'))
     usuario = relationship('Usuario')
