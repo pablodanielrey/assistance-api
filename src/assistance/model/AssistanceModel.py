@@ -407,16 +407,17 @@ class AssistanceModel:
         logs = zk['api'].getAttLog()
         if len(logs) <= 0:
             logging.info(logs)
-            return []
+            yield
 
         token = cls._get_token()
-        sincronizados = []
-        for l in logs:
+        #sincronizados = []
+        for l in logs[:10]:
             dni = l['PIN'].strip().lower()
             usuario = cls._sinc_usuario_por_dni(session, dni, token=token)
             marcacion = l['DateTime']
 
-            if session.query(Marcacion).filter(and_(Marcacion.usuario_id == usuario.id, Marcacion.marcacion == marcacion)).count() <= 0:
+            m = session.query(Marcacion).filter(and_(Marcacion.usuario_id == usuario.id, Marcacion.marcacion == marcacion)).one_or_none()
+            if not m:
                 log = Marcacion()
                 log.id = str(uuid.uuid4())
                 log.usuario_id = usuario.id
@@ -429,8 +430,10 @@ class AssistanceModel:
                 r = session.query(Marcacion).filter(Marcacion.id == log.id).options(joinedload('usuario')).one()
                 session.expunge(r.usuario)
                 session.expunge(r)
-                sincronizados.append(r)
+                yield {'estado':'agregada', 'marcacion':r}
+                #sincronizados.append(r)
             else:
+                yield {'estado':'existente', 'marcacion':m}
                 logging.warn('Marcación duplicada {} {} {}'.format(usuario.id, dni, marcacion))
 
-        return sincronizados
+        #return sincronizados

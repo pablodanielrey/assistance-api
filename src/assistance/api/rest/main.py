@@ -17,7 +17,8 @@ from dateutil import parser
 
 from werkzeug.contrib.fixers import ProxyFix
 
-from flask import Flask, abort, make_response, jsonify, url_for, request, json
+import flask
+from flask import Flask, Response, abort, make_response, jsonify, url_for, request, json, stream_with_context
 from flask_jsontools import jsonapi
 from dateutil import parser
 
@@ -163,19 +164,21 @@ def reloj(rid):
         session.close()
 
 @app.route(API_BASE + '/relojes/<rid>/sincronizar', methods=['GET', 'OPTIONS'])
-@jsonapi
+#@jsonapi
 def reloj_sincronizar(rid):
-    assert rid is not None
-    if request.method == 'OPTIONS':
-        return 204
-    session = Session()
-    try:
-        r = AssistanceModel.sincronizar_reloj(session, rid)
-        session.commit()
-        return r
+    def generate():
+        assert rid is not None
+        if request.method == 'OPTIONS':
+            return 204
+        session = Session()
+        try:
+            for r in AssistanceModel.sincronizar_reloj(session, rid):
+                session.commit()
+                yield flask.json.dumps(r)
 
-    finally:
-        session.close()
+        finally:
+            session.close()
+    return Response(stream_with_context(generate()), mimetype='application/stream+json')
 
 @app.route(API_BASE + '/relojes/<rid>/marcaciones', methods=['GET', 'OPTIONS'])
 @jsonapi
