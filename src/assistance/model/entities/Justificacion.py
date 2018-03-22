@@ -22,6 +22,8 @@ class FechaJustificada(Base):
     fecha_inicio = Column(TIMESTAMP(timezone=True))
     fecha_fin = Column(TIMESTAMP(timezone=True))
 
+    eliminado = Column(DateTime)
+
     usuario_id = Column(String, ForeignKey('usuario.id'))
     usuario = relationship('Usuario')
 

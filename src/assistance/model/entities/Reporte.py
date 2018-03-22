@@ -307,7 +307,7 @@ class Reporte:
 
             q = session.query(FechaJustificada)
             q = q.filter(FechaJustificada.usuario_id == usuario['id'])
-            # q = q.filter(or_(func.DATE(FechaJustificada.fecha_inicio) >= actual, func.DATE(FechaJustificada.fecha_inicio) <= actual), (func.DATE(FechaJustificada.fecha_inicio) <= actual, func.DATE(FechaJustificada.fecha_fin) >= actual ))
+            q = q.filter(FechaJustificada.eliminado == None)
             q = q.filter(or_(and_(FechaJustificada.fecha_inicio >= fi, FechaJustificada.fecha_inicio <= ff),and_(FechaJustificada.fecha_inicio <= ff, FechaJustificada.fecha_fin >= fi)))
             q = q.options(joinedload('justificacion'))
             justificaciones = [JustificacionReporte(j, actual) for j in q.all()]
@@ -321,15 +321,6 @@ class Reporte:
         rep.detalle = Detalle()
         rep.detalle.calcular(rep)
 
-
-        for j in justificaciones:
-            logging.info(j.__json__())
-        logging.info("======================================================")
-        for r in rep.reportes:
-            logging.info('Reporte: {}'.format(r.__json__()))
-            for j in r.justificaciones:
-                logging.info('Es primer dia: {} Fecha justificada:{}'.format(j.esPrimerDia, j.__json__()))
-        logging.info("======================================================")
         return rep
 
     def __json__(self):

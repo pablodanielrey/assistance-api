@@ -319,6 +319,7 @@ def eliminar_justificacion(jid):
         session.commit()
     finally:
         session.close()
+
 @app.route(API_BASE + '/justificaciones/<jid>', methods=['POST'])
 @jsonapi
 def actualizar_justificacion(jid):
@@ -348,6 +349,19 @@ def justificar():
 
     finally:
         session.close()
+
+@app.route(API_BASE + '/usuarios/<uid>/justificaciones/<jid>', methods=['DELETE'])
+@jsonapi
+def eliminar_fecha_justificada(uid, jid):
+    session = Session()
+    try:
+        jid = AssistanceModel.eliminarFechaJustificada(session, jid)
+        session.commit()
+        return jid
+    finally:
+        session.close()
+
+
 @app.after_request
 def cors_after_request(response):
     response.headers.add('Access-Control-Allow-Origin', '*')
