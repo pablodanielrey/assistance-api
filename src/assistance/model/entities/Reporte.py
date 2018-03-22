@@ -12,6 +12,19 @@ from flask_jsontools import JsonSerializableBase
 import logging
 logging.getLogger().setLevel(logging.DEBUG)
 
+
+class JustificacionReporte:
+
+    def __init__(self, fj, fecha):
+        self.esPrimerDia = fj.fecha_inicio.date() == fecha
+        self.id = fj.id
+        self.nombre = fj.justificacion.nombre
+        self.codigo = fj.justificacion.codigo
+        self.descripcion = fj.justificacion.descripcion
+
+    def __json__(self):
+        return self.__dict__
+
 class Detalle:
 
     def __init__(self):
@@ -157,7 +170,7 @@ class Detalle:
             ''' calculo las justificaciones '''
             ''' TODO: falta hacer los calculos correctamente '''
             if renglon.justificaciones and len(renglon.justificaciones) > 0:
-                k = renglon.justificaciones[0].justificacion.nombre
+                k = renglon.justificaciones[0].nombre
                 try:
                     self.justificaciones[k] = self.justificaciones[k] + 1
                 except KeyError as e:
@@ -297,9 +310,7 @@ class Reporte:
             # q = q.filter(or_(func.DATE(FechaJustificada.fecha_inicio) >= actual, func.DATE(FechaJustificada.fecha_inicio) <= actual), (func.DATE(FechaJustificada.fecha_inicio) <= actual, func.DATE(FechaJustificada.fecha_fin) >= actual ))
             q = q.filter(or_(and_(FechaJustificada.fecha_inicio >= fi, FechaJustificada.fecha_inicio <= ff),and_(FechaJustificada.fecha_inicio <= ff, FechaJustificada.fecha_fin >= fi)))
             q = q.options(joinedload('justificacion'))
-            justificaciones = q.all()
-            for j in justificaciones:
-                j.eliminable = j.fecha_inicio.date() == actual
+            justificaciones = [JustificacionReporte(j, actual) for j in q.all()]
 
             r = RenglonReporte(actual, horario, marcaciones, duplicadas, justificaciones)
             reportes.append(r)
@@ -310,6 +321,15 @@ class Reporte:
         rep.detalle = Detalle()
         rep.detalle.calcular(rep)
 
+
+        for j in justificaciones:
+            logging.info(j.__json__())
+        logging.info("======================================================")
+        for r in rep.reportes:
+            logging.info('Reporte: {}'.format(r.__json__()))
+            for j in r.justificaciones:
+                logging.info('Es primer dia: {} Fecha justificada:{}'.format(j.esPrimerDia, j.__json__()))
+        logging.info("======================================================")
         return rep
 
     def __json__(self):
