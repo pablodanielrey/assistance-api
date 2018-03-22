@@ -411,7 +411,7 @@ class AssistanceModel:
 
         token = cls._get_token()
         #sincronizados = []
-        for l in logs[:10]:
+        for l in logs:
             dni = l['PIN'].strip().lower()
             usuario = cls._sinc_usuario_por_dni(session, dni, token=token)
             marcacion = l['DateTime']
@@ -425,12 +425,15 @@ class AssistanceModel:
                 log.tipo = l['Verified']
                 log.marcacion = marcacion
                 session.add(log)
+                yield {'estado':'agregada', 'marcacion':log}
 
+                """
                 ''' para que no tire error el serializador de json le hago un expunge '''
                 r = session.query(Marcacion).filter(Marcacion.id == log.id).options(joinedload('usuario')).one()
                 session.expunge(r.usuario)
                 session.expunge(r)
                 yield {'estado':'agregada', 'marcacion':r}
+                """
                 #sincronizados.append(r)
             else:
                 yield {'estado':'existente', 'marcacion':m}
