@@ -10,7 +10,7 @@ engine = create_engine('postgresql://{}:{}@{}:5432/{}'.format(
     os.environ['ASSISTANCE_DB_PASSWORD'],
     os.environ['ASSISTANCE_DB_HOST'],
     os.environ['ASSISTANCE_DB_NAME']
-), echo=True)
+), echo=False)
 Session = sessionmaker(bind=engine)
 
 

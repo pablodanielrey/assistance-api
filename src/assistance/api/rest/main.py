@@ -174,7 +174,7 @@ def reloj_sincronizar(rid):
         try:
             for r in AssistanceModel.sincronizar_reloj(session, rid):
                 session.commit()
-                yield flask.json.dumps(r)
+                yield flask.json.dumps(r) + "\n"
 
         finally:
             session.close()

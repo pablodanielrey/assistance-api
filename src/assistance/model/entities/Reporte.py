@@ -277,7 +277,7 @@ class Reporte:
         ''' elimino los RenglonReporte a ser reemplazados '''
         reportes_filtrados = [r for r in reportes if r.fecha not in por_fecha]
         for k in por_fecha:
-            r = RenglonReporte(k, None, por_fecha[k], [], None)
+            r = RenglonReporte(k, None, por_fecha[k], [], [])
             reportes_filtrados.append(r)
         return sorted(reportes_filtrados, key=lambda x: x.fecha)
 
