@@ -248,7 +248,9 @@ class AssistanceModel:
 
     @classmethod
     def crear_justificacion(cls, session, justificacion):
-        if session.query(Justificacion).filter(or_(Justificacion.nombre == justificacion["nombre"], Justificacion.codigo == justificacion["codigo"])).count() > 0:
+        q = session.query(Justificacion).filter(or_(Justificacion.nombre == justificacion["nombre"], Justificacion.codigo == justificacion["codigo"]))
+        q = q.filter(Justificacion.eliminado == None)
+        if q.count() > 0:
             raise Exception('Justificacion existente')
 
         j = Justificacion()
@@ -295,7 +297,7 @@ class AssistanceModel:
         j.id = str(uuid.uuid4())
         j.fecha_inicio = fj["fecha_inicio"]
         j.fecha_fin = fj["fecha_fin"]
-        j.usuario_id = fj["usuario_id"]
+        j.usuario_id = fj["usuario_id"] if 'usuario_id' in fj else None
         j.justificacion_id = just["id"]
 
         session.add(j)

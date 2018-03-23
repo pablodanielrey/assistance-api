@@ -253,7 +253,7 @@ class Reporte:
         q = q.filter(FechaJustificada.eliminado == None)
         q = q.filter(or_(and_(FechaJustificada.fecha_inicio >= fi, FechaJustificada.fecha_inicio <= ff),and_(FechaJustificada.fecha_inicio <= ff, FechaJustificada.fecha_fin >= fi)))
         q = q.options(joinedload('justificacion'))
-        justificaciones = [JustificacionReporte(j, actual) for j in q.all()]
+        justificaciones = [JustificacionReporte(j, fecha) for j in q.all()]
         return justificaciones
 
     @classmethod
@@ -293,7 +293,7 @@ class Reporte:
         reportes_filtrados = [r for r in reportes if r.fecha not in por_fecha]
         for fecha in por_fecha:
             justificaciones = cls._obtenerJustificaciones(session, fecha, tzone, uid)
-            r = RenglonReporte(k, None, por_fecha[fecha], [], justificaciones)
+            r = RenglonReporte(fecha, None, por_fecha[fecha], [], justificaciones)
             reportes_filtrados.append(r)
         return sorted(reportes_filtrados, key=lambda x: x.fecha)
 
