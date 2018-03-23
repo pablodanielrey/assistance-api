@@ -267,6 +267,13 @@ class AssistanceModel:
         justificacion.eliminado = datetime.now()
 
     @classmethod
+    def eliminarFechaJustificada(cls, session, jid):
+        justificacion = session.query(FechaJustificada).filter(FechaJustificada.id == jid).one()
+        logging.info(justificacion)
+        justificacion.eliminado = datetime.now()
+        return justificacion.id
+
+    @classmethod
     def actualizar_justificacion(cls, session, jid, datos):
         justificacion = session.query(Justificacion).filter(Justificacion.id == jid).one()
         justificacion.nombre = datos["nombre"]

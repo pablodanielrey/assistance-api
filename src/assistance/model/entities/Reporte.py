@@ -240,6 +240,21 @@ class Reporte:
         self.reportes = []
         self.detalle = None
 
+    @classmethod
+    def _obtenerJustificaciones(cls, session, fecha, tzone, uid):
+        # convierto la fecha a datetime para compararlo en la base
+        #timezone = tzlocal() if tzone is None else pytz.timezone(tzone)
+        timezone = tzlocal()
+        fi = datetime.combine(fecha, time(0), timezone)
+        ff = datetime.combine(fecha, time(23,59,59,999999), timezone)
+
+        q = session.query(FechaJustificada)
+        q = q.filter(or_(FechaJustificada.usuario_id == uid, FechaJustificada.usuario_id == None))
+        q = q.filter(FechaJustificada.eliminado == None)
+        q = q.filter(or_(and_(FechaJustificada.fecha_inicio >= fi, FechaJustificada.fecha_inicio <= ff),and_(FechaJustificada.fecha_inicio <= ff, FechaJustificada.fecha_fin >= fi)))
+        q = q.options(joinedload('justificacion'))
+        justificaciones = [JustificacionReporte(j, actual) for j in q.all()]
+        return justificaciones
 
     @classmethod
     def _agregar_marcaciones_sin_horario(cls, session, reportes, uid, inicio, fin, tzone='America/Argentina/Buenos_Aires'):
@@ -276,8 +291,9 @@ class Reporte:
 
         ''' elimino los RenglonReporte a ser reemplazados '''
         reportes_filtrados = [r for r in reportes if r.fecha not in por_fecha]
-        for k in por_fecha:
-            r = RenglonReporte(k, None, por_fecha[k], [], [])
+        for fecha in por_fecha:
+            justificaciones = cls._obtenerJustificaciones(session, fecha, tzone, uid)
+            r = RenglonReporte(k, None, por_fecha[fecha], [], justificaciones)
             reportes_filtrados.append(r)
         return sorted(reportes_filtrados, key=lambda x: x.fecha)
 
@@ -299,18 +315,7 @@ class Reporte:
             marcaciones, duplicadas = Marcacion.obtenerMarcaciones(session, horario, usuario['id'], actual, tzone)
             marcaciones = [] if marcaciones is None else marcaciones
 
-            # convierto la fecha a datetime para compararlo en la base
-            # timezone = tzlocal() if tzone is None else pytz.timezone(tzone)
-            timezone = tzlocal()
-            fi = datetime.combine(actual, time(0), timezone)
-            ff = datetime.combine(actual, time(23,59,59,999999), timezone)
-
-            q = session.query(FechaJustificada)
-            q = q.filter(or_(FechaJustificada.usuario_id == usuario['id'], FechaJustificada.usuario_id == None))
-            # q = q.filter(or_(func.DATE(FechaJustificada.fecha_inicio) >= actual, func.DATE(FechaJustificada.fecha_inicio) <= actual), (func.DATE(FechaJustificada.fecha_inicio) <= actual, func.DATE(FechaJustificada.fecha_fin) >= actual ))
-            q = q.filter(or_(and_(FechaJustificada.fecha_inicio >= fi, FechaJustificada.fecha_inicio <= ff),and_(FechaJustificada.fecha_inicio <= ff, FechaJustificada.fecha_fin >= fi)))
-            q = q.options(joinedload('justificacion'))
-            justificaciones = [JustificacionReporte(j, actual) for j in q.all()]
+            justificaciones = cls._obtenerJustificaciones(session, actual, tzone, usuario['id'])
 
             r = RenglonReporte(actual, horario, marcaciones, duplicadas, justificaciones)
             reportes.append(r)
@@ -321,15 +326,6 @@ class Reporte:
         rep.detalle = Detalle()
         rep.detalle.calcular(rep)
 
-
-        for j in justificaciones:
-            logging.info(j.__json__())
-        logging.info("======================================================")
-        for r in rep.reportes:
-            logging.info('Reporte: {}'.format(r.__json__()))
-            for j in r.justificaciones:
-                logging.info('Es primer dia: {} Fecha justificada:{}'.format(j.esPrimerDia, j.__json__()))
-        logging.info("======================================================")
         return rep
 
     def __json__(self):
