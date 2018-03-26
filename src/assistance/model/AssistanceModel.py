@@ -17,6 +17,7 @@ class AssistanceModel:
 
     verify = True
     usuarios_url = os.environ['USERS_API_URL']
+    sileg_url = os.environ['SILEG_API_URL']
     client_id = os.environ['OIDC_CLIENT_ID']
     client_secret = os.environ['OIDC_CLIENT_SECRET']
 
@@ -175,6 +176,20 @@ class AssistanceModel:
             return {
                 'usuario': usr
             }
+
+    @classmethod
+    def lugares(cls, session, search):
+        query = cls.sileg_url + '/lugares/'
+        params = {}
+        if search:
+            params['q'] = search
+
+        logging.debug(query)
+        r = cls.api(query, params)
+        if not r.ok:
+            return []
+
+        return r.json()
 
     @classmethod
     def usuarios(cls, session, search, retornarClave, offset, limit, fecha):

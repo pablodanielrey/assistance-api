@@ -62,6 +62,21 @@ def usuarios(uid=None):
     finally:
         session.close()
 
+@app.route(API_BASE + '/lugares/', methods=['GET','OPTIONS'])
+@jsonapi
+def lugares():
+    if request.method == 'OPTIONS':
+        return 204
+    s = Session()
+    try:
+        search = request.args.get('q')
+        return AssistanceModel.lugares(session=s, search=search)
+    except Exception as e:
+        logging.exception(e)
+        raise e
+    finally:
+        s.close()
+
 @app.route(API_BASE + '/usuarios/<uid>/reporte/', methods=['GET', 'OPTIONS'])
 @jsonapi
 def reporte(uid):
