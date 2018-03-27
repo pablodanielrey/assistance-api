@@ -95,6 +95,20 @@ def reporte(uid):
     finally:
         session.close()
 
+@app.route(API_BASE + '/reportes/', methods=['POST'])
+@jsonapi
+def reporte_general():
+    datos = request.get_json()
+    fecha = parser.parse(datos["fecha"]).date() if 'fecha' in datos else None
+    lugares = datos["lugares"]
+
+    logging.info(lugares)
+    session = Session()
+    try:
+        return AssistanceModel.reporteGeneral(session, lugares, fecha)
+    finally:
+        session.close()
+
 @app.route(API_BASE + '/usuarios/<uid>/horario/', methods=['GET', 'OPTIONS'])
 @jsonapi
 def horario(uid):

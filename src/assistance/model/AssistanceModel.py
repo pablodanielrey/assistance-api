@@ -96,6 +96,33 @@ class AssistanceModel:
         usr = r.json()
         return Reporte.generarReporte(session, usr, inicio, fin, tzone)
 
+    @classmethod
+    def reporteGeneral(cls, session, lugares, fecha, tzone='America/Argentina/Buenos_Aires'):
+        ret = []
+        for lid in lugares:
+            query = cls.sileg_url + '/lugares/' + lid
+            params = {}
+            r = cls.api(query, params)
+            if not r.ok:
+                lugar = None
+            lugar = r.json()
+
+            # busco las designaciones
+            query = cls.sileg_url + '/designaciones/?l=' + lid
+
+            r = cls.api(query)
+            desig = r.json()
+            logging.info(desig)
+            uids = set([d["usuario_id"] for d in desig if "usuario_id" in d])
+            reportes = []
+            for uid in uids:
+                r = cls.reporte(session, uid, fecha, fecha, tzone)
+                if isinstance(r, Reporte):
+                    reportes.append(r)
+
+            ret.append({'lugar':lugar, 'reportes': reportes})
+
+        return ret
 
     @classmethod
     def horario(cls, session, uid, fecha):
