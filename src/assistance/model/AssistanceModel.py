@@ -100,6 +100,7 @@ class AssistanceModel:
     def reporteGeneral(cls, session, lugares, fecha, tzone='America/Argentina/Buenos_Aires'):
         ret = []
         for lid in lugares:
+            # obtengo el lugar
             query = cls.sileg_url + '/lugares/' + lid
             params = {}
             r = cls.api(query, params)
@@ -107,20 +108,24 @@ class AssistanceModel:
                 lugar = None
             lugar = r.json()
 
-            # busco las designaciones
+            # busco los usuarios
             query = cls.sileg_url + '/designaciones/?l=' + lid
 
             r = cls.api(query)
             desig = r.json()
             logging.info(desig)
             uids = set([d["usuario_id"] for d in desig if "usuario_id" in d])
-            reportes = []
+            usuarios = []
             for uid in uids:
-                r = cls.reporte(session, uid, fecha, fecha, tzone)
-                if isinstance(r, Reporte):
-                    reportes.append(r)
+                u = session.query(Usuario).filter(Usuario.id == uid).one_or_none()
+                if u:
+                    query = cls.usuarios_url + '/usuarios/' + uid
+                    resp = cls.api(query)
+                    usr = resp.json() if r.ok else u
+                    usuarios.append(usr)
 
-            ret.append({'lugar':lugar, 'reportes': reportes})
+            rep = ReporteGeneral.generarReporte(session, lugar, usuarios, fecha, tzone)
+            ret.append(rep)
 
         return ret
 

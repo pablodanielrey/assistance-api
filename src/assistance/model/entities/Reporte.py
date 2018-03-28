@@ -198,7 +198,7 @@ class RenglonReporte:
     cantidad_horas_trabajadas: number;
     justifcacion: FechaJustificada;
     '''
-    def __init__(self, fecha, horario, marcaciones, duplicadas, justificaciones):
+    def __init__(self, fecha, horario, marcaciones, duplicadas, justificaciones, usuario=None):
         self.fecha = fecha
         self.horario = horario
         self.marcaciones = marcaciones
@@ -208,6 +208,7 @@ class RenglonReporte:
         self.justificaciones = justificaciones
         self.cantidad_segundos_trabajados = self._calcularSegundosTrabajados()
         self.cantidad_horas_trabajadas = self.cantidad_segundos_trabajados
+        self.usuario = usuario
 
     def _calcularSegundosTrabajados(self):
         seconds = 0
@@ -330,3 +331,45 @@ class Reporte:
 
     def __json__(self):
         return self.__dict__
+
+class ReporteGeneral:
+
+    '''
+    fecha: Date;
+    reportes: RenglonReporte[] = [];
+    detalle: Detalle;
+    lugar: Lugar
+    '''
+
+    def __init__(self, fecha, lugar, reportes = []):
+        self.fecha = fecha
+        self.reportes = reportes
+        self.detalle = None
+        self.lugar = lugar
+
+    def __json__(self):
+        return self.__dict__
+
+    @classmethod
+    def generarReporte(cls, session, lugar, usuarios, fecha, tzone='America/Argentina/Buenos_Aires'):
+        reportes = []
+        for u in usuarios:
+            q = session.query(Horario)
+            q = q.filter(Horario.usuario_id == u["id"], Horario.dia_semanal == fecha.weekday(), Horario.fecha_valido <= fecha)
+            q = q.order_by(Horario.fecha_valido.desc())
+            horario = q.limit(1).one_or_none()
+
+            if horario is None:
+                marcaciones = session.query(Marcacion).filter(Marcacion.usuario_id == u["id"], Marcacion.marcacion >= fecha, Marcacion.marcacion <= fecha).all()
+                duplicadas = []
+            else:
+                marcaciones, duplicadas = Marcacion.obtenerMarcaciones(session, horario, u["id"], fecha, tzone)
+                marcaciones = [] if marcaciones is None else marcaciones
+
+            justificaciones = Reporte._obtenerJustificaciones(session, fecha, tzone, u["id"])
+
+            r = RenglonReporte(fecha, horario, marcaciones, duplicadas, justificaciones, u)
+            reportes.append(r)
+
+        rep = ReporteGeneral(fecha, lugar, reportes)
+        return rep
