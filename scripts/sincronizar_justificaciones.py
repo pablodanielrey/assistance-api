@@ -42,26 +42,28 @@ if __name__ == '__main__':
                   {'id':'49264c80-c12a-4bc4-9ab2-0e1012f493c9', 't':'training'},
                   {'id':'3d486aa0-745a-4914-a46d-bc559853d367', 't':'weather'}]
 
-        rango = ['family_atention',
-                 'leave_without_salary',
-                 'long_duration',
-                 'marriage',
-                 'maternity',
-                 'medical_board',
-                 'medical_certificate',
-                 'mourning',
-                 'out_ticket',
-                 'paternity',
-                 'pre_exam',
-                 'prenatal',
-                 'resolution638',
-                 'short_duration',
-                 'summer_break',
-                 'task',
-                 'travel',
-                 'winter_break',
-                 'informed_absence']
+        rango = [{'id':'b80c8c0e-5311-4ad1-94a7-8d294888d770', 't':'family_atention'},
+                 {'id':'1c14a13c-2358-424f-89d3-d639a9404579', 't':'leave_without_salary'},
+                 {'id':'a93d3af3-4079-4e93-a891-91d5d3145155', 't':'long_duration'},
+                 {'id':'30a249d5-f90c-4666-aec6-34c53b62a447', 't':'marriage'},
+                 {'id':'68bf4c98-984d-4b71-98b0-4165c69d62ce', 't':'maternity'},
+                 {'id':'90b3b99a-fcf7-48b1-845f-764ee58eb427', 't':'medical_board'},
+                 {'id':'478a2e35-51b8-427a-986e-591a9ee449d8', 't':'medical_certificate'},
+                 {'id':'0cd276aa-6d6b-4752-abe5-9258dbfd6f09', 't':'mourning'},
+                 {'id':'fa64fdbd-31b0-42ab-af83-818b3cbecf46', 't':'out_ticket'},
+                 {'id':'4939cd4d-29d7-487c-af01-7aaecc4b76d0', 't':'paternity'},
+                 {'id':'b70013e3-389a-46d4-8b98-8e4ab75335d0', 't':'pre_exam'},
+                 {'id':'aa41a39e-c20e-4cc4-942c-febe95569499', 't':'prenatal'},
+                 {'id':'50998530-10dd-4d68-8b4a-a4b7a87f3972', 't':'resolution638'},
+                 {'id':'f9baed8a-a803-4d7f-943e-35c436d5db46', 't':'short_duration'},
+                 {'id':'76bc064a-e8bf-4aa3-9f51-a3c4483a729a', 't':'summer_break'},
+                 {'id':'cb2b4583-2f44-4db0-808c-4e36ee059efe', 't':'task'},
+                 {'id':'7747e3ff-bbe2-4f2e-88f7-9cc624a242a9', 't':'travel'},
+                 {'id':'f7464e86-8b9e-4415-b370-b44b624951ca', 't':'winter_break'}]
 
+        jdate = [{'id':'e0dfcef6-98bb-4624-ae6c-960657a9a741', 't':'informed_absence'}]
+
+        usuarios_comparados = set()
 
         count = 0
         cur2 = conn2.cursor(cursor_factory=DictCursor)
@@ -69,7 +71,7 @@ if __name__ == '__main__':
             for jnn in simple:
                 jn = jnn['t']
                 logging.info(jn)
-                cur2.execute('select id, user_id, owner_id, date, notes from assistance.justification_{}'.format(jn))
+                cur2.execute('select id, user_id, owner_id, date, notes from assistance.justification_{} order by date'.format(jn))
                 for j in cur2.fetchall():
                     jid = j[0]
                     cur2.execute('select status from assistance.justification_status where justification_id = %s order by created desc limit 1', (jid,))
@@ -80,12 +82,79 @@ if __name__ == '__main__':
                         logging.info(status)
                         logging.info(jnn['id'])
 
+                        if j[1] not in usuarios_comparados:
+                            cur.execute('select id from usuario where id = %s', (j[1],))
+                            if cur.rowcount <= 0:
+                                cur2.execute('select id, dni from profile.users where id = %s', (j[1],))
+                                uu = cur2.fetchone()
+                                cur.execute('insert into usuario (id, dni) values (%s, %s)', (uu[0],uu[1]))
+                            usuarios_comparados.add(j[1])
+
                         cur.execute('select id from fecha_justificada where id = %s', (jid,))
                         if cur.rowcount <= 0:
                             logging.info('agregando')
                             logging.info(j)
                             cur.execute('set timezone=-3; insert into fecha_justificada (id, fecha_inicio, usuario_id, responsable_id, justificacion_id) values (%s,%s,%s,%s,%s)', (jid, j[3], j[1], j[2], jnn['id']))
-            conn.commit()
+                            conn.commit()
+
+            for jnn in jdate:
+                jn = jnn['t']
+                logging.info(jn)
+                cur2.execute('select id, user_id, owner_id, jdate, notes from assistance.justification_{} order by jdate'.format(jn))
+                for j in cur2.fetchall():
+                    jid = j[0]
+                    cur2.execute('select status from assistance.justification_status where justification_id = %s order by created desc limit 1', (jid,))
+                    status = cur2.fetchone()
+                    if status[0] == 2:
+                        logging.info('obtengo')
+                        logging.info(j)
+                        logging.info(status)
+                        logging.info(jnn['id'])
+
+                        if j[1] not in usuarios_comparados:
+                            cur.execute('select id from usuario where id = %s', (j[1],))
+                            if cur.rowcount <= 0:
+                                cur2.execute('select id, dni from profile.users where id = %s', (j[1],))
+                                uu = cur2.fetchone()
+                                cur.execute('insert into usuario (id, dni) values (%s, %s)', (uu[0],uu[1]))
+                            usuarios_comparados.add(j[1])
+
+                        cur.execute('select id from fecha_justificada where id = %s', (jid,))
+                        if cur.rowcount <= 0:
+                            logging.info('agregando')
+                            logging.info(j)
+                            cur.execute('set timezone=-3; insert into fecha_justificada (id, fecha_inicio, usuario_id, responsable_id, justificacion_id) values (%s,%s,%s,%s,%s)', (jid, j[3], j[1], j[2], jnn['id']))
+                            conn.commit()
+
+
+            for jnn in rango:
+                jn = jnn['t']
+                logging.info(jn)
+                cur2.execute('select id, user_id, owner_id, jstart, jend, notes from assistance.justification_{} order by jstart'.format(jn))
+                for j in cur2.fetchall():
+                    jid = j[0]
+                    cur2.execute('select status from assistance.justification_status where justification_id = %s order by created desc limit 1', (jid,))
+                    status = cur2.fetchone()
+                    if status[0] == 2:
+                        logging.info('obtengo')
+                        logging.info(j)
+                        logging.info(status)
+                        logging.info(jnn['id'])
+
+                        if j[1] not in usuarios_comparados:
+                            cur.execute('select id from usuario where id = %s', (j[1],))
+                            if cur.rowcount <= 0:
+                                cur2.execute('select id, dni from profile.users where id = %s', (j[1],))
+                                uu = cur2.fetchone()
+                                cur.execute('insert into usuario (id, dni) values (%s, %s)', (uu[0],uu[1]))
+                            usuarios_comparados.add(j[1])
+
+                        cur.execute('select id from fecha_justificada where id = %s', (jid,))
+                        if cur.rowcount <= 0:
+                            logging.info('agregando')
+                            logging.info(j)
+                            cur.execute('set timezone=-3; insert into fecha_justificada (id, fecha_inicio, fecha_fin, usuario_id, responsable_id, justificacion_id) values (%s,%s,%s,%s,%s,%s)', (jid, j[3], j[4], j[1], j[2], jnn['id']))
+                            conn.commit()
 
         finally:
             conn2.close()
