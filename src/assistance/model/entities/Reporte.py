@@ -28,7 +28,7 @@ class JustificacionReporte:
 class Detalle:
 
     def __init__(self):
-        self.justificaciones = {}
+        self.justificaciones = []
         self.dias_seleccionados = 0
 
         self.dias_laborables = 0
@@ -97,7 +97,7 @@ class Detalle:
         self.minutos_minimos_hora_extra_lab = minutos_minimos_para_hora_extra
         self.minutos_bloque_hora_extra_lab = bloque_de_minutos_para_hora_extra
 
-
+        justificaciones_aux = {}
 
         for renglon in reporte.reportes:
             minutos_trabajados = renglon.cantidad_segundos_trabajados / 60
@@ -166,17 +166,15 @@ class Detalle:
                 if minutos_extra > 0 or extra_descartados > 0:
                     self.dias_extra_trabajados = self.dias_extra_trabajados + 1
 
-
             ''' calculo las justificaciones '''
-            ''' TODO: falta hacer los calculos correctamente '''
-            if renglon.justificaciones and len(renglon.justificaciones) > 0:
-                k = renglon.justificaciones[0].nombre
-                try:
-                    self.justificaciones[k] = self.justificaciones[k] + 1
-                except KeyError as e:
-                    self.justificaciones[k] = 1
+            for j in renglon.justificaciones:
+                if j.nombre in justificaciones_aux:
+                    justificaciones_aux[j.nombre] = justificaciones_aux[j.nombre] + 1
+                else:
+                    justificaciones_aux[j.nombre] = 1
 
-
+        for j in justificaciones_aux:
+            self.justificaciones.append({'nombre':j, 'cantidad': justificaciones_aux[j]})
 
         self.dias_totales_trabajados = self.dias_trabajados + self.dias_extra_trabajados
         self.minutos_totales_trabajados = self.minutos_trabajados + self.minutos_extra + self.minutos_extra_descartados + self.minutos_extra_en_dias_laborables + self.minutos_extra_descartados_en_dias_laborables
