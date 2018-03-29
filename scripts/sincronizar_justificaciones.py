@@ -75,9 +75,17 @@ if __name__ == '__main__':
                     cur2.execute('select status from assistance.justification_status where justification_id = %s order by created desc limit 1', (jid,))
                     status = cur2.fetchone()
                     if status[0] == 2:
+                        logging.info('obtengo')
                         logging.info(j)
                         logging.info(status)
                         logging.info(jnn['id'])
+
+                        cur.execute('select id from fecha_justificada where id = %s', (jid,))
+                        if cur.rowcount <= 0:
+                            logging.info('agregando')
+                            logging.info(j)
+                            cur.execute('set timezone=-3; insert into fecha_justificada (id, fecha_inicio, usuario_id, responsable_id, justificacion_id) values (%s,%s,%s,%s,%s)', (jid, j[3], j[1], j[2], jnn['id']))
+            conn.commit()
 
         finally:
             conn2.close()
