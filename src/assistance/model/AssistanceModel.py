@@ -134,15 +134,10 @@ class AssistanceModel:
         assert uid is not None
         fecha = fecha if fecha else date.today()
 
-        u = session.query(Usuario).filter(Usuario.id == uid).one_or_none()
-        if u is None:
-            return {}
-
-
-        query = cls.usuarios_url + '/usuarios/' + u.id
+        query = cls.usuarios_url + '/usuarios/' + uid
         r = cls.api(query)
         if not r.ok:
-            return []
+            raise Exception('error consultando la api de usuarios')
 
         usr = r.json()
 
@@ -153,7 +148,7 @@ class AssistanceModel:
             actual = fecha + timedelta(days=i)
 
             q = session.query(Horario)
-            q = q.filter(Horario.usuario_id == u.id, Horario.dia_semanal == actual.weekday(), Horario.fecha_valido <= actual)
+            q = q.filter(Horario.usuario_id == uid, Horario.dia_semanal == actual.weekday(), Horario.fecha_valido <= actual)
             q = q.order_by(Horario.fecha_valido.desc())
             horario = q.limit(1).one_or_none()
 
@@ -166,25 +161,43 @@ class AssistanceModel:
             horarios.append(horario)
             hsSemanales = hsSemanales + (horario.hora_salida - horario.hora_entrada)
 
-
         minSem = (hsSemanales /60)  % 60
         hsSem = int((hsSemanales /60)  / 60)
-        return {
+        datos = {
                 'horarios': horarios,
                 'horasSemanales': {'horas': hsSem, 'minSem': minSem},
-                'usuario':usr
+                'usuario': usr
                 }
+        return datos
+
+
+    @classmethod
+    def _siNoExisteCrearUsuario(cls, session, uid):
+        u = session.query(Usuario).filter(Usuario.id == uid).one_or_none()
+        if u is None:
+            query = cls.usuarios_url + '/usuarios/' + uid
+            r = cls.api(query)
+            if not r.ok:
+                raise Exception('error consultando la api de usuarios')
+            usr = r.json()
+            u = Usuario()
+            u.id = uid
+            u.dni = usr['dni']
+            session.add(u)
+            #session.commit()
 
     @classmethod
     def crearHorario(cls, session, horarios):
         for h in horarios:
-            horario = Horario()
+            uid = h['usuario_id']
+            cls._siNoExisteCrearUsuario(session, uid)
 
+            horario = Horario()
             horario.fecha_valido = parser.parse(h['fecha_valido']).date() if h['fecha_valido'] else None
             horario.dia_semanal = h['dia_semanal']
             horario.hora_entrada = h['hora_entrada']
             horario.hora_salida = h['hora_salida']
-            horario.usuario_id = h['usuario_id']
+            horario.usuario_id = uid
             horario.id = str(uuid.uuid4())
             session.add(horario)
 
