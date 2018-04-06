@@ -479,21 +479,25 @@ class AssistanceModel:
             yield
 
         token = cls._get_token()
-        for l in logs:
-            dni = l['PIN'].strip().lower()
-            usuario = cls._sinc_usuario_por_dni(session, dni, token=token)
-            marcacion = l['DateTime']
+        try:
+            for l in logs:
+                dni = l['PIN'].strip().lower()
+                usuario = cls._sinc_usuario_por_dni(session, dni, token=token)
+                marcacion = l['DateTime']
 
-            m = session.query(Marcacion).filter(and_(Marcacion.usuario_id == usuario.id, Marcacion.marcacion == marcacion)).one_or_none()
-            if not m:
-                log = Marcacion()
-                log.id = str(uuid.uuid4())
-                log.usuario_id = usuario.id
-                log.dispositivo_id = zk['reloj'].id
-                log.tipo = l['Verified']
-                log.marcacion = marcacion
-                session.add(log)
-                yield {'estado':'agregada', 'marcacion':log, 'dni':dni}
-            else:
-                yield {'estado':'existente', 'marcacion':m, 'dni':dni}
-                logging.warn('Marcación duplicada {} {} {}'.format(usuario.id, dni, marcacion))
+                m = session.query(Marcacion).filter(and_(Marcacion.usuario_id == usuario.id, Marcacion.marcacion == marcacion)).one_or_none()
+                if not m:
+                    log = Marcacion()
+                    log.id = str(uuid.uuid4())
+                    log.usuario_id = usuario.id
+                    log.dispositivo_id = zk['reloj'].id
+                    log.tipo = l['Verified']
+                    log.marcacion = marcacion
+                    session.add(log)
+                    yield {'estado':'agregada', 'marcacion':log, 'dni':dni}
+                else:
+                    yield {'estado':'existente', 'marcacion':m, 'dni':dni}
+                    logging.warn('Marcación duplicada {} {} {}'.format(usuario.id, dni, marcacion))
+        except Exception as e:
+            yield {'estado':'error', 'mensaje':str(e)}
+            raise e
