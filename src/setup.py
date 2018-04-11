@@ -37,6 +37,7 @@ setup(name='assistance-api',
                             'flask_jsontools',
                             'xmltodict',
                             'pytz',
+                            'gunicorn',
                             'microservices_common'],
           entry_points={
             'console_scripts': [
