@@ -4,13 +4,6 @@
 import logging
 logging.getLogger().setLevel(logging.DEBUG)
 
-logger = logging.getLogger('assistance.model.zkSoftware')
-hdlr = logging.FileHandler('/tmp/assistance_sinc_logs.log')
-formatter = logging.Formatter('%(asctime)s, %(name)s, %(module)s, %(filename)s, %(funcName)s, %(levelname)s, %(message)s')
-hdlr.setFormatter(formatter)
-logger.addHandler(hdlr)
-logger.setLevel(logging.DEBUG)
-
 import sys
 import os
 from dateutil import parser

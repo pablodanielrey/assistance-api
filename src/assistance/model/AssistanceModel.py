@@ -3,15 +3,25 @@ from sqlalchemy.orm import joinedload, with_polymorphic
 from datetime import datetime, date, timedelta
 import requests
 import os
-import logging
 import uuid
 from dateutil import parser
+
+import logging
+from logging.handlers import TimedRotatingFileHandler
+logger = logging.getLogger('assistance.model.zkSoftware')
+hdlr = TimedRotatingFileHandler('/var/log/assistance_sinc_logs.log', when='D', interval=1)
+formatter = logging.Formatter('%(asctime)s, %(name)s, %(module)s, %(filename)s, %(funcName)s, %(levelname)s, %(message)s')
+hdlr.setFormatter(formatter)
+logger.addHandler(hdlr)
+logger.setLevel(logging.DEBUG)
+
 import oidc
 from oidc.oidc import ClientCredentialsGrant
 
 from assistance.model.zkSoftware import ZkSoftware
 from .entities import *
 from . import Session
+
 
 class AssistanceModel:
 
@@ -468,6 +478,8 @@ class AssistanceModel:
 
     @classmethod
     def sincronizar_reloj(cls, session, rid):
+        logger = logging.getLogger('assistance.model.zkSoftware')
+
         reloj = session.query(Reloj).filter(Reloj.id == rid).one()
         zona_horaria = reloj.zona_horaria
         if not zona_horaria:
@@ -475,7 +487,6 @@ class AssistanceModel:
         zk = {'reloj':reloj, 'api':ZkSoftware(host=reloj.ip, port=reloj.puerto, timezone=zona_horaria)}
         logs = zk['api'].getAttLog()
         if len(logs) <= 0:
-            logging.info(logs)
             yield
 
         token = cls._get_token()
@@ -494,10 +505,14 @@ class AssistanceModel:
                     log.tipo = l['Verified']
                     log.marcacion = marcacion
                     session.add(log)
-                    yield {'estado':'agregada', 'marcacion':log, 'dni':dni}
+                    r = {'estado':'agregada', 'marcacion':log, 'dni':dni}
+                    logger.info(r)
+                    yield r
                 else:
                     yield {'estado':'existente', 'marcacion':m, 'dni':dni}
-                    logging.warn('Marcación duplicada {} {} {}'.format(usuario.id, dni, marcacion))
+                    logger.warn('Marcación duplicada {} {} {}'.format(usuario.id, dni, marcacion))
+
         except Exception as e:
+            logger.exception(e)
             yield {'estado':'error', 'mensaje':str(e)}
             raise e
