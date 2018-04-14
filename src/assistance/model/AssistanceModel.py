@@ -486,8 +486,8 @@ class AssistanceModel:
             zona_horaria = 'America/Argentina/Buenos_Aires'
         zk = {'reloj':reloj, 'api':ZkSoftware(host=reloj.ip, port=reloj.puerto, timezone=zona_horaria)}
         logs = zk['api'].getAttLog()
-            if len(logs) <= 0:
-                yield
+        if len(logs) <= 0:
+            yield
 
         token = cls._get_token()
         try:
