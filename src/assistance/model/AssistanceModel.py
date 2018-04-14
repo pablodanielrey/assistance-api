@@ -9,7 +9,7 @@ from dateutil import parser
 import logging
 from logging.handlers import TimedRotatingFileHandler
 logger = logging.getLogger('assistance.model.zkSoftware')
-hdlr = TimedRotatingFileHandler('/var/log/assistance_sinc_logs.log', when='D', interval=1)
+hdlr = TimedRotatingFileHandler('/var/log/assistance/sinc_logs.log', when='D', interval=1)
 formatter = logging.Formatter('%(asctime)s, %(name)s, %(module)s, %(filename)s, %(funcName)s, %(levelname)s, %(message)s')
 hdlr.setFormatter(formatter)
 logger.addHandler(hdlr)
@@ -486,8 +486,8 @@ class AssistanceModel:
             zona_horaria = 'America/Argentina/Buenos_Aires'
         zk = {'reloj':reloj, 'api':ZkSoftware(host=reloj.ip, port=reloj.puerto, timezone=zona_horaria)}
         logs = zk['api'].getAttLog()
-        if len(logs) <= 0:
-            yield
+            if len(logs) <= 0:
+                yield
 
         token = cls._get_token()
         try:
