@@ -44,5 +44,4 @@ setup(name='assistance-api',
                 'rest=assistance.api.rest.main:main'
             ]
           }
-
       )
