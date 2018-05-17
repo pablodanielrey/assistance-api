@@ -5,6 +5,12 @@
 		},
 		{
 			"path": "/src/github/microservices_common"
+		},
+		{
+			"path": "/src/github/assistance"
+		},
+		{
+			"path": "/src/temporales/angular-oauth2-oidc"
 		}
 	],
 	"settings": {}
