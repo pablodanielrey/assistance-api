@@ -18,22 +18,33 @@ from dateutil import parser
 
 from rest_utils import register_encoder
 
+import oidc
+from oidc.oidc import TokenIntrospection
+client_id = os.environ['OIDC_CLIENT_ID']
+client_secret = os.environ['OIDC_CLIENT_SECRET']
+rs = TokenIntrospection(client_id, client_secret)
+
 from assistance.model.AssistanceModel import AssistanceModel
 from assistance.model import Session
 
 # set the project root directory as the static folder, you can set others.
-app = Flask(__name__, static_url_path='/src/sileg/web')
+app = Flask(__name__, static_url_path='/src/assistance/web')
 app.wsgi_app = ProxyFix(app.wsgi_app)
 register_encoder(app)
 
 API_BASE = os.environ['API_BASE']
 
-@app.route(API_BASE + '/usuarios/', methods=['GET', 'OPTIONS'], defaults={'uid':None})
-@app.route(API_BASE + '/usuarios/<uid>', methods=['GET', 'OPTIONS'])
-@jsonapi
-def usuarios(uid=None):
+@app.route(API_BASE + '*', methods=['OPTIONS'])
+def options():
     if request.method == 'OPTIONS':
         return 204
+    return 204
+
+@app.route(API_BASE + '/usuarios/', methods=['GET'])
+@app.route(API_BASE + '/usuarios/<uid>', methods=['GET'])
+@rs.require_valid_token
+@jsonapi
+def usuarios(uid=None, token=None):
 
     search = request.args.get('q',None)
     offset = request.args.get('offset',None,int)
@@ -56,11 +67,10 @@ def usuarios(uid=None):
     finally:
         session.close()
 
-@app.route(API_BASE + '/lugares/', methods=['GET','OPTIONS'])
+@app.route(API_BASE + '/lugares/', methods=['GET'])
+@rs.require_valid_token
 @jsonapi
-def lugares():
-    if request.method == 'OPTIONS':
-        return 204
+def lugares(token=None):
     s = Session()
     try:
         search = request.args.get('q')
@@ -71,12 +81,10 @@ def lugares():
     finally:
         s.close()
 
-@app.route(API_BASE + '/usuarios/<uid>/reporte/', methods=['GET', 'OPTIONS'])
+@app.route(API_BASE + '/usuarios/<uid>/reporte/', methods=['GET'])
+@rs.require_valid_token
 @jsonapi
-def reporte(uid):
-    if request.method == 'OPTIONS':
-        return 204
-
+def reporte(uid, token):
     fecha_str = request.args.get('inicio', None)
     inicio = parser.parse(fecha_str).date() if fecha_str else None
 
@@ -90,12 +98,12 @@ def reporte(uid):
         session.close()
 
 @app.route(API_BASE + '/reportes/', methods=['POST'])
+@rs.require_valid_token
 @jsonapi
-def reporte_general():
+def reporte_general(token):
     datos = request.get_json()
     fecha = parser.parse(datos["fecha"]).date() if 'fecha' in datos else None
     lugares = datos["lugares"]
-
     logging.info(lugares)
     session = Session()
     try:
@@ -103,12 +111,10 @@ def reporte_general():
     finally:
         session.close()
 
-@app.route(API_BASE + '/usuarios/<uid>/horario/', methods=['GET', 'OPTIONS'])
+@app.route(API_BASE + '/usuarios/<uid>/horario/', methods=['GET'])
+@rs.require_valid_token
 @jsonapi
-def horario(uid):
-    if request.method == 'OPTIONS':
-        return 204
-
+def horario(uid,token):
     fecha_str = request.args.get('fecha', None)
     fecha = parser.parse(fecha_str).date() if fecha_str else None
 
@@ -119,8 +125,9 @@ def horario(uid):
         session.close()
 
 @app.route(API_BASE + '/horario/', methods=['PUT'])
+@rs.require_valid_token
 @jsonapi
-def crear_horario():
+def crear_horario(token):
     horarios = request.get_json()
     logging.debug(horarios)
     session = Session()
@@ -131,38 +138,32 @@ def crear_horario():
     finally:
         session.close()
 
-@app.route(API_BASE + '/usuarios/<uid>/logs', methods=['GET', 'OPTIONS'])
+@app.route(API_BASE + '/usuarios/<uid>/logs', methods=['GET'])
+@rs.require_valid_token
 @jsonapi
-def logs_por_usuario(uid):
-    if request.method == 'OPTIONS':
-        return 204
+def logs_por_usuario(uid,token):
     #return AssistanceModel.reporte(uid=uid, inicio=inicio, fin=fin)
     return None
 
-@app.route(API_BASE + '/logs/<fecha>', methods=['GET', 'OPTIONS'])
+@app.route(API_BASE + '/logs/<fecha>', methods=['GET'])
+@rs.require_valid_token
 @jsonapi
-def logs_por_fecha(fecha):
-    if request.method == 'OPTIONS':
-        return 204
+def logs_por_fecha(fecha,token):
     #return AssistanceModel.reporte(uid=uid, inicio=inicio, fin=fin)
     return None
 
-@app.route(API_BASE + '/relojes', methods=['GET', 'OPTIONS'])
+@app.route(API_BASE + '/relojes', methods=['GET'])
 @jsonapi
 def relojes():
-    if request.method == 'OPTIONS':
-        return 204
     session = Session()
     try:
         return AssistanceModel.relojes(session)
     finally:
         session.close()
 
-@app.route(API_BASE + '/relojes/sincronizar', methods=['GET', 'OPTIONS'])
+@app.route(API_BASE + '/relojes/sincronizar', methods=['GET'])
 @jsonapi
 def relojes_sincronizar():
-    if request.method == 'OPTIONS':
-        return 204
     session = Session()
     try:
         r = AssistanceModel.sincronizar(session)
@@ -172,12 +173,10 @@ def relojes_sincronizar():
     finally:
         session.close()
 
-@app.route(API_BASE + '/relojes/<rid>', methods=['GET', 'OPTIONS'])
+@app.route(API_BASE + '/relojes/<rid>', methods=['GET'])
 @jsonapi
 def reloj(rid):
     assert rid is not None
-    if request.method == 'OPTIONS':
-        return 204
     session = Session()
     try:
         r = AssistanceModel.reloj(session, rid)
@@ -186,13 +185,11 @@ def reloj(rid):
     finally:
         session.close()
 
-@app.route(API_BASE + '/relojes/<rid>/sincronizar', methods=['GET', 'OPTIONS'])
+@app.route(API_BASE + '/relojes/<rid>/sincronizar', methods=['GET'])
 #@jsonapi
 def reloj_sincronizar(rid):
     def generate():
         assert rid is not None
-        if request.method == 'OPTIONS':
-            return 204
         session = Session()
         try:
             for r in AssistanceModel.sincronizar_reloj(session, rid):
@@ -203,12 +200,10 @@ def reloj_sincronizar(rid):
             session.close()
     return Response(stream_with_context(generate()), mimetype='application/stream+json')
 
-@app.route(API_BASE + '/relojes/<rid>/marcaciones', methods=['GET', 'OPTIONS'])
+@app.route(API_BASE + '/relojes/<rid>/marcaciones', methods=['GET'])
 @jsonapi
 def reloj_marcaciones(rid):
     assert rid is not None
-    if request.method == 'OPTIONS':
-        return 204
     session = Session()
     try:
         r = AssistanceModel.marcaciones_por_reloj(session, rid)
@@ -218,12 +213,11 @@ def reloj_marcaciones(rid):
         session.close()
 
 
-@app.route(API_BASE + '/relojes/<rid>/eliminar_huellas', methods=['GET', 'OPTIONS'])
+@app.route(API_BASE + '/relojes/<rid>/eliminar_huellas', methods=['GET'])
+@rs.require_valid_token
 @jsonapi
-def reloj_eliminar_huellas(rid):
+def reloj_eliminar_huellas(rid, token):
     assert rid is not None
-    if request.method == 'OPTIONS':
-        return 204
     session = Session()
     try:
         r = AssistanceModel.eliminar_huellas_reloj(session, rid)
@@ -232,12 +226,11 @@ def reloj_eliminar_huellas(rid):
     finally:
         session.close()
 
-@app.route(API_BASE + '/relojes/<rid>/eliminar_usuarios', methods=['GET', 'OPTIONS'])
+@app.route(API_BASE + '/relojes/<rid>/eliminar_usuarios', methods=['GET'])
+@rs.require_valid_token
 @jsonapi
-def reloj_eliminar_usuarios(rid):
+def reloj_eliminar_usuarios(rid, token):
     assert rid is not None
-    if request.method == 'OPTIONS':
-        return 204
     session = Session()
     try:
         r = AssistanceModel.eliminar_usuarios_reloj(session, rid)
@@ -246,12 +239,11 @@ def reloj_eliminar_usuarios(rid):
     finally:
         session.close()
 
-@app.route(API_BASE + '/relojes/<rid>/usuarios', methods=['GET', 'OPTIONS'])
+@app.route(API_BASE + '/relojes/<rid>/usuarios', methods=['GET'])
+@rs.require_valid_token
 @jsonapi
-def reloj_usuarios(rid):
+def reloj_usuarios(rid, token):
     assert rid is not None
-    if request.method == 'OPTIONS':
-        return 204
     session = Session()
     try:
         r = AssistanceModel.usuarios_por_reloj(session, rid)
@@ -260,13 +252,11 @@ def reloj_usuarios(rid):
     finally:
         session.close()
 
-@app.route(API_BASE + '/relojes/<rid>/usuarios/<ruid>', methods=['GET', 'OPTIONS'])
+@app.route(API_BASE + '/relojes/<rid>/usuarios/<ruid>', methods=['GET'])
 @jsonapi
 def reloj_usuario(rid, ruid):
     assert rid is not None
     assert ruid is not None
-    if request.method == 'OPTIONS':
-        return 204
     session = Session()
     try:
         u = AssistanceModel.usuario_por_reloj(session, rid, ruid)
@@ -280,12 +270,10 @@ def reloj_usuario(rid, ruid):
     finally:
         session.close()
 
-@app.route(API_BASE + '/relojes/<rid>/huellas', methods=['GET', 'OPTIONS'])
+@app.route(API_BASE + '/relojes/<rid>/huellas', methods=['GET'])
 @jsonapi
 def reloj_huellas(rid):
     assert rid is not None
-    if request.method == 'OPTIONS':
-        return 204
     session = Session()
     try:
         r = AssistanceModel.templates_por_reloj(session, rid)
@@ -295,33 +283,28 @@ def reloj_huellas(rid):
         session.close()
 
 
-@app.route(API_BASE + '/justificaciones/<jid>', methods=['GET', 'OPTIONS'])
+@app.route(API_BASE + '/justificaciones/<jid>', methods=['GET'])
 @jsonapi
 def justificacion(jid):
-    if request.method == 'OPTIONS':
-        return 204
     session = Session()
     try:
         return AssistanceModel.justificacion(session, jid)
     finally:
         session.close()
 
-@app.route(API_BASE + '/justificaciones', methods=['GET', 'OPTIONS'])
+@app.route(API_BASE + '/justificaciones', methods=['GET'])
 @jsonapi
 def justificaciones():
-    if request.method == 'OPTIONS':
-        return 204
     session = Session()
     try:
         return AssistanceModel.justificaciones(session)
     finally:
         session.close()
 
-@app.route(API_BASE + '/justificaciones', methods=['PUT','OPTIONS'])
+@app.route(API_BASE + '/justificaciones', methods=['PUT'])
+@rs.require_valid_token
 @jsonapi
-def crear_justificacion():
-    if request.method == 'OPTIONS':
-        return 204
+def crear_justificacion(token):
     justificacion = request.get_json()
     logging.debug(justificacion)
     session = Session()
@@ -334,8 +317,9 @@ def crear_justificacion():
         session.close()
 
 @app.route(API_BASE + '/justificaciones/<jid>', methods=['DELETE'])
+@rs.require_valid_token
 @jsonapi
-def eliminar_justificacion(jid):
+def eliminar_justificacion(jid, token):
     session = Session()
     try:
         AssistanceModel.eliminarJustificacion(session, jid)
@@ -344,8 +328,9 @@ def eliminar_justificacion(jid):
         session.close()
 
 @app.route(API_BASE + '/justificaciones/<jid>', methods=['POST'])
+@rs.require_valid_token
 @jsonapi
-def actualizar_justificacion(jid):
+def actualizar_justificacion(jid, token):
     datos = request.get_json()
     session = Session()
     try:
@@ -357,11 +342,10 @@ def actualizar_justificacion(jid):
 
 
 
-@app.route(API_BASE + '/justificar', methods=['PUT','OPTIONS'])
+@app.route(API_BASE + '/justificar', methods=['PUT'])
+@rs.require_valid_token
 @jsonapi
-def justificar():
-    if request.method == 'OPTIONS':
-        return 204
+def justificar(token):
     fechaJustificada = request.get_json()
     logging.debug(fechaJustificada)
     session = Session()
@@ -374,8 +358,9 @@ def justificar():
         session.close()
 
 @app.route(API_BASE + '/usuarios/<uid>/justificaciones/<jid>', methods=['DELETE'])
+@rs.require_valid_token
 @jsonapi
-def eliminar_fecha_justificada(uid, jid):
+def eliminar_fecha_justificada(uid, jid, token):
     session = Session()
     try:
         jid = AssistanceModel.eliminarFechaJustificada(session, jid)
