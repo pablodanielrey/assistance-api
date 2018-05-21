@@ -1,4 +1,5 @@
 {
     "python.pythonPath": "${workspaceFolder}/env/bin/python",
+    "python.autoComplete.extraPaths": ["/src/github/microservices_common/src"],
     "python.venvPath": "${workspaceFolder}/env"
 }
