@@ -42,9 +42,9 @@ def options():
 
 @app.route(API_BASE + '/usuarios/', methods=['GET'])
 @app.route(API_BASE + '/usuarios/<uid>', methods=['GET'])
-@rs.require_valid_token
+@rs.require_valid_token_for('rn:assistance:users', 'list')
 @jsonapi
-def usuarios(uid=None, token=None):
+def usuarios(uid=None, token=None, access=None):
 
     search = request.args.get('q',None)
     offset = request.args.get('offset',None,int)
