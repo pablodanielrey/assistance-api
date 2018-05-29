@@ -42,9 +42,16 @@ def options():
 
 @app.route(API_BASE + '/usuarios/', methods=['GET'])
 @app.route(API_BASE + '/usuarios/<uid>', methods=['GET'])
-@rs.require_valid_token_for('rn:assistance:users', 'list')
+@rs.require_valid_token
 @jsonapi
-def usuarios(uid=None, token=None, access=None):
+def usuarios(uid=None, token=None):
+
+    from warden.sdk.warden import Warden
+    w = Warden('https://api.econo.unlp.edu.ar/warden/api/v1.0', client_id, client_secret)
+    access = w.check_access(token, 'rn:assistance:users', 'list')
+    if not access:
+        return 401
+    
 
     search = request.args.get('q',None)
     offset = request.args.get('offset',None,int)

@@ -38,7 +38,8 @@ setup(name='assistance-api',
                             'xmltodict',
                             'pytz',
                             'gunicorn',
-                            'microservices_common'],
+                            'microservices_common',
+                            'warden'],
           entry_points={
             'console_scripts': [
                 'rest=assistance.api.rest.main:main'

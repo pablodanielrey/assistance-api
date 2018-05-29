@@ -13,7 +13,7 @@
 			"path": "/src/temporales/angular-oauth2-oidc"
 		},
 		{
-			"path": "/src/github/login-hydra-ory"
+			"path": "/src/github/warden"
 		}
 	],
 	"settings": {}
