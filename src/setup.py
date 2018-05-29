@@ -12,7 +12,7 @@
 from setuptools import setup, find_packages
 
 setup(name='assistance-api',
-          version='1.0.1.alpha0',
+          version='1.0.1.alpha1',
           description='Proyecto que implementa la api de asistencia',
           url='https://github.com/pablodanielrey/assistance-api',
           author='Desarrollo DiTeSi, FCE',
@@ -39,7 +39,7 @@ setup(name='assistance-api',
                             'pytz',
                             'gunicorn',
                             'microservices_common',
-                            'warden'],
+                            'warden-api'],
           entry_points={
             'console_scripts': [
                 'rest=assistance.api.rest.main:main'
