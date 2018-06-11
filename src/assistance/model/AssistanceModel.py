@@ -515,6 +515,7 @@ class AssistanceModel:
             logs2 = zk['api'].getAttLog()
             if len(logs2) == len(logs):
                 zk['api'].clearAttLogs()
+                yield {'estado':'borrando_logs', 'mensaje':'eliminando {} logs'.format(len(logs2))}
 
 
         except Exception as e:
