@@ -512,6 +512,11 @@ class AssistanceModel:
                     yield {'estado':'existente', 'marcacion':m, 'dni':dni}
                     logger.warn('Marcación duplicada {} {} {}'.format(usuario.id, dni, marcacion))
 
+            logs2 = zk['api'].getAttLog()
+            if len(logs2) == len(logs):
+                zk['api'].clearAttLogs()
+
+
         except Exception as e:
             logger.exception(e)
             yield {'estado':'error', 'mensaje':str(e)}
