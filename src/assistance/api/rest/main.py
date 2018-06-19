@@ -24,6 +24,10 @@ client_id = os.environ['OIDC_CLIENT_ID']
 client_secret = os.environ['OIDC_CLIENT_SECRET']
 rs = TokenIntrospection(client_id, client_secret)
 
+warden_url = os.environ['WARDEN_API_URL']
+from warden.sdk.warden import Warden
+warden = Warden(warden_url, client_id, client_secret)
+
 from assistance.model.AssistanceModel import AssistanceModel
 from assistance.model import Session
 
@@ -34,27 +38,21 @@ register_encoder(app)
 
 API_BASE = os.environ['API_BASE']
 
-@app.route(API_BASE + '*', methods=['OPTIONS'])
-def options():
-    if request.method == 'OPTIONS':
-        return 204
-    return 204
-
-@app.route(API_BASE + '/usuarios/', methods=['GET'])
+@app.route(API_BASE + '/usuarios', methods=['GET'])
 @app.route(API_BASE + '/usuarios/<uid>', methods=['GET'])
 @rs.require_valid_token
 @jsonapi
 def usuarios(uid=None, token=None):
 
-    from warden.sdk.warden import Warden
-    w = Warden('https://api.econo.unlp.edu.ar/warden/api/v1.0', client_id, client_secret)
-    access = w.check_access(token, 'rn:assistance:users', 'list')
-    if not access:
-        return ('no tiene los permisos suficientes', 403)
+    # access = w.check_access(token, 'rn:assistance:users', 'list')
+    # if not access:
+    #     return ('no tiene los permisos suficientes', 403)
     
-    prof = w.has_profile(token, 'admin-assistance')
+    prof = warden.has_one_profile(token, ['assistance-admin'])
     if not prof or prof['profile'] == False:
-        return ('no tiene los permisos suficientes', 403)
+        ''' como no soy admin, entonces chequea que se este consultando a si mismo '''
+        if not uid or uid != token['sub']:
+            return ('no tiene los permisos suficientes', 403)
 
     search = request.args.get('q',None)
     offset = request.args.get('offset',None,int)
@@ -77,7 +75,7 @@ def usuarios(uid=None, token=None):
     finally:
         session.close()
 
-@app.route(API_BASE + '/lugares/', methods=['GET'])
+@app.route(API_BASE + '/lugares', methods=['GET'])
 @rs.require_valid_token
 @jsonapi
 def lugares(token=None):
@@ -91,10 +89,18 @@ def lugares(token=None):
     finally:
         s.close()
 
-@app.route(API_BASE + '/usuarios/<uid>/reporte/', methods=['GET'])
+@app.route(API_BASE + '/usuarios/<uid>/reporte', methods=['GET'])
 @rs.require_valid_token
 @jsonapi
 def reporte(uid, token):
+
+    prof = warden.has_one_profile(token, ['assistance-admin'])
+    if not prof or prof['profile'] == False:
+        ''' como no soy admin, entonces chequea que se este consultando a si mismo '''
+        if not uid or uid != token['sub']:
+            return ('no tiene los permisos suficientes', 403)
+
+
     fecha_str = request.args.get('inicio', None)
     inicio = parser.parse(fecha_str).date() if fecha_str else None
 
@@ -107,10 +113,15 @@ def reporte(uid, token):
     finally:
         session.close()
 
-@app.route(API_BASE + '/reportes/', methods=['POST'])
+@app.route(API_BASE + '/reportes', methods=['POST'])
 @rs.require_valid_token
 @jsonapi
 def reporte_general(token):
+
+    prof = warden.has_one_profile(token, ['assistance-admin'])
+    if not prof or prof['profile'] == False:
+        return ('no tiene los permisos suficientes', 403)
+
     datos = request.get_json()
     fecha = parser.parse(datos["fecha"]).date() if 'fecha' in datos else None
     lugares = datos["lugares"]
@@ -121,10 +132,18 @@ def reporte_general(token):
     finally:
         session.close()
 
-@app.route(API_BASE + '/usuarios/<uid>/horario/', methods=['GET'])
+@app.route(API_BASE + '/usuarios/<uid>/horario', methods=['GET'])
 @rs.require_valid_token
 @jsonapi
 def horario(uid,token):
+
+    prof = warden.has_one_profile(token, ['assistance-admin'])
+    if not prof or prof['profile'] == False:
+        ''' como no soy admin, entonces chequea que se este consultando a si mismo '''
+        if not uid or uid != token['sub']:
+            return ('no tiene los permisos suficientes', 403)
+
+
     fecha_str = request.args.get('fecha', None)
     fecha = parser.parse(fecha_str).date() if fecha_str else None
 
@@ -134,10 +153,16 @@ def horario(uid,token):
     finally:
         session.close()
 
-@app.route(API_BASE + '/horario/', methods=['PUT'])
+@app.route(API_BASE + '/horario', methods=['PUT'])
 @rs.require_valid_token
 @jsonapi
 def crear_horario(token):
+
+    prof = warden.has_one_profile(token, ['assistance-admin'])
+    if not prof or prof['profile'] == False:
+        return ('no tiene los permisos suficientes', 403)
+
+
     horarios = request.get_json()
     logging.debug(horarios)
     session = Session()
@@ -223,10 +248,16 @@ def reloj_marcaciones(rid):
         session.close()
 
 
-@app.route(API_BASE + '/relojes/<rid>/eliminar_huellas', methods=['GET'])
+@app.route(API_BASE + '/relojes/<rid>/huellas', methods=['DELETE'])
 @rs.require_valid_token
 @jsonapi
 def reloj_eliminar_huellas(rid, token):
+
+    prof = warden.has_one_profile(token, 'assistance-super-admin')
+    if not prof or prof['profile'] == False:
+        return ('no tiene los permisos suficientes', 403)
+
+
     assert rid is not None
     session = Session()
     try:
@@ -236,10 +267,15 @@ def reloj_eliminar_huellas(rid, token):
     finally:
         session.close()
 
-@app.route(API_BASE + '/relojes/<rid>/eliminar_usuarios', methods=['GET'])
+@app.route(API_BASE + '/relojes/<rid>/usuarios', methods=['DELETE'])
 @rs.require_valid_token
 @jsonapi
 def reloj_eliminar_usuarios(rid, token):
+
+    prof = warden.has_one_profile(token, 'assistance-super-admin')
+    if not prof or prof['profile'] == False:
+        return ('no tiene los permisos suficientes', 403)
+
     assert rid is not None
     session = Session()
     try:
@@ -253,6 +289,11 @@ def reloj_eliminar_usuarios(rid, token):
 @rs.require_valid_token
 @jsonapi
 def reloj_usuarios(rid, token):
+
+    prof = warden.has_one_profile(token, ['assistance-admin'])
+    if not prof or prof['profile'] == False:
+        return ('no tiene los permisos suficientes', 403)
+
     assert rid is not None
     session = Session()
     try:
@@ -263,8 +304,14 @@ def reloj_usuarios(rid, token):
         session.close()
 
 @app.route(API_BASE + '/relojes/<rid>/usuarios/<ruid>', methods=['GET'])
+@rs.require_valid_token
 @jsonapi
-def reloj_usuario(rid, ruid):
+def reloj_usuario(rid, ruid, token):
+
+    prof = warden.has_one_profile(token, ['assistance-admin'])
+    if not prof or prof['profile'] == False:
+        return ('no tiene los permisos suficientes', 403)
+
     assert rid is not None
     assert ruid is not None
     session = Session()
@@ -281,8 +328,14 @@ def reloj_usuario(rid, ruid):
         session.close()
 
 @app.route(API_BASE + '/relojes/<rid>/huellas', methods=['GET'])
+@rs.require_valid_token
 @jsonapi
-def reloj_huellas(rid):
+def reloj_huellas(rid, token):
+
+    prof = warden.has_one_profile(token, ['assistance-admin'])
+    if not prof or prof['profile'] == False:
+        return ('no tiene los permisos suficientes', 403)
+
     assert rid is not None
     session = Session()
     try:
@@ -294,8 +347,9 @@ def reloj_huellas(rid):
 
 
 @app.route(API_BASE + '/justificaciones/<jid>', methods=['GET'])
+@rs.require_valid_token
 @jsonapi
-def justificacion(jid):
+def justificacion(jid, token):
     session = Session()
     try:
         return AssistanceModel.justificacion(session, jid)
@@ -303,8 +357,9 @@ def justificacion(jid):
         session.close()
 
 @app.route(API_BASE + '/justificaciones', methods=['GET'])
+@rs.require_valid_token
 @jsonapi
-def justificaciones():
+def justificaciones(token):
     session = Session()
     try:
         return AssistanceModel.justificaciones(session)
@@ -315,6 +370,11 @@ def justificaciones():
 @rs.require_valid_token
 @jsonapi
 def crear_justificacion(token):
+
+    prof = warden.has_one_profile(token, ['assistance-admin'])
+    if not prof or prof['profile'] == False:
+        return ('no tiene los permisos suficientes', 403)
+
     justificacion = request.get_json()
     logging.debug(justificacion)
     session = Session()
@@ -330,6 +390,11 @@ def crear_justificacion(token):
 @rs.require_valid_token
 @jsonapi
 def eliminar_justificacion(jid, token):
+
+    prof = warden.has_one_profile(token, ['assistance-admin'])
+    if not prof or prof['profile'] == False:
+        return ('no tiene los permisos suficientes', 403)
+
     session = Session()
     try:
         AssistanceModel.eliminarJustificacion(session, jid)
@@ -341,6 +406,11 @@ def eliminar_justificacion(jid, token):
 @rs.require_valid_token
 @jsonapi
 def actualizar_justificacion(jid, token):
+
+    prof = warden.has_one_profile(token, ['assistance-admin'])
+    if not prof or prof['profile'] == False:
+        return ('no tiene los permisos suficientes', 403)
+
     datos = request.get_json()
     session = Session()
     try:
@@ -356,6 +426,11 @@ def actualizar_justificacion(jid, token):
 @rs.require_valid_token
 @jsonapi
 def justificar(token):
+
+    prof = warden.has_one_profile(token, ['assistance-admin'])
+    if not prof or prof['profile'] == False:
+        return ('no tiene los permisos suficientes', 403)
+
     fechaJustificada = request.get_json()
     logging.debug(fechaJustificada)
     session = Session()
@@ -371,6 +446,11 @@ def justificar(token):
 @rs.require_valid_token
 @jsonapi
 def eliminar_fecha_justificada(uid, jid, token):
+
+    prof = warden.has_one_profile(token, ['assistance-admin'])
+    if not prof or prof['profile'] == False:
+        return ('no tiene los permisos suficientes', 403)
+
     session = Session()
     try:
         jid = AssistanceModel.eliminarFechaJustificada(session, jid)
@@ -379,6 +459,11 @@ def eliminar_fecha_justificada(uid, jid, token):
     finally:
         session.close()
 
+@app.route(API_BASE + '*', methods=['OPTIONS'])
+def options():
+    if request.method == 'OPTIONS':
+        return 204
+    return 204
 
 @app.after_request
 def cors_after_request(response):
