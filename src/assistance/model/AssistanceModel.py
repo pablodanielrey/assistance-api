@@ -20,7 +20,7 @@ from oidc.oidc import ClientCredentialsGrant
 
 from assistance.model.zkSoftware import ZkSoftware
 from .entities import *
-from . import Session
+
 
 
 class AssistanceModel:
