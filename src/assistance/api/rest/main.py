@@ -78,7 +78,7 @@ def usuarios(uid=None, token=None):
 def lugares(token=None):
     with obtener_session() as session:
         search = request.args.get('q')
-        return AssistanceModel.lugares(session=s, search=search)
+        return AssistanceModel.lugares(session=session, search=search)
 
 @app.route(API_BASE + '/usuarios/<uid>/reporte', methods=['GET'])
 @rs.require_valid_token
