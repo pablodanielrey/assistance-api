@@ -16,17 +16,19 @@ from flask import Flask, Response, abort, make_response, jsonify, url_for, reque
 from flask_jsontools import jsonapi
 from dateutil import parser
 
+VERIFY_SSL = bool(int(os.environ.get('VERIFY_SSL',0)))
+
 from rest_utils import register_encoder
 
 import oidc
 from oidc.oidc import TokenIntrospection
 client_id = os.environ['OIDC_CLIENT_ID']
 client_secret = os.environ['OIDC_CLIENT_SECRET']
-rs = TokenIntrospection(client_id, client_secret)
+rs = TokenIntrospection(client_id, client_secret, verify=VERIFY_SSL)
 
 warden_url = os.environ['WARDEN_API_URL']
 from warden.sdk.warden import Warden
-warden = Warden(warden_url, client_id, client_secret)
+warden = Warden(warden_url, client_id, client_secret, verify=VERIFY_SSL)
 
 from assistance.model.AssistanceModel import AssistanceModel
 from assistance.model import obtener_session
@@ -84,27 +86,30 @@ def lugares(token=None):
 @rs.require_valid_token
 @jsonapi
 def reporte(uid, token):
-    prof = warden.has_one_profile(token, ['assistance-admin'])
-    if not prof or prof['profile'] == False:
-        ''' como no soy admin, entonces chequea que se este consultando a si mismo '''
-        if not uid or uid != token['sub']:
-            return ('no tiene los permisos suficientes', 403)
-
     fecha_str = request.args.get('inicio', None)
     inicio = parser.parse(fecha_str).date() if fecha_str else None
 
     fecha_str = request.args.get('fin', None)
     fin = parser.parse(fecha_str).date() if fecha_str else None
 
+    prof = warden.has_one_profile(token, ['assistance-super-admin', 'assistance-admin'])
+    if prof and prof['profile']:
+        with obtener_session() as session:
+            return AssistanceModel.reporte(session, uid, inicio, fin)
+
+    usuario_logueado = token['sub']
     with obtener_session() as session:
-        return AssistanceModel.reporte(session, uid, inicio, fin)
+        if AssistanceModel.chequear_acceso_reporte(session, usuario_logueado, uid):
+            return AssistanceModel.reporte(session, uid, inicio, fin)
+        else:
+            return ('no tiene los permisos suficientes', 403)
 
 @app.route(API_BASE + '/reportes', methods=['POST'])
 @rs.require_valid_token
 @jsonapi
 def reporte_general(token):
 
-    prof = warden.has_one_profile(token, ['assistance-admin'])
+    prof = warden.has_one_profile(token, ['assistance-super-admin','assistance-admin'])
     if not prof or prof['profile'] == False:
         return ('no tiene los permisos suficientes', 403)
 
@@ -294,7 +299,7 @@ def justificaciones(token):
 @rs.require_valid_token
 @jsonapi
 def crear_justificacion(token):
-    prof = warden.has_one_profile(token, ['assistance-admin'])
+    prof = warden.has_one_profile(token, ['assistance-super-admin','assistance-admin'])
     if not prof or prof['profile'] == False:
         return ('no tiene los permisos suficientes', 403)
 
@@ -309,7 +314,7 @@ def crear_justificacion(token):
 @rs.require_valid_token
 @jsonapi
 def eliminar_justificacion(jid, token):
-    prof = warden.has_one_profile(token, ['assistance-admin'])
+    prof = warden.has_one_profile(token, ['assistance-super-admin','assistance-admin'])
     if not prof or prof['profile'] == False:
         return ('no tiene los permisos suficientes', 403)
     with obtener_session() as session:
@@ -320,7 +325,7 @@ def eliminar_justificacion(jid, token):
 @rs.require_valid_token
 @jsonapi
 def actualizar_justificacion(jid, token):
-    prof = warden.has_one_profile(token, ['assistance-admin'])
+    prof = warden.has_one_profile(token, ['assistance-super-admin', 'assistance-admin'])
     if not prof or prof['profile'] == False:
         return ('no tiene los permisos suficientes', 403)
     datos = request.get_json()
@@ -332,7 +337,7 @@ def actualizar_justificacion(jid, token):
 @rs.require_valid_token
 @jsonapi
 def justificar(token):
-    prof = warden.has_one_profile(token, ['assistance-admin'])
+    prof = warden.has_one_profile(token, ['assistance-super-admin', 'assistance-admin'])
     if not prof or prof['profile'] == False:
         return ('no tiene los permisos suficientes', 403)
     fechaJustificada = request.get_json()
@@ -346,7 +351,7 @@ def justificar(token):
 @rs.require_valid_token
 @jsonapi
 def eliminar_fecha_justificada(uid, jid, token):
-    prof = warden.has_one_profile(token, ['assistance-admin'])
+    prof = warden.has_one_profile(token, ['assistance-super-admin', 'assistance-admin'])
     if not prof or prof['profile'] == False:
         return ('no tiene los permisos suficientes', 403)
     with obtener_session() as session:

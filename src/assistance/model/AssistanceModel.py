@@ -86,6 +86,16 @@ class AssistanceModel:
         return r
 
     @classmethod
+    def chequear_acceso_reporte(cls, session, usuario_logueado, uid):
+        assert usuario_logueado is not None
+        assert uid is not None
+
+        ''' ahora chequeamos que el usuario logueado tenga permisos para consultar los reportes de uid '''
+
+        return usuario_logueado == uid
+
+
+    @classmethod
     def reporte(cls, session, uid, inicio, fin, tzone='America/Argentina/Buenos_Aires'):
         assert uid is not None
 
