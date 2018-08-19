@@ -23,6 +23,9 @@ print('Iniciando bot usando token : {}'.format(TOKEN))
 
 def inicio(bot, update):
     cid = update.message.chat_id
+    r.sadd('clientes',cid)
+    logging.info('cliente conectado {}'.format(cid))
+
     iniciar_keyboard = KeyboardButton(text="Recibir eventos", request_contact=True, request_location=True)
     finalizar_keyboard = InlineKeyboardButton(text="No recibir eventos", callback_data='2')
     reply_markup = ReplyKeyboardMarkup([[iniciar_keyboard, finalizar_keyboard]])
@@ -31,15 +34,14 @@ def inicio(bot, update):
 
 def fin(bot, update):
     cid = update.message.chat_id
-    r.srem('clientes',cid)
+    r.hdel(cid, 'phone_number')
     bot.send_message(chat_id=cid, text="No recibirá mas eventos")
     logging.info('cliente desregistrado {}'.format(cid))
 
 def contact_callback(bot, update):
-    cid = update.message.chat_id
-    r.sadd('clientes',cid)
-
+    cid = update.effective_message.chat_id
     contact = update.effective_message.contact
+    r.hmset(cid, contact.__dict__)
     logging.info('contacto registrado')
     logging.info(contact)
     phone = contact.phone_number
@@ -49,13 +51,17 @@ def text_callback(bot, update):
     fin(bot, update)    
 
 def callback_minute(bot, job):
-    logs = r.lpop('marcaciones')
-    if logs:
-        for l in logs:
-            cids = r.smembers('clientes')
-            for cid in cids:
+    l = r.spop('marcaciones')
+    if l:
+        logging.info('enviando {}'.format(l))
+        cids = r.smembers('clientes')
+        for cid in cids:
+            logging.info('chequeo los clientes registrados {}'.format(cid))
+            phone = r.hmget(cid, 'phone_number')
+            logging.info('telefono {} para {}'.format(phone, cid))
+            if phone and len(phone) > 0:
                 bot.send_message(chat_id=cid, text='{}'.format(l))
-                logging.info('enviando {} a {}'.format(l,cid))
+                logging.info('enviando {} a {} - {}'.format(l, phone, cid))
    
 
 
