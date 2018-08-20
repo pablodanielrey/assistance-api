@@ -15,6 +15,12 @@ hdlr.setFormatter(formatter)
 logger.addHandler(hdlr)
 logger.setLevel(logging.DEBUG)
 
+import json
+import redis
+redis_host = os.environ.get('TELEGRAM_BOT_REDIS')
+redis_port = int(os.environ.get('TELEGRAM_BOT_REDIS_PORT', 6379))
+redis_marcaciones = redis.StrictRedis(host=redis_host, port=redis_port, decode_responses=True)
+
 import oidc
 from oidc.oidc import ClientCredentialsGrant
 
@@ -517,6 +523,17 @@ class AssistanceModel:
                     session.add(log)
                     r = {'estado':'agregada', 'marcacion':log, 'dni':dni}
                     logger.info(r)
+
+                    try:
+                        m = {
+                            'dni':dni,
+                            'log':log
+                        }
+                        redis_marcaciones.sadd('marcaciones', json.dumps(m))
+                    except Exception as e:
+                        logging.exception(e)
+
+
                     yield r
                 else:
                     yield {'estado':'existente', 'marcacion':m, 'dni':dni}

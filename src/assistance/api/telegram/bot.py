@@ -8,6 +8,7 @@ from telegram.ext import Updater
 from telegram.ext import CommandHandler
 from telegram.ext import MessageHandler, Filters
 from telegram import KeyboardButton, ReplyKeyboardMarkup, InlineKeyboardButton
+from telegram import Contact
 
 import redis
 
@@ -34,18 +35,33 @@ def inicio(bot, update):
 
 def fin(bot, update):
     cid = update.message.chat_id
-    r.hdel(cid, 'phone_number')
-    bot.send_message(chat_id=cid, text="No recibirá mas eventos")
+    r.hset(cid, 'activo', '')
+    bot.send_message(chat_id=cid, text="No recibirá mas eventos hasta que lo indique nuevamente")
     logging.info('cliente desregistrado {}'.format(cid))
+    logging.info(r.hgetall(cid))
+
+def status(bot, update):
+    cid = update.message.chat_id
+    for k in r.keys('*'):
+        bot.send_message(chat_id=cid, text=k)
+        logging.info(k)
+
 
 def contact_callback(bot, update):
     cid = update.effective_message.chat_id
     contact = update.effective_message.contact
-    r.hmset(cid, contact.__dict__)
+    
+    c = {
+        'activo': 'True',
+        'phone_number': contact.phone_number,
+        'first_name': contact.first_name,
+        'last_name': contact.last_name,
+        'user_id': contact.user_id
+    }
+    r.hmset(cid, c)
+
     logging.info('contacto registrado')
-    logging.info(contact)
-    phone = contact.phone_number
-    logging.info(phone)
+    logging.info(r.hgetall(cid))
 
 def text_callback(bot, update):
     fin(bot, update)    
@@ -56,19 +72,26 @@ def callback_minute(bot, job):
         logging.info('enviando {}'.format(l))
         cids = r.smembers('clientes')
         for cid in cids:
-            logging.info('chequeo los clientes registrados {}'.format(cid))
-            phone = r.hmget(cid, 'phone_number')
-            logging.info('telefono {} para {}'.format(phone, cid))
-            if phone and len(phone) > 0:
+            logging.info('chat registrado {}'.format(cid))
+            if not r.hexists(cid, 'activo'):
+                logging.info('ignorando {} ya que no tiene contacto registrado'.format(cid))
+                continue
+
+            c = r.hgetall(cid)
+            logging.info(c)
+            if 'activo' in c and bool(c['activo']):
+                logging.info('telefono {} para {}'.format(c['phone_number'], cid))
                 bot.send_message(chat_id=cid, text='{}'.format(l))
-                logging.info('enviando {} a {} - {}'.format(l, phone, cid))
+                logging.info('enviando {} a {} - {}'.format(l, c['phone_number'], cid))
+            else:
+                logging.info('cliente no activo')
    
 
 
 if __name__ == '__main__':
 
     updater = Updater(token=TOKEN)
-    job_minute = updater.job_queue.run_repeating(callback_minute, interval=10, first=0)
+    job_minute = updater.job_queue.run_repeating(callback_minute, interval=60, first=0)
     dispatcher = updater.dispatcher
 
     h = CommandHandler('start', inicio)
@@ -76,6 +99,9 @@ if __name__ == '__main__':
 
     h = CommandHandler('end', fin)
     dispatcher.add_handler(h)
+
+    h = CommandHandler('status', status)
+    dispatcher.add_handler(h)    
 
     dispatcher.add_handler(MessageHandler(Filters.contact, contact_callback))
     dispatcher.add_handler(MessageHandler(Filters.text, text_callback))
