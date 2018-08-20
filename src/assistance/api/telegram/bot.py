@@ -67,24 +67,26 @@ def text_callback(bot, update):
     fin(bot, update)    
 
 def callback_minute(bot, job):
-    l = r.spop('marcaciones')
-    if l:
-        logging.info('enviando {}'.format(l))
-        cids = r.smembers('clientes')
-        for cid in cids:
-            logging.info('chat registrado {}'.format(cid))
-            if not r.hexists(cid, 'activo'):
-                logging.info('ignorando {} ya que no tiene contacto registrado'.format(cid))
-                continue
+    l = True
+    while l:
+        l = r.spop('marcaciones')
+        if l:
+            logging.info('enviando {}'.format(l))
+            cids = r.smembers('clientes')
+            for cid in cids:
+                logging.info('chat registrado {}'.format(cid))
+                if not r.hexists(cid, 'activo'):
+                    logging.info('ignorando {} ya que no tiene contacto registrado'.format(cid))
+                    continue
 
-            c = r.hgetall(cid)
-            logging.info(c)
-            if 'activo' in c and bool(c['activo']):
-                logging.info('telefono {} para {}'.format(c['phone_number'], cid))
-                bot.send_message(chat_id=cid, text='{}'.format(l))
-                logging.info('enviando {} a {} - {}'.format(l, c['phone_number'], cid))
-            else:
-                logging.info('cliente no activo')
+                c = r.hgetall(cid)
+                logging.info(c)
+                if 'activo' in c and bool(c['activo']):
+                    logging.info('telefono {} para {}'.format(c['phone_number'], cid))
+                    bot.send_message(chat_id=cid, text='{}'.format(l))
+                    logging.info('enviando {} a {} - {}'.format(l, c['phone_number'], cid))
+                else:
+                    logging.info('cliente no activo')
    
 
 
