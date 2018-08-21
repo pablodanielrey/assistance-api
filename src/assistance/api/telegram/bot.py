@@ -58,6 +58,7 @@ def contact_callback(bot, update):
         'last_name': contact.last_name,
         'user_id': contact.user_id
     }
+    r.sadd('clientes',cid)
     r.hmset(cid, c)
 
     logging.info('contacto registrado')
