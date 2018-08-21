@@ -528,6 +528,7 @@ class AssistanceModel:
                         from rest_utils import ApiJSONEncoder
                         m = {
                             'dni':dni,
+                            'usuario_id': usuario.id,
                             'log':log
                         }
                         m2 = json.dumps(m, cls=ApiJSONEncoder)

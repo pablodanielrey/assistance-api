@@ -45,6 +45,8 @@ def status(bot, update):
     for k in r.keys('*'):
         bot.send_message(chat_id=cid, text=k)
         logging.info(k)
+        if 'clientes' not in k:
+            bot.send_message(chat_id=cid, r.hgetall(k))
 
 
 def contact_callback(bot, update):
