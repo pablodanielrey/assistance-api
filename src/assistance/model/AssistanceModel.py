@@ -527,7 +527,7 @@ class AssistanceModel:
                     try:
                         m = {
                             'dni':dni,
-                            'log':log
+                            'log':log.__dict__
                         }
                         m2 = json.dumps(m)
                         logger.info('enviando a redis {}'.format(m2))
