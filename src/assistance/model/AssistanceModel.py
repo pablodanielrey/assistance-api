@@ -525,11 +525,12 @@ class AssistanceModel:
                     logger.info(r)
 
                     try:
+                        from rest_utils import ApiJSONEncoder
                         m = {
                             'dni':dni,
-                            'log':log.__dict__
+                            'log':log
                         }
-                        m2 = json.dumps(m)
+                        m2 = json.dumps(m, cls=ApiJSONEncoder)
                         logger.info('enviando a redis {}'.format(m2))
                         redis_marcaciones.sadd('marcaciones', m2)
                     except Exception as e:
