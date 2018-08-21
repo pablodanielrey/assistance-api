@@ -529,9 +529,11 @@ class AssistanceModel:
                             'dni':dni,
                             'log':log
                         }
-                        redis_marcaciones.sadd('marcaciones', json.dumps(m))
+                        m2 = json.dumps(m)
+                        logger.info('enviando a redis {}'.format(m2))
+                        redis_marcaciones.sadd('marcaciones', m2)
                     except Exception as e:
-                        logging.exception(e)
+                        logger.exception(e)
 
 
                     yield r
