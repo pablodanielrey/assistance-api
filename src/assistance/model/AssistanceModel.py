@@ -15,11 +15,6 @@ hdlr.setFormatter(formatter)
 logger.addHandler(hdlr)
 logger.setLevel(logging.DEBUG)
 
-import json
-import redis
-redis_host = os.environ.get('TELEGRAM_BOT_REDIS')
-redis_port = int(os.environ.get('TELEGRAM_BOT_REDIS_PORT', 6379))
-redis_marcaciones = redis.StrictRedis(host=redis_host, port=redis_port, decode_responses=True)
 
 import oidc
 from oidc.oidc import ClientCredentialsGrant
@@ -27,7 +22,10 @@ from oidc.oidc import ClientCredentialsGrant
 from assistance.model.zkSoftware import ZkSoftware
 from .entities import *
 
-
+import json
+import redis
+REDIS_HOST = os.environ.get('TELEGRAM_BOT_REDIS')
+REDIS_PORT = int(os.environ.get('TELEGRAM_BOT_REDIS_PORT', 6379))
 
 class AssistanceModel:
 
@@ -37,6 +35,7 @@ class AssistanceModel:
     client_id = os.environ['OIDC_CLIENT_ID']
     client_secret = os.environ['OIDC_CLIENT_SECRET']
 
+    redis_assistance = redis.StrictRedis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
 
     @classmethod
     def _get_token(cls):
@@ -99,6 +98,56 @@ class AssistanceModel:
         ''' ahora chequeamos que el usuario logueado tenga permisos para consultar los reportes de uid '''
 
         return usuario_logueado == uid
+
+
+    """
+    ////////////// MANEJO DE CACHE ////////////////////////
+    """
+
+    @classmethod
+    def _setear_usuario_cache(cls, usr):
+        cls.redis_assistance.hmset('usuario_uid_{}'.format(usr['uid']), usr)
+        cls.redis_assistance.hset('usuario_dni_{}'.format(usr['dni'].lower().trim()), 'uid', usr['uid'])
+
+    @classmethod
+    def _obtener_usuario_por_uid(cls, uid):
+        usr = cls.redis_assistance.hgetall('usuario_uid_{}'.format(uid))
+        if len(usr.keys()) > 0:
+            return usr
+        
+        query = cls.usuarios_url + '/usuarios/' + uid
+        r = cls.api(query)
+        if not r.ok:
+            return []
+        jusr = r.json()
+        usr = json.loads(jusr)
+
+        cls._setear_usuario_cache(usr)
+        return usr
+    
+    @classmethod
+    def _obtener_usuario_por_dni(cls, dni, token):
+        key = 'usuario_dni_{}'.format(dni.lower().trim())
+        if cls.redis_assistance.hexists(key,'uid'):
+            uid = cls.redis_assistance.hget(key,'uid')
+            return cls._obtener_usuario_por_uid(uid)
+
+        query = cls.usuarios_url + '/usuarios/'
+        params = {}
+        params['c'] = True
+        params = {'q':dni}
+        r = cls.api(query,params=params,token=token)
+        if not r.ok:
+            raise Exception(r.text)
+        for jusr in r.json():
+            usr = json.loads(jusr)
+            cls._setear_usuario_cache(usr)
+            return usr
+        raise Exception('No se encuentra usuario con dni {}'.format(dni))
+
+    """
+    /////////////////////////////
+    """
 
 
     @classmethod
@@ -533,7 +582,7 @@ class AssistanceModel:
                         }
                         m2 = json.dumps(m, cls=ApiJSONEncoder)
                         logger.info('enviando a redis {}'.format(m2))
-                        redis_marcaciones.sadd('marcaciones', m2)
+                        cls.redis_assistance.sadd('marcaciones', m2)
                     except Exception as e:
                         logger.exception(e)
 
