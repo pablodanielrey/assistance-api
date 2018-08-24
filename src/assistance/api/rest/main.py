@@ -40,6 +40,42 @@ register_encoder(app)
 
 API_BASE = os.environ['API_BASE']
 
+@app.route(API_BASE + '/acceso_modulos', methods=['GET'])
+@rs.require_valid_token
+@jsonapi
+def obtener_acceso_modulos(token=None):
+
+    prof = warden.has_one_profile(token, ['assistance-admin'])
+    if prof and prof['profile'] == True:
+        a = [
+            'inicio_personal',
+            'reporte_personal',
+            'reporte_general',
+            'justificacion_personal',
+            'justificacion_general',
+            'justificacion_tipo_abm',
+            'horario_vista',
+            'horario_abm'
+        ]
+        return json.dumps(a)
+    
+    prof = warden.has_one_profile(token, ['assistance-operator'])
+    if prof and prof['profile'] == True:
+        a = [
+            'inicio_personal',
+            'reporte_personal',
+            'reporte_general',
+            'justificacion_personal',
+            'justificacion_general',
+            'horario_vista'
+        ]
+        return json.dumps(a)
+
+    a = [
+        'inicio_personal'
+    ]
+    return json.dumps(a)            
+
 @app.route(API_BASE + '/usuarios', methods=['GET'])
 @app.route(API_BASE + '/usuarios/<uid>', methods=['GET'])
 @rs.require_valid_token
