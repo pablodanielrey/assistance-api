@@ -288,7 +288,7 @@ def reloj_eliminar_usuarios(rid, token):
 @jsonapi
 def reloj_usuarios(rid, token):
 
-    prof = warden.has_one_profile(token, ['assisstance-super-admin','assistance-admin'])
+    prof = warden.has_one_profile(token, ['assistance-super-admin','assistance-admin'])
     if not prof or prof['profile'] == False:
         return ('no tiene los permisos suficientes', 403)
 
