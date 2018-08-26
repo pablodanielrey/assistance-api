@@ -106,8 +106,8 @@ class AssistanceModel:
 
     @classmethod
     def _setear_usuario_cache(cls, usr):
-        cls.redis_assistance.hmset('usuario_uid_{}'.format(usr['uid']), usr)
-        cls.redis_assistance.hset('usuario_dni_{}'.format(usr['dni'].lower().trim()), 'uid', usr['uid'])
+        cls.redis_assistance.hmset('usuario_uid_{}'.format(usr['id']), usr)
+        cls.redis_assistance.hset('usuario_dni_{}'.format(usr['dni'].lower().replace(' ','')), 'uid', usr['id'])
 
     @classmethod
     def _obtener_usuario_por_uid(cls, uid):
@@ -119,15 +119,13 @@ class AssistanceModel:
         r = cls.api(query)
         if not r.ok:
             return []
-        jusr = r.json()
-        usr = json.loads(jusr)
-
+        usr = r.json()
         cls._setear_usuario_cache(usr)
         return usr
     
     @classmethod
     def _obtener_usuario_por_dni(cls, dni, token):
-        key = 'usuario_dni_{}'.format(dni.lower().trim())
+        key = 'usuario_dni_{}'.format(dni.lower().replace(' ',''))
         if cls.redis_assistance.hexists(key,'uid'):
             uid = cls.redis_assistance.hget(key,'uid')
             return cls._obtener_usuario_por_uid(uid)
@@ -148,6 +146,33 @@ class AssistanceModel:
     """
     /////////////////////////////
     """
+
+    @classmethod
+    def perfil(cls, session, uid, fecha, tzone='America/Argentina/Buenos_Aires'):
+        assert uid is not None
+        usr = cls._obtener_usuario_por_uid(uid)
+        r = Reporte.generarReporte(session, usr, fecha, fecha, tzone)
+
+        """ transformo el reporte en info de perfil """
+
+        reporte = r.reportes[0]
+        trabajado = reporte.cantidad_segundos_trabajados
+        entrada = reporte.entrada
+        salida = reporte.salida
+        (hora_entrada, hora_salida) = reporte.horario.obtenerInicioFin(reporte.fecha,tzone)
+        justificaciones = []
+
+        perfil = {
+            'fecha': reporte.fecha,
+            'entrada': entrada.marcacion if entrada else None,
+            'salida': salida.marcacion if salida else None,
+            'segundos_trabajados': trabajado,
+            'hora_entrada': hora_entrada,
+            'hora_salida': hora_salida,
+            'justificaciones': justificaciones
+        }
+
+        return perfil
 
 
     @classmethod

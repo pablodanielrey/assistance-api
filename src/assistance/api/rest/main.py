@@ -121,6 +121,29 @@ def lugares(token=None):
         search = request.args.get('q')
         return AssistanceModel.lugares(session=session, search=search)
 
+@app.route(API_BASE + '/usuarios/<uid>/perfil', methods=['GET'])
+@rs.require_valid_token
+@jsonapi
+def perfil(uid, token):
+    fecha_str = request.args.get('fecha', None)
+    fecha = parser.parse(fecha_str).date() if fecha_str else None
+    if not fecha:
+        return ('fecha, parametro no encontrado',400)
+
+    prof = warden.has_one_profile(token, ['assistance-super-admin', 'assistance-admin'])
+    if prof and prof['profile']:
+        with obtener_session() as session:
+            return AssistanceModel.perfil(session, uid, fecha)
+
+    usuario_logueado = token['sub']
+    with obtener_session() as session:
+        #if AssistanceModel.chequear_acceso_reporte(session, usuario_logueado, uid):
+        if usuario_logueado == uid:
+            return AssistanceModel.perfil(session, uid, fecha)
+        else:
+            return ('no tiene los permisos suficientes', 403)
+
+
 @app.route(API_BASE + '/usuarios/<uid>/reporte', methods=['GET'])
 @rs.require_valid_token
 @jsonapi
