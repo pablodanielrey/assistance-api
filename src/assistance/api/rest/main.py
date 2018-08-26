@@ -89,11 +89,7 @@ def obtener_acceso_modulos(token=None):
 @jsonapi
 def usuarios(uid=None, token=None):
 
-    # access = w.check_access(token, 'rn:assistance:users', 'list')
-    # if not access:
-    #     return ('no tiene los permisos suficientes', 403)
-    
-    prof = warden.has_one_profile(token, ['assistance-admin'])
+    prof = warden.has_one_profile(token, ['assistance-super-admin','assistance-admin'])
     if not prof or prof['profile'] == False:
         ''' como no soy admin, entonces chequea que se este consultando a si mismo '''
         if not uid or uid != token['sub']:
@@ -167,7 +163,8 @@ def reporte_general(token):
 @rs.require_valid_token
 @jsonapi
 def horario(uid,token):
-    prof = warden.has_one_profile(token, ['assistance-admin'])
+
+    prof = warden.has_one_profile(token, ['assistance-super-admin','assistance-admin'])
     if not prof or prof['profile'] == False:
         ''' como no soy admin, entonces chequea que se este consultando a si mismo '''
         if not uid or uid != token['sub']:
@@ -181,8 +178,7 @@ def horario(uid,token):
 @rs.require_valid_token
 @jsonapi
 def crear_horario(token):
-
-    prof = warden.has_one_profile(token, ['assistance-admin'])
+    prof = warden.has_one_profile(token, ['assistance-super-admin','assistance-admin'])
     if not prof or prof['profile'] == False:
         return ('no tiene los permisos suficientes', 403)
 
@@ -208,8 +204,13 @@ def logs_por_fecha(fecha,token):
     return None
 
 @app.route(API_BASE + '/relojes', methods=['GET'])
+@rs.require_valid_token
 @jsonapi
-def relojes():
+def relojes(token):
+    prof = warden.has_one_profile(token, ['assistance-super-admin','assistance-admin'])
+    if not prof or prof['profile'] == False:
+        return ('no tiene los permisos suficientes', 403)
+
     with obtener_session() as session:
         return AssistanceModel.relojes(session)
 
@@ -222,9 +223,15 @@ def relojes_sincronizar():
         return r
 
 @app.route(API_BASE + '/relojes/<rid>', methods=['GET'])
+@rs.require_valid_token
 @jsonapi
-def reloj(rid):
+def reloj(rid,token):
     assert rid is not None
+
+    prof = warden.has_one_profile(token, ['assistance-super-admin','assistance-admin'])
+    if not prof or prof['profile'] == False:
+        return ('no tiene los permisos suficientes', 403)
+
     with obtener_session() as session:
         r = AssistanceModel.reloj(session, rid)
         return r
@@ -281,7 +288,7 @@ def reloj_eliminar_usuarios(rid, token):
 @jsonapi
 def reloj_usuarios(rid, token):
 
-    prof = warden.has_one_profile(token, ['assistance-admin'])
+    prof = warden.has_one_profile(token, ['assisstance-super-admin','assistance-admin'])
     if not prof or prof['profile'] == False:
         return ('no tiene los permisos suficientes', 403)
 
@@ -294,8 +301,7 @@ def reloj_usuarios(rid, token):
 @rs.require_valid_token
 @jsonapi
 def reloj_usuario(rid, ruid, token):
-
-    prof = warden.has_one_profile(token, ['assistance-admin'])
+    prof = warden.has_one_profile(token, ['assistance-super-admin','assistance-admin'])
     if not prof or prof['profile'] == False:
         return ('no tiene los permisos suficientes', 403)
 
@@ -314,7 +320,7 @@ def reloj_usuario(rid, ruid, token):
 @rs.require_valid_token
 @jsonapi
 def reloj_huellas(rid, token):
-    prof = warden.has_one_profile(token, ['assistance-admin'])
+    prof = warden.has_one_profile(token, ['assistance-super-admin','assistance-admin'])
     if not prof or prof['profile'] == False:
         return ('no tiene los permisos suficientes', 403)
 
