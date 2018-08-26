@@ -160,16 +160,31 @@ class AssistanceModel:
         entrada = reporte.entrada
         salida = reporte.salida
         (hora_entrada, hora_salida) = reporte.horario.obtenerInicioFin(reporte.fecha,tzone)
-        justificaciones = []
+        
+        #proceso las justificaciones para el formato esperado:
+        justificaciones = {}
+        for j in reporte.justificaciones:
+            if j.tipo in justificaciones:
+                justificaciones[j.tipo].cantidad = justificaciones[j.tipo].cantidad + 1
+            else:
+                justificaciones[j.tipo] = {
+                    'cantidad':1,
+                    'nombre': j.nombre,
+                    'descripcion': j.descripcion,
+                    'codigo': j.codigo,
+                    'tipo': j.tipo
+                }
+        ljustificaciones = [justificaciones[j] for j in justificaciones.keys()]
 
         perfil = {
+            'usuario': usr,
             'fecha': reporte.fecha,
             'entrada': entrada.marcacion if entrada else None,
             'salida': salida.marcacion if salida else None,
             'segundos_trabajados': trabajado,
             'hora_entrada': hora_entrada,
             'hora_salida': hora_salida,
-            'justificaciones': justificaciones
+            'justificaciones': ljustificaciones
         }
 
         return perfil

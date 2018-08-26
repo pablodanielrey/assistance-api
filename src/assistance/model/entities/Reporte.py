@@ -20,6 +20,7 @@ class JustificacionReporte:
         self.id = fj.id
         self.nombre = fj.justificacion.nombre
         self.codigo = fj.justificacion.codigo
+        self.tipo = fj.justificacion.id
         self.descripcion = fj.justificacion.descripcion
 
     def __json__(self):
