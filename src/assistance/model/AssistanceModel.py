@@ -159,8 +159,12 @@ class AssistanceModel:
         trabajado = reporte.cantidad_segundos_trabajados
         entrada = reporte.entrada
         salida = reporte.salida
-        (hora_entrada, hora_salida) = reporte.horario.obtenerInicioFin(reporte.fecha,tzone)
-        horario_segundos = reporte.horario.cantidadDeSegundos()
+        hora_entrada = None
+        hora_salida = None
+        horario_segundos = 0
+        if reporte.horario:
+            (hora_entrada, hora_salida) = reporte.horario.obtenerInicioFin(reporte.fecha,tzone)
+            horario_segundos = reporte.horario.cantidadDeSegundos()
         
         #proceso las justificaciones para el formato esperado:
         justificaciones = {}
@@ -177,6 +181,22 @@ class AssistanceModel:
                 }
         ljustificaciones = [justificaciones[j] for j in justificaciones.keys()]
 
+        #proceso los lugares de la persona.
+        query = cls.sileg_url + '/usuarios/{}/designaciones'.format(uid)
+        r = cls.api(query)
+        desig = r.json()
+        oficinas = [
+            {
+                'id_oficina': d['lugar']['id'],
+                'oficina': d['lugar']['nombre'],
+                'cargo': d['cargo']['nombre'],
+                'tipo_cargo': d['cargo']['tipo'],
+                'desde': d['desde'],
+                'hasta': d['hasta']
+            } 
+            for d in desig if not d['historico']
+        ]
+
         perfil = {
             'usuario': usr,
             'fecha': reporte.fecha,
@@ -186,7 +206,8 @@ class AssistanceModel:
             'hora_entrada': hora_entrada,
             'hora_salida': hora_salida,
             'horario_segundos': horario_segundos,
-            'justificaciones': ljustificaciones
+            'justificaciones': ljustificaciones,
+            'oficinas': oficinas
         }
 
         return perfil
