@@ -45,6 +45,13 @@ API_BASE = os.environ['API_BASE']
 @jsonapi
 def obtener_acceso_modulos(token=None):
 
+    prof = warden.has_one_profile(token, ['assistance-super-admin'])
+    if prof and prof['profile'] == True:
+        a = [
+            'super-admin'
+        ]
+        return json.dumps(a)
+
     prof = warden.has_one_profile(token, ['assistance-admin'])
     if prof and prof['profile'] == True:
         a = [
