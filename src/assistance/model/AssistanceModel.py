@@ -160,6 +160,7 @@ class AssistanceModel:
         entrada = reporte.entrada
         salida = reporte.salida
         (hora_entrada, hora_salida) = reporte.horario.obtenerInicioFin(reporte.fecha,tzone)
+        horario_segundos = reporte.horario.cantidadDeSegundos()
         
         #proceso las justificaciones para el formato esperado:
         justificaciones = {}
@@ -184,6 +185,7 @@ class AssistanceModel:
             'segundos_trabajados': trabajado,
             'hora_entrada': hora_entrada,
             'hora_salida': hora_salida,
+            'horario_segundos': horario_segundos,
             'justificaciones': ljustificaciones
         }
 

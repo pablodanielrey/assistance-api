@@ -20,6 +20,9 @@ class Horario(Base):
     usuario_id = Column(String, ForeignKey('usuario.id'))
     usuario = relationship('Usuario')
 
+    def cantidadDeSegundos(self):
+        return self.hora_salida - self.hora_entrada
+
     def cantidadDeMinutos(self):
         return int((self.hora_salida - self.hora_entrada) / 60)
 
