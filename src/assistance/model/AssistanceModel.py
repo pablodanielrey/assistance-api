@@ -268,6 +268,30 @@ class AssistanceModel:
         return ret
 
     @classmethod
+    def historial_horarios(cls, session, uid, fecha_inicio=None, fecha_fin=None):
+        assert uid is not None
+        assert session is not None
+
+        usr = cls._obtener_usuario_por_uid(uid)
+        if not usr:
+            raise Exception('No existe el usuario con uid {}'.format(uid))
+        
+        q = session.query(Horario)
+        if fecha_inicio:
+            q.filter(Horario.fecha_valido >= fecha_inicio)
+        if fecha_fin:
+            q.filter(Horario.fecha_valido <= fecha_fin)
+        rhs = q.order_by(Horario.fecha_valido).all()
+
+        hs = {
+            'usuario': usr,
+            'historial': [ {'horario':h, 'creador':None} for h in rhs ]
+        }
+        return hs
+
+
+    
+    @classmethod
     def horario(cls, session, uid, fecha):
         assert uid is not None
         fecha = fecha if fecha else date.today()
