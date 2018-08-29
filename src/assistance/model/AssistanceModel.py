@@ -5,6 +5,7 @@ import requests
 import os
 import uuid
 from dateutil import parser
+import datetime
 
 import logging
 from logging.handlers import TimedRotatingFileHandler
@@ -281,7 +282,7 @@ class AssistanceModel:
             q.filter(Horario.fecha_valido >= fecha_inicio)
         if fecha_fin:
             q.filter(Horario.fecha_valido <= fecha_fin)
-        rhs = q.order_by(Horario.fecha_valido).all()
+        rhs = q.order_by(Horario.fecha_valido, Horario.dia_semanal).all()
 
         hs = {
             'usuario': usr,
@@ -290,6 +291,13 @@ class AssistanceModel:
         return hs
 
 
+    @classmethod
+    def eliminar_horario(cls, session, uid, hid):
+        assert uid is not None
+        assert hid is not None
+        h = session.query(Horario).filter(Horario.id == hid).one()
+        h.eliminado = datetime.datetime.now()
+        return hid
     
     @classmethod
     def horario(cls, session, uid, fecha):
