@@ -277,7 +277,7 @@ class AssistanceModel:
         if not usr:
             raise Exception('No existe el usuario con uid {}'.format(uid))
         
-        q = session.query(Horario)
+        q = session.query(Horario).filter(Horario.usuario_id == uid)
         if fecha_inicio:
             q.filter(Horario.fecha_valido >= fecha_inicio)
         if fecha_fin:
