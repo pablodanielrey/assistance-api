@@ -592,7 +592,7 @@ class AssistanceModel:
                         from rest_utils import ApiJSONEncoder
                         m = {
                             'dni':dni,
-                            'usuario_id': usuario.id,
+                            'usuario_id': usuario['id'],
                             'usuario': usuario,
                             'log':log
                         }
