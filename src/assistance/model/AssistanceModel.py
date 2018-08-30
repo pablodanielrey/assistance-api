@@ -112,13 +112,13 @@ class AssistanceModel:
         cls.redis_assistance.hset('usuario_dni_{}'.format(usr['dni'].lower().replace(' ','')), 'uid', usr['id'])
 
     @classmethod
-    def _obtener_usuario_por_uid(cls, uid):
+    def _obtener_usuario_por_uid(cls, uid, token=None):
         usr = cls.redis_assistance.hgetall('usuario_uid_{}'.format(uid))
         if len(usr.keys()) > 0:
             return usr
         
         query = cls.usuarios_url + '/usuarios/' + uid
-        r = cls.api(query)
+        r = cls.api(query, token=token)
         if not r.ok:
             return []
         usr = r.json()
@@ -126,17 +126,17 @@ class AssistanceModel:
         return usr
     
     @classmethod
-    def _obtener_usuario_por_dni(cls, dni):
+    def _obtener_usuario_por_dni(cls, dni, token=None):
         key = 'usuario_dni_{}'.format(dni.lower().replace(' ',''))
         if cls.redis_assistance.hexists(key,'uid'):
             uid = cls.redis_assistance.hget(key,'uid')
-            return cls._obtener_usuario_por_uid(uid)
+            return cls._obtener_usuario_por_uid(uid, token)
 
         query = cls.usuarios_url + '/usuarios/'
         params = {}
         params['c'] = True
         params = {'q':dni}
-        r = cls.api(query, params=params)
+        r = cls.api(query, params=params, token=token)
         if not r.ok:
             raise Exception(r.text)
         for jusr in r.json():
@@ -148,6 +148,15 @@ class AssistanceModel:
     """
     /////////////////////////////
     """
+
+    @classmethod
+    def _obtener_uids_con_designacion(cls):
+        query = cls.sileg_url + '/designaciones'
+        r = cls.api(query)
+        desig = r.json()
+        uids = set([d["usuario_id"] for d in desig if "usuario_id" in d])
+        return uids
+
 
     @classmethod
     def perfil(cls, session, uid, fecha, tzone='America/Argentina/Buenos_Aires'):
@@ -238,7 +247,6 @@ class AssistanceModel:
 
             # busco los usuarios
             query = cls.sileg_url + '/designaciones/?l=' + lid
-
             r = cls.api(query)
             desig = r.json()
             logging.info(desig)
@@ -291,12 +299,9 @@ class AssistanceModel:
         assert uid is not None
         fecha = fecha if fecha else date.today()
 
-        query = cls.usuarios_url + '/usuarios/' + uid
-        r = cls.api(query)
-        if not r.ok:
-            raise Exception('error consultando la api de usuarios')
-
-        usr = r.json()
+        usr = cls._obtener_usuario_por_uid(uid)
+        if not usr:
+            raise Exception('No existe el usuario con uid {}'.format(uid))
 
         horarios = []
         hsSemanales = 0
@@ -327,28 +332,10 @@ class AssistanceModel:
                 }
         return datos
 
-
-    @classmethod
-    def _siNoExisteCrearUsuario(cls, session, uid):
-        u = session.query(Usuario).filter(Usuario.id == uid).one_or_none()
-        if u is None:
-            query = cls.usuarios_url + '/usuarios/' + uid
-            r = cls.api(query)
-            if not r.ok:
-                raise Exception('error consultando la api de usuarios')
-            usr = r.json()
-            u = Usuario()
-            u.id = uid
-            u.dni = usr['dni']
-            session.add(u)
-            #session.commit()
-
     @classmethod
     def crearHorario(cls, session, horarios):
         for h in horarios:
             uid = h['usuario_id']
-            cls._siNoExisteCrearUsuario(session, uid)
-
             horario = Horario()
             horario.fecha_valido = parser.parse(h['fecha_valido']).date() if h['fecha_valido'] else None
             horario.dia_semanal = h['dia_semanal']
@@ -358,26 +345,13 @@ class AssistanceModel:
             horario.id = str(uuid.uuid4())
             session.add(horario)
 
-
     @classmethod
     def usuario(cls, session, uid, retornarClave=False):
-        query = cls.usuarios_url + '/usuarios/' + uid
-        query = query + '?c=True' if retornarClave else query
-        r = cls.api(query)
-        if not r.ok:
-            return []
-
-        usr = r.json()
-        ausr = session.query(Usuario).filter(Usuario.id == uid).one_or_none()
-        if ausr:
-            return {
-                'usuario': usr,
-                'asistencia': ausr
-            }
-        else:
-            return {
-                'usuario': usr
-            }
+        usr = cls._obtener_usuario_por_uid(uid)
+        return {
+            'usuario': usr,
+            'asistencia': None
+        }
 
     @classmethod
     def lugares(cls, session, search):
@@ -395,60 +369,50 @@ class AssistanceModel:
 
     @classmethod
     def usuarios(cls, session, search, retornarClave, offset, limit, fecha):
-        logging.debug(fecha)
+
         query = cls.usuarios_url + '/usuarios/'
         params = {}
-        if search:
-            params['q'] = search
-        if offset:
-            params['offset'] = offset
-        if limit:
-            params['limit'] = limit
-        if fecha:
-            params['f'] = fecha
         if retornarClave:
             params['c'] = True
-
-        logging.debug(query)
-        r = cls.api(query, params)
+        params = {'q':search}
+        r = cls.api(query,params=params)
         if not r.ok:
-            return []
+            raise Exception(r.text)
 
-        usrs = r.json()
-        idsProcesados = {}
+        uids = cls._obtener_uids_con_designacion()
 
-        rusers = []
-        for u in usrs:
-            uid = u['id']
-            idsProcesados[uid] = u
-            susrs = session.query(Usuario).filter(Usuario.id == uid).one_or_none()
-            rusers.append({
-                'usuario': u,
-                'asistencia': susrs
-            })
+        usuarios = []
+        for usr in r.json():
+            cls._setear_usuario_cache(usr)
+            usuarios.append({
+                    'usuario':usr,
+                    'asistencia': usr if usr['id'] in uids else None
+                })
+        return usuarios
 
-        if not fecha:
-            return rusers
+        """
+        import re
+        r = '^.*{}.*$'.format(search.replace(' ','.*'))
+        reg = re.compile(r)
 
-
-        """ tengo en cuenta los que se pudieron haber agregado a asistencia despues """
+        usuarios = []
+        uids = cls._obtener_uids_con_designacion()
         token = cls._get_token()
-        q = None
-        q = session.query(Usuario).filter(or_(Usuario.creado >= fecha, Usuario.actualizado >= fecha)).all()
-        for u in q:
-            if u.id not in idsProcesados.keys():
-                query = '{}/{}/{}'.format(cls.usuarios_url, 'usuarios', u.id)
-                r = cls.api(query, params={'c':True}, token=token)
-                if not r.ok:
-                    continue
-                usr = r.json()
-                if usr:
-                    rusers.append({
-                        'agregado': True,
-                        'usuario': usr,
-                        'asistencia': u
-                    })
-        return rusers
+        for uid in uids:
+            usr = cls._obtener_usuario_por_uid(uid, token)
+            if search:
+                fn = usr['nombre'] + ' ' + usr['apellido']
+                if reg.match(fn):
+                    usuarios.append({
+                            'usuario':usr,
+                            'asistencia':None
+                        })
+
+        return usuarios
+        """
+
+
+
 
     '''
         APIs de justificaciones
