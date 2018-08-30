@@ -246,8 +246,9 @@ class AssistanceModel:
             usuarios = []
             for uid in uids:
                 usr = cls._obtener_usuario_por_uid(uid)
-                if usr:
-                    usuarios.append(usr)
+                if not usr:
+                    raise Exception('No existe el usuario con uid {}'.format(uid))
+                usuarios.append(usr)
 
             rep = ReporteGeneral.generarReporte(session, lugar, usuarios, fecha, tzone)
             ret.append(rep)
