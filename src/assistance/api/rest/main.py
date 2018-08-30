@@ -58,6 +58,7 @@ def obtener_acceso_modulos(token=None):
             'inicio_personal',
             'reporte_personal',
             'reporte_general',
+            'reporte_detalles_avanzados',
             'justificacion_personal',
             'justificacion_general',
             'justificacion_tipo_abm',
@@ -72,6 +73,7 @@ def obtener_acceso_modulos(token=None):
             'inicio_personal',
             'reporte_personal',
             'reporte_general',
+            'reporte_detalles_avanzados',
             'justificacion_personal',
             'justificacion_general',
             'horario_vista'
