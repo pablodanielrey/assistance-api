@@ -42,7 +42,7 @@ class AssistanceModel:
     @classmethod
     def _get_token(cls):
         ''' obtengo un token mediante el flujo client_credentials para poder llamar a la api de usuarios '''
-        grant = ClientCredentialsGrant(cls.client_id, cls.client_secret, verify=VERIFY_SSL)
+        grant = ClientCredentialsGrant(cls.client_id, cls.client_secret, verify=cls.verify)
         token = grant.get_token(grant.access_token())
         if not token:
             raise Exception()
@@ -126,7 +126,7 @@ class AssistanceModel:
         return usr
     
     @classmethod
-    def _obtener_usuario_por_dni(cls, dni, token):
+    def _obtener_usuario_por_dni(cls, dni):
         key = 'usuario_dni_{}'.format(dni.lower().replace(' ',''))
         if cls.redis_assistance.hexists(key,'uid'):
             uid = cls.redis_assistance.hget(key,'uid')
@@ -136,7 +136,7 @@ class AssistanceModel:
         params = {}
         params['c'] = True
         params = {'q':dni}
-        r = cls.api(query,params=params,token=token)
+        r = cls.api(query, params=params)
         if not r.ok:
             raise Exception(r.text)
         for jusr in r.json():
