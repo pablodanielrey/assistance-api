@@ -27,6 +27,7 @@ import json
 import redis
 REDIS_HOST = os.environ.get('TELEGRAM_BOT_REDIS')
 REDIS_PORT = int(os.environ.get('TELEGRAM_BOT_REDIS_PORT', 6379))
+VERIFY_SSL = bool(int(os.environ.get('VERIFY_SSL',0)))
 
 class AssistanceModel:
 
@@ -41,7 +42,7 @@ class AssistanceModel:
     @classmethod
     def _get_token(cls):
         ''' obtengo un token mediante el flujo client_credentials para poder llamar a la api de usuarios '''
-        grant = ClientCredentialsGrant(cls.client_id, cls.client_secret)
+        grant = ClientCredentialsGrant(cls.client_id, cls.client_secret, verify=VERIFY_SSL)
         token = grant.get_token(grant.access_token())
         if not token:
             raise Exception()
