@@ -218,22 +218,11 @@ class AssistanceModel:
     @classmethod
     def reporte(cls, session, uid, inicio, fin, tzone='America/Argentina/Buenos_Aires'):
         assert uid is not None
-
         fin = fin if fin else date.today()
         inicio = inicio if inicio else fin - timedelta(days=7)
-
-        logging.debug('------------------------\n\n')
-        logging.debug('{} --> {}'.format(inicio,fin))
-
-        u = session.query(Usuario).filter(Usuario.id == uid).one_or_none()
-        if u is None:
+        usr = cls._obtener_usuario_por_uid(uid)
+        if not usr:
             return []
-        query = cls.usuarios_url + '/usuarios/' + uid
-        r = cls.api(query)
-        if not r.ok:
-            return []
-
-        usr = r.json()
         return Reporte.generarReporte(session, usr, inicio, fin, tzone)
 
     @classmethod
