@@ -318,7 +318,7 @@ class AssistanceModel:
             actual = fecha + timedelta(days=i)
 
             q = session.query(Horario)
-            q = q.filter(Horario.usuario_id == uid, Horario.dia_semanal == actual.weekday(), Horario.fecha_valido <= actual)
+            q = q.filter(Horario.usuario_id == uid, Horario.dia_semanal == actual.weekday(), Horario.fecha_valido <= actual, Horario.eliminado == None)
             q = q.order_by(Horario.fecha_valido.desc())
             horario = q.limit(1).one_or_none()
 
