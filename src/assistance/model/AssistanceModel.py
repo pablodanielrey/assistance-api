@@ -576,6 +576,9 @@ class AssistanceModel:
                 usuario = cls._obtener_usuario_por_dni(dni, token=token)
                 marcacion = l['DateTime']
 
+                logging.info(usuario)
+                logging.info(usuario['id'])
+
                 m = session.query(Marcacion).filter(and_(Marcacion.usuario_id == usuario['id'], Marcacion.marcacion == marcacion)).one_or_none()
                 if not m:
                     log = Marcacion()
