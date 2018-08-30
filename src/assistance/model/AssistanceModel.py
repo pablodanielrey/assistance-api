@@ -447,13 +447,13 @@ class AssistanceModel:
     @classmethod
     def eliminarJustificacion(cls, session, jid):
         justificacion = session.query(Justificacion).filter(Justificacion.id == jid).one()
-        justificacion.eliminado = datetime.now()
+        justificacion.eliminado = datetime.datetime.now()
 
     @classmethod
     def eliminarFechaJustificada(cls, session, jid):
         justificacion = session.query(FechaJustificada).filter(FechaJustificada.id == jid).one()
         logging.info(justificacion)
-        justificacion.eliminado = datetime.now()
+        justificacion.eliminado = datetime.datetime.now()
         return justificacion.id
 
     @classmethod
@@ -549,37 +549,6 @@ class AssistanceModel:
         return zk['api'].getAttLog()
 
     @classmethod
-    def _sinc_usuario_por_dni(cls, session, dni, retornarClave=False, token=None):
-        '''
-            Usado internamente para obtener un usuario por dni
-            NOTA: AGREGA AL USUARIO A LAS TABLAS DE ASISTENCIA SI ES QUE NO EXISTE!!!!
-        '''
-        ausr = session.query(Usuario).filter(Usuario.dni == dni).one_or_none()
-        if ausr:
-            return ausr
-
-        query = cls.usuarios_url + '/usuarios/'
-        params = {}
-        if retornarClave:
-            params['c'] = True
-        params = {'q':dni}
-        r = cls.api(query,params=params,token=token)
-        if not r.ok:
-            raise Exception(r.text)
-        import json
-        logging.debug(r.json())
-        for usuario in r.json():
-            if usuario['dni'] == dni:
-                u = session.query(Usuario).filter(Usuario.dni == dni).one_or_none()
-                if not u:
-                    u = Usuario()
-                    u.id = usuario['id']
-                    u.dni = usuario['dni']
-                    session.add(u)
-                return u
-        raise Exception('No se encuentra usuario con dni {}'.format(dni))
-
-    @classmethod
     def sincronizar(cls, session):
         q = session.query(Reloj.id).filter(Reloj.activo).all()
         sincronizados = []
@@ -604,14 +573,14 @@ class AssistanceModel:
         try:
             for l in logs:
                 dni = l['PIN'].strip().lower()
-                usuario = cls._sinc_usuario_por_dni(session, dni, token=token)
+                usuario = cls._obtener_usuario_por_dni(dni, token=token)
                 marcacion = l['DateTime']
 
                 m = session.query(Marcacion).filter(and_(Marcacion.usuario_id == usuario.id, Marcacion.marcacion == marcacion)).one_or_none()
                 if not m:
                     log = Marcacion()
                     log.id = str(uuid.uuid4())
-                    log.usuario_id = usuario.id
+                    log.usuario_id = usuario['id']
                     log.dispositivo_id = zk['reloj'].id
                     log.tipo = l['Verified']
                     log.marcacion = marcacion
@@ -624,6 +593,7 @@ class AssistanceModel:
                         m = {
                             'dni':dni,
                             'usuario_id': usuario.id,
+                            'usuario': usuario,
                             'log':log
                         }
                         m2 = json.dumps(m, cls=ApiJSONEncoder)
