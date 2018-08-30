@@ -214,7 +214,6 @@ class AssistanceModel:
 
         return perfil
 
-
     @classmethod
     def reporte(cls, session, uid, inicio, fin, tzone='America/Argentina/Buenos_Aires'):
         assert uid is not None
@@ -246,11 +245,8 @@ class AssistanceModel:
             uids = set([d["usuario_id"] for d in desig if "usuario_id" in d])
             usuarios = []
             for uid in uids:
-                u = session.query(Usuario).filter(Usuario.id == uid).one_or_none()
-                if u:
-                    query = cls.usuarios_url + '/usuarios/' + uid
-                    resp = cls.api(query)
-                    usr = resp.json() if r.ok else u
+                usr = cls._obtener_usuario_por_uid(uid)
+                if usr:
                     usuarios.append(usr)
 
             rep = ReporteGeneral.generarReporte(session, lugar, usuarios, fecha, tzone)
