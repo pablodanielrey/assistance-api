@@ -31,7 +31,7 @@ VERIFY_SSL = bool(int(os.environ.get('VERIFY_SSL',0)))
 
 class AssistanceModel:
 
-    verify = True
+    verify = VERIFY_SSL
     usuarios_url = os.environ['USERS_API_URL']
     sileg_url = os.environ['SILEG_API_URL']
     client_id = os.environ['OIDC_CLIENT_ID']
