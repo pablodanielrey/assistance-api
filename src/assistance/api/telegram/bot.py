@@ -2,13 +2,17 @@ import logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
 import datetime
+from dateutil import parser
+import pytz
 import os
+import json
 
 from telegram.ext import Updater
 from telegram.ext import CommandHandler
 from telegram.ext import MessageHandler, Filters
 from telegram import KeyboardButton, ReplyKeyboardMarkup, InlineKeyboardButton
 from telegram import Contact
+from telegram import ParseMode
 
 import redis
 
@@ -69,11 +73,22 @@ def contact_callback(bot, update):
 def text_callback(bot, update):
     fin(bot, update)    
 
+
+def _obtener_correo(mails):
+    if not mails:
+        return ""
+    for m in mails:
+        if 'econo.unlp.edu.ar' in m['email'] and not m['eliminado'] and m['confirmado']:
+            return m['email']
+    return ""
+
 def callback_minute(bot, job):
+    timezone = pytz.timezone('America/Argentina/Buenos_Aires')
     l = True
     while l:
-        l = r.spop('marcaciones')
-        if l:
+        log = r.spop('telegram')
+        if log:
+            l = json.loads(log)
             logging.info('enviando {}'.format(l))
             cids = r.smembers('clientes')
             for cid in cids:
@@ -85,9 +100,35 @@ def callback_minute(bot, job):
                 c = r.hgetall(cid)
                 logging.info(c)
                 if 'activo' in c and bool(c['activo']):
+                   
+                    fecha_hora = parser.parse(l['log']['marcacion']).astimezone(timezone)
+                    template = """
+<pre>
+Dni: {}
+Nombre: {}
+Apellido: {}
+Fecha: {}
+Hora: {}
+Tipo Marcación: {}
+Reloj: {}
+Correo: {}
+</pre>
+                    """.format(
+                        l['usuario']['dni'],
+                        l['usuario']['nombre'],
+                        l['usuario']['apellido'],
+                        fecha_hora.date(),
+                        fecha_hora.time(),
+                        l['log']['tipo'],
+                        l['log']['dispositivo_id'],
+                        #_obtener_correo(l['usuario']['mails']))
+                        "en la nueva versión"
+                    )
+
+
                     logging.info('telefono {} para {}'.format(c['phone_number'], cid))
-                    bot.send_message(chat_id=cid, text='{}'.format(l))
-                    logging.info('enviando {} a {} - {}'.format(l, c['phone_number'], cid))
+                    bot.send_message(chat_id=cid, text='{}'.format(template), parse_mode=ParseMode.HTML)
+                    logging.info('enviando {} a {} - {}'.format(template, c['phone_number'], cid))
                 else:
                     logging.info('cliente no activo')
    
@@ -96,7 +137,7 @@ def callback_minute(bot, job):
 if __name__ == '__main__':
 
     updater = Updater(token=TOKEN)
-    job_minute = updater.job_queue.run_repeating(callback_minute, interval=60, first=0)
+    job_minute = updater.job_queue.run_repeating(callback_minute, interval=600, first=0)
     dispatcher = updater.dispatcher
 
     h = CommandHandler('start', inicio)

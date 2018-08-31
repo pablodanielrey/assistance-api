@@ -140,7 +140,6 @@ class AssistanceModel:
         if not r.ok:
             raise Exception(r.text)
         for usr in r.json():
-            #usr = json.loads(jusr)
             cls._setear_usuario_cache(usr)
             return usr
         raise Exception('No se encuentra usuario con dni {}'.format(dni))
@@ -557,6 +556,19 @@ class AssistanceModel:
         return sincronizados
 
     @classmethod
+    def _publicar_en_redis(cls, dni, usuario, marcacion):
+        from rest_utils import ApiJSONEncoder
+        m = {
+            'dni': dni,
+            'usuario': usuario,
+            'log': marcacion
+        }
+        m2 = json.dumps(m, cls=ApiJSONEncoder)
+        logger.info('enviando a redis {}'.format(m2))
+        cls.redis_assistance.sadd('telegram', m2)
+        #cls.redis_assistance.sadd('correos', m2)
+
+    @classmethod
     def sincronizar_reloj(cls, session, rid):
         logger = logging.getLogger('assistance.model.zkSoftware')
 
@@ -576,9 +588,6 @@ class AssistanceModel:
                 usuario = cls._obtener_usuario_por_dni(dni, token=token)
                 marcacion = l['DateTime']
 
-                logging.info(usuario)
-                logging.info(usuario['id'])
-
                 m = session.query(Marcacion).filter(and_(Marcacion.usuario_id == usuario['id'], Marcacion.marcacion == marcacion)).one_or_none()
                 if not m:
                     log = Marcacion()
@@ -588,33 +597,34 @@ class AssistanceModel:
                     log.tipo = l['Verified']
                     log.marcacion = marcacion
                     session.add(log)
-                    r = {'estado':'agregada', 'marcacion':log, 'dni':dni}
+                    r = {'estado':'agregada', 'marcacion':log, 'dni':dni, 'nombre':usuario['nombre'], 'apellido':usuario['apellido']}
                     logger.info(r)
 
                     try:
-                        from rest_utils import ApiJSONEncoder
-                        m = {
-                            'dni':dni,
-                            'usuario_id': usuario['id'],
-                            'usuario': usuario,
-                            'log':log
-                        }
-                        m2 = json.dumps(m, cls=ApiJSONEncoder)
-                        logger.info('enviando a redis {}'.format(m2))
-                        cls.redis_assistance.sadd('marcaciones', m2)
+                        cls._publicar_en_redis(dni, usuario, log)
                     except Exception as e:
                         logger.exception(e)
 
 
                     yield r
                 else:
-                    yield {'estado':'existente', 'marcacion':m, 'dni':dni}
-                    logger.warn('Marcación duplicada {} {} {}'.format(usuario.id, dni, marcacion))
 
+                    """
+                    try:
+                        cls._publicar_en_redis(dni, usuario, m)
+                    except Exception as e:
+                        logger.exception(e)
+                    """
+
+                    yield {'estado':'existente', 'marcacion':m, 'dni':dni}
+                    logger.warn('Marcación duplicada {} {} {}'.format(usuario['id'], dni, marcacion))
+
+            """
             logs2 = zk['api'].getAttLog()
             if len(logs) > 0 and len(logs2) == len(logs):
                 zk['api'].clearAttLogs()
                 yield {'estado':'borrando_logs', 'mensaje':'eliminando {} logs'.format(len(logs2))}
+            """
 
 
         except Exception as e:

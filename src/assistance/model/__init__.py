@@ -18,7 +18,7 @@ def obtener_session():
         os.environ['ASSISTANCE_DB_NAME']
     ), echo=True)
 
-    Session = sessionmaker(bind=engine, autoflush=False, autocommit=False)
+    Session = sessionmaker(bind=engine, autoflush=False, autocommit=False, expire_on_commit=False)
     session = Session()
     try:
         yield session
