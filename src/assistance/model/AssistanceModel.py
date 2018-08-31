@@ -42,7 +42,7 @@ class AssistanceModel:
     @classmethod
     def _get_token(cls):
         ''' obtengo un token mediante el flujo client_credentials para poder llamar a la api de usuarios '''
-        grant = ClientCredentialsGrant(cls.client_id, cls.client_secret, verify=False)
+        grant = ClientCredentialsGrant(cls.client_id, cls.client_secret, verify=cls.verify)
         token = grant.get_token(grant.access_token())
         if not token:
             raise Exception()
