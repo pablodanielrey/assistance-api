@@ -42,7 +42,7 @@ class AssistanceModel:
     @classmethod
     def _get_token(cls):
         ''' obtengo un token mediante el flujo client_credentials para poder llamar a la api de usuarios '''
-        grant = ClientCredentialsGrant(cls.client_id, cls.client_secret, verify=cls.verify)
+        grant = ClientCredentialsGrant(cls.client_id, cls.client_secret, verify=False)
         token = grant.get_token(grant.access_token())
         if not token:
             raise Exception()
@@ -116,7 +116,7 @@ class AssistanceModel:
         usr = cls.redis_assistance.hgetall('usuario_uid_{}'.format(uid))
         if len(usr.keys()) > 0:
             return usr
-        
+
         query = cls.usuarios_url + '/usuarios/' + uid
         r = cls.api(query, token=token)
         if not r.ok:
@@ -124,7 +124,7 @@ class AssistanceModel:
         usr = r.json()
         cls._setear_usuario_cache(usr)
         return usr
-    
+
     @classmethod
     def _obtener_usuario_por_dni(cls, dni, token=None):
         key = 'usuario_dni_{}'.format(dni.lower().replace(' ',''))
@@ -176,7 +176,7 @@ class AssistanceModel:
         if reporte.horario:
             (hora_entrada, hora_salida) = reporte.horario.obtenerInicioFin(reporte.fecha,tzone)
             horario_segundos = reporte.horario.cantidadDeSegundos()
-        
+
         #proceso las justificaciones para el formato esperado:
         justificaciones = {}
         for j in reporte.justificaciones:
@@ -204,7 +204,7 @@ class AssistanceModel:
                 'tipo_cargo': d['cargo']['tipo'],
                 'desde': d['desde'],
                 'hasta': d['hasta']
-            } 
+            }
             for d in desig if not d['historico']
         ]
 
@@ -271,7 +271,7 @@ class AssistanceModel:
         usr = cls._obtener_usuario_por_uid(uid)
         if not usr:
             raise Exception('No existe el usuario con uid {}'.format(uid))
-        
+
         q = session.query(Horario).filter(Horario.usuario_id == uid)
         if fecha_inicio:
             q.filter(Horario.fecha_valido >= fecha_inicio)
@@ -293,7 +293,7 @@ class AssistanceModel:
         h = session.query(Horario).filter(Horario.id == hid).one()
         h.eliminado = datetime.datetime.now()
         return hid
-    
+
     @classmethod
     def horario(cls, session, uid, fecha):
         assert uid is not None
