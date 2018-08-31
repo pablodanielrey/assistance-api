@@ -139,8 +139,8 @@ class AssistanceModel:
         r = cls.api(query, params=params, token=token)
         if not r.ok:
             raise Exception(r.text)
-        for jusr in r.json():
-            usr = json.loads(jusr)
+        for usr in r.json():
+            #usr = json.loads(jusr)
             cls._setear_usuario_cache(usr)
             return usr
         raise Exception('No se encuentra usuario con dni {}'.format(dni))
