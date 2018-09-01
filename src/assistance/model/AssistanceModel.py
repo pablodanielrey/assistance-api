@@ -6,6 +6,7 @@ import os
 import uuid
 from dateutil import parser
 import datetime
+import hashlib
 
 import logging
 from logging.handlers import TimedRotatingFileHandler
@@ -147,6 +148,12 @@ class AssistanceModel:
     """
     /////////////////////////////
     """
+    @classmethod
+    def telegram_token(cls, token):
+        st = token['sub'] + str(datetime.datetime.now())
+        h = hashlib.sha1(st.encode('utf-8')).hexdigest()
+        cls.redis_assistance.hmset('token_{}'.format(h), token)
+        return h
 
     @classmethod
     def _obtener_uids_con_designacion(cls):
@@ -155,7 +162,6 @@ class AssistanceModel:
         desig = r.json()
         uids = set([d["usuario_id"] for d in desig if "usuario_id" in d])
         return uids
-
 
     @classmethod
     def perfil(cls, session, uid, fecha, tzone='America/Argentina/Buenos_Aires'):

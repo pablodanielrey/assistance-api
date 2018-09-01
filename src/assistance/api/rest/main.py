@@ -85,6 +85,17 @@ def obtener_acceso_modulos(token=None):
     ]
     return json.dumps(a)            
 
+@app.route(API_BASE + '/telegram_token', methods=['GET'])
+@rs.require_valid_token
+@jsonapi
+def telegram_token(token=None):
+    h = AssistanceModel.telegram_token(token)
+    return {
+        'status': 'ok',
+        'token': h
+    }
+
+
 @app.route(API_BASE + '/usuarios', methods=['GET'])
 @app.route(API_BASE + '/usuarios/<uid>', methods=['GET'])
 @rs.require_valid_token
