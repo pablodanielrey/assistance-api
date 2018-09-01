@@ -152,6 +152,12 @@ class AssistanceModel:
     def telegram_token(cls, token):
         st = token['sub'] + str(datetime.datetime.now())
         h = hashlib.sha1(st.encode('utf-8')).hexdigest()
+
+        usr = cls._obtener_usuario_por_uid(token['sub'])
+        token['nombre'] = usr['nombre']
+        token['apellido'] = usr['apellido']
+        token['dni'] = usr['dni']
+
         cls.redis_assistance.hmset('token_{}'.format(h), token)
         return h
 
