@@ -2,15 +2,6 @@
     Implementa un bot básico de notificaciones de telegram.
     claves redis a tener en cuenta:
 
-    t_token_{} : {
-                ...
-                'sub': uid,
-                ...
-                ....
-                'nombre':..,
-                'apellido':..,
-                'dni':...,
-            }                               ---> token usado para autentificar el usuario desde la ui de asistencia
     telegram_{uid} : {
                         'notificar': 0|1
                         't_telefono': ..
@@ -23,10 +14,16 @@
                         'u_apellido': ..
                         'u_correo': ..
                     }                       ---> datos del usuario chateando con el bot
+
     t_chat_id_{} : { 
                         'uid': uid 
-                        'codigo': codigo de activación cuenta
                     }                      ---> para asociar los datos de un chat con un usuario
+
+
+    t_auth_{} : {                          ---> codigo de autorizacion   
+                    'chat_id': ...         ---> chat a autorizar
+                }
+
 
     telegram : [{
             'dni': dni,
@@ -63,6 +60,8 @@ bot_name = os.environ.get('TELEGRAM_BOT_NAME')
 bot_username = os.environ.get('TELEGRAM_BOT_USERNAME')
 TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN')
 
+WEB_URL = os.environ.get('ASSISTANCE_URL', 'http://localhost:4200')
+
 print('Iniciando bot usando token : {}'.format(TOKEN))
 
 def inicio(bot, update, args=[]):
@@ -71,29 +70,25 @@ def inicio(bot, update, args=[]):
 
     k = 't_chat_id_{}'.format(cid)
     if not r.hexists(k,'uid'):
-        code = hashlib.sha1('{}_{}'.format(datetime.datetime.now(),cid).encode('utf-8')).hexdigest()[:5]
-        r.hset(k,'codigo',code)
-        bot.send_message(chat_id=cid, text='Por favor escriba el siguiente código en la aplicación web: {}'.format(code))
+        code = hashlib.sha1('{}_{}'.format(datetime.datetime.now(),cid).encode('utf-8')).hexdigest()
+        kc = 't_auth_{}'.format(code)
+        r.hset(kc,'chat_id',cid)
+        url = '{}/telegram/{}'.format(WEB_URL, code)
+        bot.send_message(chat_id=cid, text="""
+<p>
+Para activar su usuario por favor haga click
+<a href="{}">aquí</a>
+</p>
+""".format(url))
         return
+
 
     """
-        aca hay que verificar si es que ya el chat_id tiene los datos asociados
-        y retornar en ese caso con un mensaje de bienvenida
+        Ya tenemos asociado el chat_id con un usuario.
+        por lo que se continua con el proceso de registro del usuario.
     """
 
-    if len(args) <= 1:
-        bot.send_message(chat_id=cid, text='Debe ingresar desde el sistema')
-        return
-
-    h = args[0]
-    tk = 't_token_{}'.format(h)
-    tusr = r.hgetall(tk)
-    if not tusr or 'sub' not in tusr:
-        ''' no tiene token, no ingreso desde el sistema '''
-        bot.send_message(chat_id=cid, text='Información incorrecta, por favor ingrese nuevamente desde el sistema')
-        return
-    uid = tusr['sub']
-
+    uid = r.hget(k,'uid')
     k = 'telegram_{}'.format(uid)
     usr = r.hgetall(k)
     if not usr:
@@ -109,7 +104,6 @@ def inicio(bot, update, args=[]):
     else:
         ''' actualizo por las dudas el chat_id '''
         r.hset(k, 't_chat_id', cid)
-    r.hmset('t_chat_id_{}'.format(cid), {'uid':uid})
 
     bot.send_message(chat_id=cid, text='Bienvenido {} {}'.format(usr['u_nombre'], usr['u_apellido']))
     
@@ -205,8 +199,9 @@ def _obtener_usr(uid):
     k = 'telegram_{}'.format(uid)
     return r.hgetall(k)
 
-def callback_minute(bot, job):
-    timezone = pytz.timezone('America/Argentina/Buenos_Aires')
+def _procesar_cola_marcaciones(bot, timezone=None):
+    if not timezone:
+        timezone = pytz.timezone('America/Argentina/Buenos_Aires')
     log = True
     while log:
         log = r.spop('telegram')
@@ -249,13 +244,21 @@ Correo: {}
             else:
                 logging.info('cliente no quiere ser notificado')
                 logging.info(usr)
-   
+
+
+def _procesar_cola_autorizacion(bot):
+    pass
+
+def callback_minute(bot, job):
+    timezone = pytz.timezone('America/Argentina/Buenos_Aires')
+    _procesar_cola_autorizacion(bot)
+    _procesar_cola_marcaciones(bot, timezone)
 
 
 if __name__ == '__main__':
 
     updater = Updater(token=TOKEN)
-    job_minute = updater.job_queue.run_repeating(callback_minute, interval=600, first=0)
+    job_minute = updater.job_queue.run_repeating(callback_minute, interval=60, first=0)
     dispatcher = updater.dispatcher
 
     h = CommandHandler('start', inicio)
