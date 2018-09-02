@@ -60,7 +60,7 @@ bot_name = os.environ.get('TELEGRAM_BOT_NAME')
 bot_username = os.environ.get('TELEGRAM_BOT_USERNAME')
 TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN')
 
-WEB_URL = os.environ.get('ASSISTANCE_URL', 'http://localhost:4200')
+WEB_URL = os.environ.get('ASSISTANCE_URL', 'http://localhost')
 
 print('Iniciando bot usando token : {}'.format(TOKEN))
 
@@ -74,12 +74,16 @@ def inicio(bot, update, args=[]):
         kc = 't_auth_{}'.format(code)
         r.hset(kc,'chat_id',cid)
         url = '{}/telegram/{}'.format(WEB_URL, code)
-        bot.send_message(chat_id=cid, text="""
-<p>
+        template = """
+<pre>
 Para activar su usuario por favor haga click
-<a href="{}">aquí</a>
-</p>
-""".format(url))
+</pre>
+<a href="{}">aqui</a>
+""".format(url)
+        
+        logging.info('enviando')
+        logging.info(template)
+        bot.send_message(chat_id=cid, text=template, parse_mode=ParseMode.HTML)
         return
 
 
@@ -89,21 +93,13 @@ Para activar su usuario por favor haga click
     """
 
     uid = r.hget(k,'uid')
-    k = 'telegram_{}'.format(uid)
-    usr = r.hgetall(k)
+    kt = 'telegram_{}'.format(uid)
+    usr = r.hgetall(kt)
     if not usr:
-        ''' primera vez que ingresa, lo registro '''
-        usr = {
-            'notificar':0,
-            't_chat_id':cid,
-            'u_nombre': tusr['nombre'],
-            'u_apellido': tusr['apellido'],
-            'u_dni': tusr['dni']
-        }
-        r.hmset(k,usr)
-    else:
-        ''' actualizo por las dudas el chat_id '''
-        r.hset(k, 't_chat_id', cid)
+        ''' situación anómala. desregistro completamente al usuario, el chat_id '''
+        r.hdel(k,'uid')
+        bot.send_message(chat_id=cid, text='Error. Por favor regítrese nuevamente')
+        return
 
     bot.send_message(chat_id=cid, text='Bienvenido {} {}'.format(usr['u_nombre'], usr['u_apellido']))
     
@@ -114,7 +110,7 @@ Por favor haga click en el siguiente botón.
 Gracias.
 </p>"""
     bot.send_message(
-        chat_id=cid, 
+        chat_id=cid,
         text=telefono, 
         parse_mode=ParseMode.HTML, 
         reply_markup=ReplyKeyboardMarkup([[KeyboardButton(text='Enviar número', request_contact=True, request_location=True)]])
