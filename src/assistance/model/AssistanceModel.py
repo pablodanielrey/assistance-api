@@ -161,6 +161,31 @@ class AssistanceModel:
         cls.redis_assistance.hmset('token_{}'.format(h), token)
         return h
 
+
+    @classmethod
+    def telegram_activate(cls, codigo, token):
+        k = 't_auth_{}'.format(codigo)
+        if not cls.redis_assistance.hexists(k,'chat_id'):
+            raise Exception('código incorrecto')
+        
+        uid = token['sub']
+        cid = cls.redis_assistance.hget(k,'chat_id')
+        k2 = 't_chat_id_{}'.format(cid)
+        cls.redis_assistance.hset(k2,'uid',uid)
+
+        k3 = 'telegram_{}'.format(uid)
+        usr = cls._obtener_usuario_por_uid(uid)
+        cls.redis_assistance.hmset(k3,{
+            'u_nombre': usr['nombre'],
+            'u_apellido': usr['apellido'],
+            'u_dni': usr['dni'],
+            't_chat_id': cid
+        })
+
+        cls.redis_assistance.sadd('t_authorized', uid)
+        
+
+
     @classmethod
     def _obtener_uids_con_designacion(cls):
         query = cls.sileg_url + '/designaciones'

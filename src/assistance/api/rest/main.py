@@ -95,6 +95,15 @@ def telegram_token(token=None):
         'token': h
     }
 
+@app.route(API_BASE + '/telegram_activate/<codigo>', methods=['GET'])
+@rs.require_valid_token
+@jsonapi
+def telegram_activate(codigo, token=None):
+    AssistanceModel.telegram_activate(codigo, token)
+    return {
+        'status': 'ok'
+    }
+
 
 @app.route(API_BASE + '/usuarios', methods=['GET'])
 @app.route(API_BASE + '/usuarios/<uid>', methods=['GET'])

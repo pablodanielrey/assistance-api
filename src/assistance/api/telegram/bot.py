@@ -15,7 +15,7 @@
                         'u_correo': ..
                     }                       ---> datos del usuario chateando con el bot
 
-    t_chat_id_{} : { 
+    t_chat_id_{} : {
                         'uid': uid 
                     }                      ---> para asociar los datos de un chat con un usuario
 
@@ -24,6 +24,8 @@
                     'chat_id': ...         ---> chat a autorizar
                 }
 
+
+    t_athorized : [chat_id]
 
     telegram : [{
             'dni': dni,
@@ -70,9 +72,23 @@ def inicio(bot, update, args=[]):
 
     k = 't_chat_id_{}'.format(cid)
     if not r.hexists(k,'uid'):
-        code = hashlib.sha1('{}_{}'.format(datetime.datetime.now(),cid).encode('utf-8')).hexdigest()
+        code = hashlib.sha1('{}_{}'.format(datetime.datetime.now(),cid).encode('utf-8')).hexdigest()[:5]
         kc = 't_auth_{}'.format(code)
         r.hset(kc,'chat_id',cid)
+
+        template = """
+<pre>
+Por favor ingrese a la aplicación web de asistencia y escriba el siguente codigo
+en la seccion de Telegram.
+Codigo: {}
+</pre>
+""".format(code)
+
+        logging.info(template)
+        bot.send_message(chat_id=cid, text=template, parse_mode=ParseMode.HTML)
+        return
+
+
         url = '{}/telegram/{}'.format(WEB_URL, code)
         template = """
 <pre>
@@ -104,11 +120,11 @@ Para activar su usuario por favor haga click
     bot.send_message(chat_id=cid, text='Bienvenido {} {}'.format(usr['u_nombre'], usr['u_apellido']))
     
     telefono = """
-<p>
+<pre>
 Para poder continuar necesitamos verificar su número telefónico.
 Por favor haga click en el siguiente botón.
 Gracias.
-</p>"""
+</pre>"""
     bot.send_message(
         chat_id=cid,
         text=telefono, 
@@ -243,7 +259,17 @@ Correo: {}
 
 
 def _procesar_cola_autorizacion(bot):
-    pass
+    uid = True
+    while uid:
+        uid = r.spop('t_authorized')
+        if not uid:
+            continue
+        usr = r.hgetall('telegram_{}'.format(uid))
+        cid = usr['t_chat_id']
+        template = "Bién!!! {} {} se ha registrado correctamente".format(usr['u_nombre'],usr['u_apellido'])
+        logging.info(template)
+        bot.send_message(chat_id=cid, text=template)
+    
 
 def callback_minute(bot, job):
     timezone = pytz.timezone('America/Argentina/Buenos_Aires')
