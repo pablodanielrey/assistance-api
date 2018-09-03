@@ -66,6 +66,20 @@ WEB_URL = os.environ.get('ASSISTANCE_URL', 'http://localhost')
 
 print('Iniciando bot usando token : {}'.format(TOKEN))
 
+def _pedir_telefono(bot, cid):
+    telefono = """
+<pre>
+Para poder continuar necesitamos verificar su número telefónico.
+Por favor haga click en el siguiente botón.
+Gracias.
+</pre>"""
+    bot.send_message(
+        chat_id=cid,
+        text=telefono, 
+        parse_mode=ParseMode.HTML, 
+        reply_markup=ReplyKeyboardMarkup([[KeyboardButton(text='Enviar número', request_contact=True, request_location=True)]])
+        )
+
 def inicio(bot, update, args=[]):
     cid = update.message.chat_id
     logging.info('cliente conectado {}'.format(cid))
@@ -119,18 +133,7 @@ Para activar su usuario por favor haga click
 
     bot.send_message(chat_id=cid, text='Bienvenido {} {}'.format(usr['u_nombre'], usr['u_apellido']))
     
-    telefono = """
-<pre>
-Para poder continuar necesitamos verificar su número telefónico.
-Por favor haga click en el siguiente botón.
-Gracias.
-</pre>"""
-    bot.send_message(
-        chat_id=cid,
-        text=telefono, 
-        parse_mode=ParseMode.HTML, 
-        reply_markup=ReplyKeyboardMarkup([[KeyboardButton(text='Enviar número', request_contact=True, request_location=True)]])
-        )
+
 
 def contact_callback(bot, update):
     ''' recibo la info del contacto. respuesta al mensaje anterior '''
@@ -139,13 +142,13 @@ def contact_callback(bot, update):
     
     uid = r.hget('t_chat_id_{}'.format(cid), 'uid')
     if not uid:
-        bot.send_message(chat_id=cid, text='Debe ingresar por la aplicación')
+        inicio(bot, update)
         return
 
     k = 'telegram_{}'.format(uid)
     tusr = r.hgetall(k)
     if not tusr:
-        bot.send_message(chat_id=cid, text='Debe ingresar por la aplicación')
+        inicio(bot, update)
         return
 
     r.hset(k, 't_telefono', contact.phone_number)
