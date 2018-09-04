@@ -152,21 +152,44 @@ def button(bot, update):
 
     uid = r.hget('t_chat_id_{}'.format(cid), 'uid')
     if not uid:
-        bot.send_message(chat_id=cid, text='Debe ingresar por la aplicación')
+        bot.send_message(chat_id=cid, text='Error. Por favor regítrese nuevamente')
+        _generar_codigo(bot, cid)
         return
 
     k = 'telegram_{}'.format(uid)
     if '1' == opcion:
         r.hset(k,'notificar',1)
-        bot.sent_message(chat_id=cid, text='Notificacion habilitdas')
+        bot.send_message(chat_id=cid, text='Notificacion habilitdas')
         return
 
     if '2' == opcion:
         r.hset(k,'notificar',0)
-        bot.sent_message(chat_id=cid, text='Notificaciones desabilitadas')
+        bot.send_message(chat_id=cid, text='Notificaciones desabilitadas')
         return
 
     bot.sent_message(chat_id=cid, text='No entiendo')
+
+def text_callback(bot, update):
+    cid = update.message.chat_id
+    uid = r.hget('t_chat_id_{}'.format(cid), 'uid')
+    if not uid:
+        bot.send_message(chat_id=cid, text='Error. Por favor regítrese nuevamente')
+        _generar_codigo(bot, cid)
+        return
+
+    telegram_uid = 'telegram_{}'.format(uid)
+    if 'Recibir notificaciones' in update.message.text:
+        r.hset(telegram_uid,'notificar',1)
+        bot.send_message(chat_id=cid, text='Notificacion habilitdas')
+        return
+
+    if 'No recibir notificaciones' in update.message.text:
+        r.hset(telegram_uid,'notificar',0)
+        bot.send_message(chat_id=cid, text='Notificacion desabilitdas')
+        return
+
+    bot.send_message(chat_id=cid, text='No entiendo texto')
+    logging.info(update)
 
 def status(bot, update):
     ''' método de debug para los admins '''
@@ -178,10 +201,6 @@ def status(bot, update):
         bot.send_message(chat_id=cid, text=k)
         logging.info(k)
         bot.send_message(chat_id=cid, text='{}'.format(r.hgetall(k)))
-
-def text_callback(bot, update):
-    cid = update.message.chat_id
-    bot.send_message(chat_id=cid, text='No entiendo texto')
 
 def _obtener_correo(mails):
     if not mails:
@@ -204,8 +223,8 @@ def _procesar_cola_marcaciones(bot, timezone=None):
         if log:
             l = json.loads(log)
             logging.info('enviando {}'.format(l))
-            usr = _obtener_usr(log['usuario']['id'])
-            if usr['notificar'] >= 1:
+            usr = _obtener_usr(l['usuario']['id'])
+            if 'notificar' in usr and usr['notificar'] == '1':
                 cid = usr['t_chat_id']
                 fecha_hora = parser.parse(l['log']['marcacion']).astimezone(timezone)
                 dni = l['usuario']['dni']
@@ -259,6 +278,9 @@ def callback_minute(bot, job):
     _procesar_cola_autorizacion(bot)
     _procesar_cola_marcaciones(bot, timezone)
 
+def error(bot, update, error):
+    """Log Errors caused by Updates."""
+    logging.warning('Update "%s" caused error "%s"', update, error)
 
 if __name__ == '__main__':
 
@@ -275,6 +297,7 @@ if __name__ == '__main__':
     dispatcher.add_handler(MessageHandler(Filters.contact, contact_callback))
     dispatcher.add_handler(CallbackQueryHandler(button))
     dispatcher.add_handler(MessageHandler(Filters.text, text_callback))
+    dispatcher.add_error_handler(error)
 
 
     """
