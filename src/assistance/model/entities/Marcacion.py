@@ -21,9 +21,6 @@ class Marcacion(Base):
     dispositivo_id = Column(String, ForeignKey('reloj.id'))
     dispositivo = relationship('Reloj')
 
-    usuario_id = Column(String, ForeignKey('usuario.id'))
-    usuario = relationship('Usuario')
-
     def obtenerFechaRelativa(self, tz='America/Argentina/Buenos_Aires'):
         timezone = pytz.timezone(tz)
         return self.marcacion.astimezone(timezone).date()

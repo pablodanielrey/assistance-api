@@ -33,7 +33,7 @@ if __name__ == '__main__':
             cur.execute('set timezone=-3')
             cur2.execute('select id, device_id, person_id, verifymode, inoutmode, date, created from attlog')
             for m in cur2.fetchall():
-                cur.execute('select 1 from users where id = %s', (m[0],))
+                cur.execute('select 1 from marcacion where id = %s', (m[0],))
                 if cur.rowcount <= 0:
                     print('agregando')
                     lid = m[0]
