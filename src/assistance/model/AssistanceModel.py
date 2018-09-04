@@ -232,18 +232,20 @@ class AssistanceModel:
         #proceso los lugares de la persona.
         query = cls.sileg_url + '/usuarios/{}/designaciones'.format(uid)
         r = cls.api(query)
-        desig = r.json()
-        oficinas = [
-            {
-                'id_oficina': d['lugar']['id'],
-                'oficina': d['lugar']['nombre'],
-                'cargo': d['cargo']['nombre'],
-                'tipo_cargo': d['cargo']['tipo'],
-                'desde': d['desde'],
-                'hasta': d['hasta']
-            }
-            for d in desig if not d['historico']
-        ]
+        oficinas = []
+        if r.ok:
+            desig = r.json()
+            oficinas = [
+                {
+                    'id_oficina': d['lugar']['id'],
+                    'oficina': d['lugar']['nombre'],
+                    'cargo': d['cargo']['nombre'],
+                    'tipo_cargo': d['cargo']['tipo'],
+                    'desde': d['desde'],
+                    'hasta': d['hasta']
+                }
+                for d in desig if not d['historico']
+            ]
 
         perfil = {
             'usuario': usr,
