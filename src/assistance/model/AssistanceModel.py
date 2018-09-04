@@ -37,6 +37,7 @@ class AssistanceModel:
     sileg_url = os.environ['SILEG_API_URL']
     client_id = os.environ['OIDC_CLIENT_ID']
     client_secret = os.environ['OIDC_CLIENT_SECRET']
+    eliminar_logs_relojes = bool(int(os.environ.get('ASSISTANCE_DELETE_LOGS_SINC',0)))
 
     redis_assistance = redis.StrictRedis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
 
@@ -656,10 +657,11 @@ class AssistanceModel:
                     yield {'estado':'existente', 'marcacion':m, 'dni':dni}
                     logger.warn('Marcación duplicada {} {} {}'.format(usuario['id'], dni, marcacion))
 
-            logs2 = zk['api'].getAttLog()
-            if len(logs) > 0 and len(logs2) == len(logs):
-                zk['api'].clearAttLogs()
-                yield {'estado':'borrando_logs', 'mensaje':'eliminando {} logs'.format(len(logs2))}
+            if cls.eliminar_logs_relojes:
+                logs2 = zk['api'].getAttLog()
+                if len(logs) > 0 and len(logs2) == len(logs):
+                    zk['api'].clearAttLogs()
+                    yield {'estado':'borrando_logs', 'mensaje':'eliminando {} logs'.format(len(logs2))}
 
 
         except Exception as e:
