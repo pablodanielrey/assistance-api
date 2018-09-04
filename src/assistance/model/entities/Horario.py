@@ -16,9 +16,7 @@ class Horario(Base):
     hora_entrada = Column(Integer)
     hora_salida = Column(Integer)
     eliminado = Column(DateTime)
-
-    usuario_id = Column(String, ForeignKey('usuario.id'))
-    usuario = relationship('Usuario')
+    usuario_id = Column(String)
 
     def cantidadDeSegundos(self):
         return self.hora_salida - self.hora_entrada
