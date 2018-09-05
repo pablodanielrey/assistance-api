@@ -25,12 +25,15 @@ if __name__ == '__main__':
             cur2.execute('select id, code, description from justifications')
             for m in cur2.fetchall():
                 try:
-                    cur.execute('insert into justificacion (id, codigo, descripcion, creado) values (%s,%s,$s,now())',(m[0],m[1],m[2],))
+                    t= 'cur.execute('insert into justificacion (id, codigo, descripcion) values (%s,%s,%s)',(m[0],m[1],m[2]))'
+                    print(t)
+                    #cur.execute('insert into justificacion (id, codigo, descripcion) values (%s,%s,%s)',(m[0],m[1],m[2]))
+                    conn.commit()
                 except Exception as e:
                     print(e)
                     conn.rollback()
 
-            cur2.execute('select id, justificaton_id, person_id, jstart, jend, deleted from justificationsdate')
+            cur2.execute('select id, justificaton_id, person_id, jstart, jend from justificationsdate where deleted = false')
             for m in cur2.fetchall():
                 print('agregando')
                 id = m[0]
@@ -38,9 +41,10 @@ if __name__ == '__main__':
                 uid = m[2]
                 jinicio = m[3]
                 jfin = m[4]
-                eliminado = m[5]
                 try:
-                    cur.execute("insert into fecha_justificada (id, creado, fecha_inicio, eliminado, usuario_id, justificacion_id) values (%s, now(),%s,%s,%s,%s)",(id, jinicio, eliminado, uid, jid))
+                    t= 'cur.execute("insert into fecha_justificada (id, fecha_inicio, usuario_id, justificacion_id) values (%s,%s,%s,%s)",(id, jinicio, uid, jid))'
+                    print(t)
+                    #cur.execute("insert into fecha_justificada (id, fecha_inicio, usuario_id, justificacion_id) values (%s,%s,%s,%s)",(id, jinicio, uid, jid))
                 except Exeption as e:
                     print(e)
                     conn.rollback()
