@@ -45,10 +45,10 @@ if __name__ == '__main__':
                     t= 'cur.execute("insert into fecha_justificada (id, fecha_inicio, usuario_id, justificacion_id) values (%s,%s,%s,%s)",(id, jinicio, uid, jid))'
                     print(t)
                     #cur.execute("insert into fecha_justificada (id, fecha_inicio, usuario_id, justificacion_id) values (%s,%s,%s,%s)",(id, jinicio, uid, jid))
+                    conn.commit()
                 except Exeption as e:
                     print(e)
                     conn.rollback()
-                conn.commit()
         finally:
             conn2.close()
     finally:
