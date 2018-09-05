@@ -25,7 +25,7 @@ if __name__ == '__main__':
             cur2.execute('select id, code, description from justifications')
             for m in cur2.fetchall():
                 try:
-                    t= 'cur.execute('insert into justificacion (id, codigo, descripcion) values (%s,%s,%s)',(m[0],m[1],m[2]))'
+                    t= "cur.execute('insert into justificacion (id, codigo, descripcion) values (%s,%s,%s)',(m[0],m[1],m[2]))"
                     print(t)
                     #cur.execute('insert into justificacion (id, codigo, descripcion) values (%s,%s,%s)',(m[0],m[1],m[2]))
                     conn.commit()
@@ -42,7 +42,7 @@ if __name__ == '__main__':
                 jinicio = m[3]
                 jfin = m[4]
                 try:
-                    t= 'cur.execute("insert into fecha_justificada (id, fecha_inicio, usuario_id, justificacion_id) values (%s,%s,%s,%s)",(id, jinicio, uid, jid))'
+                    t= "cur.execute('insert into fecha_justificada (id, fecha_inicio, usuario_id, justificacion_id) values (%s,%s,%s,%s)',(id, jinicio, uid, jid))"
                     print(t)
                     #cur.execute("insert into fecha_justificada (id, fecha_inicio, usuario_id, justificacion_id) values (%s,%s,%s,%s)",(id, jinicio, uid, jid))
                     conn.commit()
