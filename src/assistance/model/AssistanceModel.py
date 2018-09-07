@@ -168,7 +168,7 @@ class AssistanceModel:
         k = 't_auth_{}'.format(codigo)
         if not cls.redis_assistance.hexists(k,'chat_id'):
             raise Exception('código incorrecto')
-        
+
         uid = token['sub']
         cid = cls.redis_assistance.hget(k,'chat_id')
         k2 = 't_chat_id_{}'.format(cid)
@@ -184,7 +184,7 @@ class AssistanceModel:
         })
 
         cls.redis_assistance.sadd('t_authorized', uid)
-        
+
 
 
     @classmethod
@@ -213,6 +213,8 @@ class AssistanceModel:
         if reporte.horario:
             (hora_entrada, hora_salida) = reporte.horario.obtenerInicioFin(reporte.fecha,tzone)
             horario_segundos = reporte.horario.cantidadDeSegundos()
+            print('Estoy buscando esto -----> Entrada', hora_entrada)
+            print('Estoy buscando esto -----> Salida', hora_salida)
 
         #proceso las justificaciones para el formato esperado:
         justificaciones = {}
