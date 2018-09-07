@@ -43,7 +43,7 @@ class Horario(Base):
         return (inicio, fin)
 
     def obtenerInicioFin(self, fecha, timezone=None):
-        if not timezone:
+        if timezone == None:
             timezone = tzlocal()
         else:
             timezone = pytz.timezone(timezone)
@@ -52,6 +52,8 @@ class Horario(Base):
         print ('DT: ---->',dt)
         inicio = dt + timedelta(seconds=self.hora_entrada)
         print ('HoraEntrada: ---->', self.hora_entrada)
+        print ('Inicio: --->', inicio)
         fin = dt + timedelta(seconds=self.hora_salida)
         print ('HoraSalida: ---->', self.hora_salida)
+        print ('Fin: --->',fin)
         return (inicio, fin)
