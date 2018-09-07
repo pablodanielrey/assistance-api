@@ -213,8 +213,6 @@ class AssistanceModel:
         if reporte.horario:
             (hora_entrada, hora_salida) = reporte.horario.obtenerInicioFin(reporte.fecha,tzone)
             horario_segundos = reporte.horario.cantidadDeSegundos()
-            print('Estoy buscando esto -----> Entrada', hora_entrada)
-            print('Estoy buscando esto -----> Salida', hora_salida)
 
         #proceso las justificaciones para el formato esperado:
         justificaciones = {}
