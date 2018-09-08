@@ -211,7 +211,7 @@ class AssistanceModel:
         hora_salida = None
         horario_segundos = 0
         if reporte.horario:
-            (hora_entrada, hora_salida) = reporte.horario.obtenerInicioFin(reporte.horario,tzone)
+            (hora_entrada, hora_salida) = reporte.horario.obtenerInicioFin(reporte.fecha,tzone)
             horario_segundos = reporte.horario.cantidadDeSegundos()
 
         #proceso las justificaciones para el formato esperado:
