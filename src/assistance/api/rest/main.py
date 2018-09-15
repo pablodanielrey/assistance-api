@@ -20,15 +20,12 @@ VERIFY_SSL = bool(int(os.environ.get('VERIFY_SSL',0)))
 
 from rest_utils import register_encoder
 
-import oidc
-from oidc.oidc import TokenIntrospection
+oidc_url = os.environ['OIDC_URL']
 client_id = os.environ['OIDC_CLIENT_ID']
 client_secret = os.environ['OIDC_CLIENT_SECRET']
-rs = TokenIntrospection(client_id, client_secret, verify=VERIFY_SSL)
-
 warden_url = os.environ['WARDEN_API_URL']
 from warden.sdk.warden import Warden
-warden = Warden(warden_url, client_id, client_secret, verify=VERIFY_SSL)
+warden = Warden(oidc_url, warden_url, client_id, client_secret, verify=VERIFY_SSL)
 
 from assistance.model.AssistanceModel import AssistanceModel
 from assistance.model import obtener_session
@@ -41,7 +38,7 @@ register_encoder(app)
 API_BASE = os.environ['API_BASE']
 
 @app.route(API_BASE + '/acceso_modulos', methods=['GET'])
-@rs.require_valid_token
+@warden.require_valid_token
 @jsonapi
 def obtener_acceso_modulos(token=None):
 
@@ -86,7 +83,7 @@ def obtener_acceso_modulos(token=None):
     return json.dumps(a)            
 
 @app.route(API_BASE + '/telegram_token', methods=['GET'])
-@rs.require_valid_token
+@warden.require_valid_token
 @jsonapi
 def telegram_token(token=None):
     h = AssistanceModel.telegram_token(token)
@@ -96,7 +93,7 @@ def telegram_token(token=None):
     }
 
 @app.route(API_BASE + '/telegram_activate/<codigo>', methods=['GET'])
-@rs.require_valid_token
+@warden.require_valid_token
 @jsonapi
 def telegram_activate(codigo, token=None):
     AssistanceModel.telegram_activate(codigo, token)
@@ -107,7 +104,7 @@ def telegram_activate(codigo, token=None):
 
 @app.route(API_BASE + '/usuarios', methods=['GET'])
 @app.route(API_BASE + '/usuarios/<uid>', methods=['GET'])
-@rs.require_valid_token
+@warden.require_valid_token
 @jsonapi
 def usuarios(uid=None, token=None):
 
@@ -136,7 +133,7 @@ def usuarios(uid=None, token=None):
                 return [u for u in usuarios if 'asistencia' in u and u['asistencia'] is not None]
 
 @app.route(API_BASE + '/lugares', methods=['GET'])
-@rs.require_valid_token
+@warden.require_valid_token
 @jsonapi
 def lugares(token=None):
     with obtener_session() as session:
@@ -144,7 +141,7 @@ def lugares(token=None):
         return AssistanceModel.lugares(session=session, search=search)
 
 @app.route(API_BASE + '/usuarios/<uid>/perfil', methods=['GET'])
-@rs.require_valid_token
+@warden.require_valid_token
 @jsonapi
 def perfil(uid, token):
     fecha_str = request.args.get('fecha', None)
@@ -167,7 +164,7 @@ def perfil(uid, token):
 
 
 @app.route(API_BASE + '/usuarios/<uid>/reporte', methods=['GET'])
-@rs.require_valid_token
+@warden.require_valid_token
 @jsonapi
 def reporte(uid, token):
     fecha_str = request.args.get('inicio', None)
@@ -189,7 +186,7 @@ def reporte(uid, token):
             return ('no tiene los permisos suficientes', 403)
 
 @app.route(API_BASE + '/reportes', methods=['POST'])
-@rs.require_valid_token
+@warden.require_valid_token
 @jsonapi
 def reporte_general(token):
 
@@ -205,7 +202,7 @@ def reporte_general(token):
         return AssistanceModel.reporteGeneral(session, lugares, fecha)
 
 @app.route(API_BASE + '/usuarios/<uid>/horario', methods=['GET'])
-@rs.require_valid_token
+@warden.require_valid_token
 @jsonapi
 def horario(uid,token):
 
@@ -220,7 +217,7 @@ def horario(uid,token):
         return AssistanceModel.horario(session, uid, fecha)
 
 @app.route(API_BASE + '/usuarios/<uid>/horario/<hid>', methods=['DELETE'])
-@rs.require_valid_token
+@warden.require_valid_token
 @jsonapi
 def eliminar_horarios(uid, hid, token):
 
@@ -244,7 +241,7 @@ def eliminar_horarios(uid, hid, token):
 
 
 @app.route(API_BASE + '/usuarios/<uid>/historial_horarios', methods=['GET'])
-@rs.require_valid_token
+@warden.require_valid_token
 @jsonapi
 def historial_horarios(uid,token):
 
@@ -266,7 +263,7 @@ def historial_horarios(uid,token):
 
 
 @app.route(API_BASE + '/horario', methods=['PUT'])
-@rs.require_valid_token
+@warden.require_valid_token
 @jsonapi
 def crear_horario(token):
     prof = warden.has_one_profile(token, ['assistance-super-admin','assistance-admin'])
@@ -281,21 +278,21 @@ def crear_horario(token):
         return  True
 
 @app.route(API_BASE + '/usuarios/<uid>/logs', methods=['GET'])
-@rs.require_valid_token
+@warden.require_valid_token
 @jsonapi
 def logs_por_usuario(uid,token):
     #return AssistanceModel.reporte(uid=uid, inicio=inicio, fin=fin)
     return None
 
 @app.route(API_BASE + '/logs/<fecha>', methods=['GET'])
-@rs.require_valid_token
+@warden.require_valid_token
 @jsonapi
 def logs_por_fecha(fecha,token):
     #return AssistanceModel.reporte(uid=uid, inicio=inicio, fin=fin)
     return None
 
 @app.route(API_BASE + '/relojes', methods=['GET'])
-@rs.require_valid_token
+@warden.require_valid_token
 @jsonapi
 def relojes(token):
     prof = warden.has_one_profile(token, ['assistance-super-admin','assistance-admin'])
@@ -314,7 +311,7 @@ def relojes_sincronizar():
         return r
 
 @app.route(API_BASE + '/relojes/<rid>', methods=['GET'])
-@rs.require_valid_token
+@warden.require_valid_token
 @jsonapi
 def reloj(rid,token):
     assert rid is not None
@@ -348,7 +345,7 @@ def reloj_marcaciones(rid):
 
 
 @app.route(API_BASE + '/relojes/<rid>/huellas', methods=['DELETE'])
-@rs.require_valid_token
+@warden.require_valid_token
 @jsonapi
 def reloj_eliminar_huellas(rid, token):
 
@@ -362,7 +359,7 @@ def reloj_eliminar_huellas(rid, token):
         return r
 
 @app.route(API_BASE + '/relojes/<rid>/usuarios', methods=['DELETE'])
-@rs.require_valid_token
+@warden.require_valid_token
 @jsonapi
 def reloj_eliminar_usuarios(rid, token):
     prof = warden.has_one_profile(token, 'assistance-super-admin')
@@ -375,7 +372,7 @@ def reloj_eliminar_usuarios(rid, token):
         return r
 
 @app.route(API_BASE + '/relojes/<rid>/usuarios', methods=['GET'])
-@rs.require_valid_token
+@warden.require_valid_token
 @jsonapi
 def reloj_usuarios(rid, token):
 
@@ -389,7 +386,7 @@ def reloj_usuarios(rid, token):
         return r
 
 @app.route(API_BASE + '/relojes/<rid>/usuarios/<ruid>', methods=['GET'])
-@rs.require_valid_token
+@warden.require_valid_token
 @jsonapi
 def reloj_usuario(rid, ruid, token):
     prof = warden.has_one_profile(token, ['assistance-super-admin','assistance-admin'])
@@ -408,7 +405,7 @@ def reloj_usuario(rid, ruid, token):
         return r
 
 @app.route(API_BASE + '/relojes/<rid>/huellas', methods=['GET'])
-@rs.require_valid_token
+@warden.require_valid_token
 @jsonapi
 def reloj_huellas(rid, token):
     prof = warden.has_one_profile(token, ['assistance-super-admin','assistance-admin'])
@@ -422,21 +419,21 @@ def reloj_huellas(rid, token):
 
 
 @app.route(API_BASE + '/justificaciones/<jid>', methods=['GET'])
-@rs.require_valid_token
+@warden.require_valid_token
 @jsonapi
 def justificacion(jid, token):
     with obtener_session() as session:
         return AssistanceModel.justificacion(session, jid)
 
 @app.route(API_BASE + '/justificaciones', methods=['GET'])
-@rs.require_valid_token
+@warden.require_valid_token
 @jsonapi
 def justificaciones(token):
     with obtener_session() as session:
         return AssistanceModel.justificaciones(session)
 
 @app.route(API_BASE + '/justificaciones', methods=['PUT'])
-@rs.require_valid_token
+@warden.require_valid_token
 @jsonapi
 def crear_justificacion(token):
     prof = warden.has_one_profile(token, ['assistance-super-admin','assistance-admin'])
@@ -451,7 +448,7 @@ def crear_justificacion(token):
         return jid
 
 @app.route(API_BASE + '/justificaciones/<jid>', methods=['DELETE'])
-@rs.require_valid_token
+@warden.require_valid_token
 @jsonapi
 def eliminar_justificacion(jid, token):
     prof = warden.has_one_profile(token, ['assistance-super-admin','assistance-admin'])
@@ -462,7 +459,7 @@ def eliminar_justificacion(jid, token):
         session.commit()
 
 @app.route(API_BASE + '/justificaciones/<jid>', methods=['POST'])
-@rs.require_valid_token
+@warden.require_valid_token
 @jsonapi
 def actualizar_justificacion(jid, token):
     prof = warden.has_one_profile(token, ['assistance-super-admin', 'assistance-admin'])
@@ -474,7 +471,7 @@ def actualizar_justificacion(jid, token):
         session.commit()
 
 @app.route(API_BASE + '/justificar', methods=['PUT'])
-@rs.require_valid_token
+@warden.require_valid_token
 @jsonapi
 def justificar(token):
     prof = warden.has_one_profile(token, ['assistance-super-admin', 'assistance-admin'])
@@ -488,7 +485,7 @@ def justificar(token):
         return id
 
 @app.route(API_BASE + '/usuarios/<uid>/justificaciones/<jid>', methods=['DELETE'])
-@rs.require_valid_token
+@warden.require_valid_token
 @jsonapi
 def eliminar_fecha_justificada(uid, jid, token):
     prof = warden.has_one_profile(token, ['assistance-super-admin', 'assistance-admin'])

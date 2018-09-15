@@ -35,6 +35,7 @@ class AssistanceModel:
     verify = VERIFY_SSL
     usuarios_url = os.environ['USERS_API_URL']
     sileg_url = os.environ['SILEG_API_URL']
+    oidc_url = os.environ['OIDC_URL']
     client_id = os.environ['OIDC_CLIENT_ID']
     client_secret = os.environ['OIDC_CLIENT_SECRET']
     eliminar_logs_relojes = bool(int(os.environ.get('ASSISTANCE_DELETE_LOGS_SINC',0)))
@@ -44,7 +45,7 @@ class AssistanceModel:
     @classmethod
     def _get_token(cls):
         ''' obtengo un token mediante el flujo client_credentials para poder llamar a la api de usuarios '''
-        grant = ClientCredentialsGrant(cls.client_id, cls.client_secret, verify=cls.verify)
+        grant = ClientCredentialsGrant(cls.oidc_url, cls.client_id, cls.client_secret, verify=cls.verify)
         token = grant.get_token(grant.access_token())
         if not token:
             raise Exception()
@@ -184,8 +185,6 @@ class AssistanceModel:
         })
 
         cls.redis_assistance.sadd('t_authorized', uid)
-
-
 
     @classmethod
     def _obtener_uids_con_designacion(cls):
