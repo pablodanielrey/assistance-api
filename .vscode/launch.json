@@ -5,14 +5,15 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python: Attach",
+            "name": "Attach (Remote Debug)",
             "type": "python",
             "request": "attach",
-            "localRoot": "${workspaceFolder}",
-            "remoteRoot": "${workspaceFolder}",
-            "port": 3000,
-            "secret": "my_secret",
-            "host": "localhost"
+            "port": 5680,
+            "host": "163.10.17.12",
+            "pathMappings": [{
+                "localRoot": "${workspaceFolder}",
+                "remoteRoot": "/"
+            }]
         },
         {
             "name": "Python: Flask (0.11.x or later)",

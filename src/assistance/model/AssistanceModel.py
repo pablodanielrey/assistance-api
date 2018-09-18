@@ -123,7 +123,7 @@ class AssistanceModel:
         query = cls.usuarios_url + '/usuarios/' + uid
         r = cls.api(query, token=token)
         if not r.ok:
-            return []
+            return None
         usr = r.json()
         cls._setear_usuario_cache(usr)
         return usr
@@ -198,6 +198,8 @@ class AssistanceModel:
     def perfil(cls, session, uid, fecha, tzone='America/Argentina/Buenos_Aires'):
         assert uid is not None
         usr = cls._obtener_usuario_por_uid(uid)
+        if not usr:
+            raise Exception('usuario no encontrado {}'.format(uid))
         r = Reporte.generarReporte(session, usr, fecha, fecha, tzone)
 
         """ transformo el reporte en info de perfil """
