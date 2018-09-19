@@ -20,6 +20,6 @@ RUN cd /src && pip3 install --trusted-host pypi.econo.unlp.edu.ar --upgrade -e .
 
 WORKDIR /src
 
-EXPOSE 5000
+EXPOSE 10302
 
 ENTRYPOINT ["/entrypoint.sh"]
