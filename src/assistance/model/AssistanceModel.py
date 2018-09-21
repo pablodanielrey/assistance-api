@@ -656,9 +656,10 @@ class AssistanceModel:
                     except Exception as e:
                         logger.exception(e)
                     """
-
-                    yield {'estado':'existente', 'marcacion':m, 'dni':dni}
-                    logger.warn('Marcación duplicada {} {} {}'.format(usuario['id'], dni, marcacion))
+                    
+                    for m in ms:
+                        yield {'estado':'existente', 'marcacion':m, 'dni':dni}
+                        logger.warn('Marcación duplicada {} {} {}'.format(usuario['id'], dni, marcacion))
 
             if cls.eliminar_logs_relojes:
                 logs2 = zk['api'].getAttLog()
