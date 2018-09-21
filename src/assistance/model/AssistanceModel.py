@@ -629,8 +629,8 @@ class AssistanceModel:
                 usuario = cls._obtener_usuario_por_dni(dni, token=token)
                 marcacion = l['DateTime']
 
-                m = session.query(Marcacion).filter(and_(Marcacion.usuario_id == usuario['id'], Marcacion.marcacion == marcacion)).one_or_none()
-                if not m:
+                ms = session.query(Marcacion).filter(and_(Marcacion.usuario_id == usuario['id'], Marcacion.marcacion == marcacion)).all()
+                if len(ms) <= 0:
                     log = Marcacion()
                     log.id = str(uuid.uuid4())
                     log.usuario_id = usuario['id']
