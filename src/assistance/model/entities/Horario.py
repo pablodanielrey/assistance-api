@@ -49,5 +49,7 @@ class Horario(Base):
             timezone = pytz.timezone(timezone)
         dt = datetime.combine(fecha, time(0), timezone)
         inicio = dt + timedelta(seconds=self.hora_entrada)
+        print('Este es el inicio ------->', inicio)
         fin = dt + timedelta(seconds=self.hora_salida)
+        print('Este es el fin ------->', fin)
         return (inicio, fin)
