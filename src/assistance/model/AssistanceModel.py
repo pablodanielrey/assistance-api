@@ -1,15 +1,12 @@
 from sqlalchemy import or_, and_
 from sqlalchemy.orm import joinedload, with_polymorphic
-from datetime import date, timedelta
-import datetime
+from datetime import datetime, date, timedelta
 import requests
 import os
 import uuid
 from dateutil import parser
 import datetime
 import hashlib
-
-import pytz
 
 import logging
 from logging.handlers import TimedRotatingFileHandler
@@ -215,11 +212,7 @@ class AssistanceModel:
         hora_salida = None
         horario_segundos = 0
         if reporte.horario:
-            timezone = pytz.timezone(tzone)
-            dt = datetime.combine(fecha, time(0), timezone)
-            hora_entrada = dt + timedelta(seconds=reporte.horario.hora_entrada)
-            hora_salida = dt + timedelta(seconds=reporte.horario.hora_salida)
-            """(hora_entrada, hora_salida) = reporte.horario.obtenerInicioFin(reporte.fecha,tzone)"""
+            (hora_entrada, hora_salida) = reporte.horario.obtenerInicioFin(reporte.fecha,tzone)
             horario_segundos = reporte.horario.cantidadDeSegundos()
 
         #proceso las justificaciones para el formato esperado:
