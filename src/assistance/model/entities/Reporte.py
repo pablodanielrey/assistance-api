@@ -86,7 +86,7 @@ class Detalle:
 
         return minutos_extra, minutos_extra_descartados
 
-    def calcular(self, reporte, minutos_minimos_para_hora_extra=30, bloque_de_minutos_para_hora_extra=30):
+    def calcular(self, reporte, minutos_minimos_para_hora_extra=30, bloque_de_minutos_para_hora_extra=30, tzone='America/Argentina/Buenos_Aires'):
         '''
             minutos_minimos_para_hora_extra == los minutos necesarios minimos adicionales -- si es 0 entnoces cada minuto extra ya contabiliza
             bloque_de_minutos_para_hora_extra == minutos necesarios para contabilizar para hora extra -- si es None cada minuto cuenta para hora extra.
@@ -138,7 +138,7 @@ class Detalle:
                         self.faltas_injustificadas = self.faltas_injustificadas + 1
 
 
-                inicio, fin = renglon.horario.obtenerInicioFin(renglon.fecha)
+                inicio, fin = renglon.horario.obtenerInicioFin(renglon.fecha, tzone)
 
                 ''' salidas '''
                 salida = renglon.salida.marcacion if renglon.salida else None
@@ -324,7 +324,7 @@ class Reporte:
         rep.reportes = cls._agregar_marcaciones_sin_horario(session, reportes, usuario['id'], inicio, fin, tzone)
 
         rep.detalle = Detalle()
-        rep.detalle.calcular(rep)
+        rep.detalle.calcular(rep, tzone=tzone)
 
         return rep
 
