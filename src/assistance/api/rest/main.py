@@ -258,7 +258,8 @@ def historial_horarios(uid,token):
     fin = parser.parse(fecha_str).date() if fecha_str else None
 
     with obtener_session() as session:
-        return AssistanceModel.historial_horarios(session, uid, inicio, fin)
+        ret = AssistanceModel.historial_horarios(session, uid, inicio, fin)
+        return ret
 
 
 
