@@ -59,7 +59,6 @@ class Horario(Base):
         return {c.name: getattr(self, c.name) for c in self.__table__.columns}
 
     def como_dict_en_zona(self, timezone):
-        import copy
         d = self._to_dict()
         d['fecha_valido'] = self._localizar_fecha_en_zona(self.fecha_valido, timezone)
         return d
