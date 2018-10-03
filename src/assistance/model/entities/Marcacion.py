@@ -26,7 +26,7 @@ class Marcacion(Base):
         return self.marcacion.astimezone(timezone).date()
 
     def esIgual(self, otra=None, tolerancia=None):
-        ''' tiene en cuenta la tolerancia para decidir si reprecentan la misma marcacion '''
+        ''' tiene en cuenta la tolerancia para decidir si representan la misma marcacion '''
         if not otra:
             return False
         if not tolerancia:
