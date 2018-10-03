@@ -42,10 +42,24 @@ class Horario(Base):
             fin = dt + timedelta(seconds=self.hora_salida)
         return (inicio, fin)
 
-    def obtenerInicioFin(self, fecha, timezone='America/Argentina/Buenos_Aires'):
-        timezone = pytz.timezone(timezone)
+    def _localizar_fecha_en_zona(self, fecha, tz):
+        timezone = pytz.timezone(tz)
         dt = datetime.combine(fecha, time(0))
         dt = timezone.localize(dt)
+        return dt
+
+    def obtenerInicioFin(self, fecha, timezone='America/Argentina/Buenos_Aires'):
+        dt = self._localizar_fecha_en_zona(fecha, timezone)
         inicio = dt + timedelta(seconds=self.hora_entrada)
         fin = dt + timedelta(seconds=self.hora_salida)
         return (inicio, fin)
+
+
+    def _to_dict(self):
+        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
+
+    def como_dict_en_zona(self, timezone):
+        import copy
+        d = self._to_dict()
+        d['fecha_valido'] = self._localizar_fecha_en_zona(self.fecha_valido, timezone)
+        return d

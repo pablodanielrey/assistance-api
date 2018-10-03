@@ -303,8 +303,16 @@ class AssistanceModel:
 
         return ret
 
+
     @classmethod
-    def historial_horarios(cls, session, uid, fecha_inicio=None, fecha_fin=None):
+    def _localizar_fecha_a_zona(fecha, timezone):
+        timezone = pytz.timezone(timezone)
+        dt = datetime.combine(fecha, time(0))
+        dt = timezone.localize(dt)
+        return dt
+
+    @classmethod
+    def historial_horarios(cls, session, uid, fecha_inicio=None, fecha_fin=None, timezone='America/Argentina/Buenos_Aires'):
         assert uid is not None
         assert session is not None
 
@@ -321,7 +329,7 @@ class AssistanceModel:
 
         hs = {
             'usuario': usr,
-            'historial': [ {'horario':h, 'creador':None} for h in rhs ]
+            'historial': [ {'horario':h.como_dict_en_zona(timezone), 'creador':None} for h in rhs ]
         }
         return hs
 

@@ -239,11 +239,10 @@ def eliminar_horarios(uid, hid, token):
     
     return {'status':'ok', 'horario':h}
 
-
 @app.route(API_BASE + '/usuarios/<uid>/historial_horarios', methods=['GET'])
 @warden.require_valid_token
 @jsonapi
-def historial_horarios(uid,token):
+def historial_horarios(uid, token):
 
     prof = warden.has_one_profile(token, ['assistance-super-admin','assistance-admin'])
     if not prof or prof['profile'] == False:
@@ -257,8 +256,10 @@ def historial_horarios(uid,token):
     fecha_str = request.args.get('fecha_fin', None)
     fin = parser.parse(fecha_str).date() if fecha_str else None
 
+    timezone = request.args.get('timezone', 'America/Argentina/Buenos_Aires')
+
     with obtener_session() as session:
-        ret = AssistanceModel.historial_horarios(session, uid, inicio, fin)
+        ret = AssistanceModel.historial_horarios(session, uid, inicio, fin, timezone)
         return ret
 
 
