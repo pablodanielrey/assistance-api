@@ -30,6 +30,14 @@ warden = Warden(oidc_url, warden_url, client_id, client_secret, verify=VERIFY_SS
 from assistance.model.AssistanceModel import AssistanceModel
 from assistance.model import obtener_session
 
+''' configuro el logger para la sincronización de asistencia '''
+logger = logging.getLogger('assistance.model.zkSoftware')
+hdlr = TimedRotatingFileHandler('/var/log/assistance/sinc_logs_{}.log'.format(os.getpid()), when='D', interval=1)
+formatter = logging.Formatter('%(asctime)s, %(name)s, %(module)s, %(filename)s, %(funcName)s, %(levelname)s, %(message)s')
+hdlr.setFormatter(formatter)
+logger.addHandler(hdlr)
+logger.setLevel(logging.DEBUG)
+
 # set the project root directory as the static folder, you can set others.
 app = Flask(__name__, static_url_path='/src/assistance/web')
 app.wsgi_app = ProxyFix(app.wsgi_app)
@@ -525,7 +533,7 @@ def add_header(r):
     return r
 
 def main():
-    app.run(host='0.0.0.0', port=9006, debug=False)
+    app.run(host='0.0.0.0', port=10302, debug=False)
 
 if __name__ == '__main__':
     main()

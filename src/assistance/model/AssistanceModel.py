@@ -11,11 +11,7 @@ import hashlib
 import logging
 from logging.handlers import TimedRotatingFileHandler
 logger = logging.getLogger('assistance.model.zkSoftware')
-hdlr = TimedRotatingFileHandler('/var/log/assistance/sinc_logs.log', when='D', interval=1)
-formatter = logging.Formatter('%(asctime)s, %(name)s, %(module)s, %(filename)s, %(funcName)s, %(levelname)s, %(message)s')
-hdlr.setFormatter(formatter)
-logger.addHandler(hdlr)
-logger.setLevel(logging.DEBUG)
+
 
 
 import oidc
