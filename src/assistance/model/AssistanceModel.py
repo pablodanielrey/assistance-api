@@ -9,7 +9,6 @@ import datetime
 import hashlib
 
 import logging
-from logging.handlers import TimedRotatingFileHandler
 logger = logging.getLogger('assistance.model.zkSoftware')
 
 

@@ -3,6 +3,7 @@
     Confiruro los loggers
 '''
 import logging
+from logging.handlers import TimedRotatingFileHandler
 logging.getLogger().setLevel(logging.DEBUG)
 
 import sys
