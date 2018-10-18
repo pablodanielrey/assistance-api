@@ -7,9 +7,6 @@
 			"path": "/src/github/microservices_common"
 		},
 		{
-			"path": "/src/temporales/angular-oauth2-oidc"
-		},
-		{
 			"path": "/src/github/warden-api"
 		},
 		{
