@@ -117,7 +117,7 @@ def telegram_activate(codigo, token=None):
 @jsonapi
 def usuarios(uid=None, token=None):
 
-    prof = warden.has_one_profile(token, ['assistance-super-admin','assistance-admin'])
+    prof = warden.has_one_profile(token, ['assistance-super-admin','assistance-admin','assistance-operator'])
     if not prof or prof['profile'] == False:
         ''' como no soy admin, entonces chequea que se este consultando a si mismo '''
         if not uid or uid != token['sub']:
@@ -182,7 +182,7 @@ def reporte(uid, token):
     fecha_str = request.args.get('fin', None)
     fin = parser.parse(fecha_str).date() if fecha_str else None
 
-    prof = warden.has_one_profile(token, ['assistance-super-admin', 'assistance-admin'])
+    prof = warden.has_one_profile(token, ['assistance-super-admin', 'assistance-admin','assistance-operator'])
     if prof and prof['profile']:
         with obtener_session() as session:
             return AssistanceModel.reporte(session, uid, inicio, fin)
@@ -199,7 +199,7 @@ def reporte(uid, token):
 @jsonapi
 def reporte_general(token):
 
-    prof = warden.has_one_profile(token, ['assistance-super-admin','assistance-admin'])
+    prof = warden.has_one_profile(token, ['assistance-super-admin','assistance-admin','assistance-operator'])
     if not prof or prof['profile'] == False:
         return ('no tiene los permisos suficientes', 403)
 
@@ -215,7 +215,7 @@ def reporte_general(token):
 @jsonapi
 def horario(uid,token):
 
-    prof = warden.has_one_profile(token, ['assistance-super-admin','assistance-admin'])
+    prof = warden.has_one_profile(token, ['assistance-super-admin','assistance-admin','assistance-operator'])
     if not prof or prof['profile'] == False:
         ''' como no soy admin, entonces chequea que se este consultando a si mismo '''
         if not uid or uid != token['sub']:
@@ -485,7 +485,7 @@ def actualizar_justificacion(jid, token):
 @warden.require_valid_token
 @jsonapi
 def justificar(token):
-    prof = warden.has_one_profile(token, ['assistance-super-admin', 'assistance-admin'])
+    prof = warden.has_one_profile(token, ['assistance-super-admin', 'assistance-admin','assistance-operator'])
     if not prof or prof['profile'] == False:
         return ('no tiene los permisos suficientes', 403)
     fechaJustificada = request.get_json()
