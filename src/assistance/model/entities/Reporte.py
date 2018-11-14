@@ -415,13 +415,19 @@ class ReporteJustificaciones:
         for j in jus:
             if j.justificacion.nombre in aux:
                 if j.fecha_fin:
-                    dias = (j.fecha_fin - j.fecha_inicio).days
+                    if j.fecha_fin.date() > fin:
+                        dias = (fin - j.fecha_inicio.date()).days
+                    else:
+                        dias = (j.fecha_fin - j.fecha_inicio).days
                     aux[j.justificacion.nombre] += dias
                 else:
                     aux[j.justificacion.nombre] += 1
             else:
                 if j.fecha_fin:
-                    dias = (j.fecha_fin - j.fecha_inicio).days
+                    if j.fecha_fin.date() > fin:
+                        dias = (fin - j.fecha_inicio.date()).days
+                    else:
+                        dias = (j.fecha_fin - j.fecha_inicio).days
                     aux[j.justificacion.nombre] = dias
                 else:
                     aux[j.justificacion.nombre] = 1
