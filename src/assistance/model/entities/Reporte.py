@@ -397,11 +397,23 @@ class ReporteJustificaciones:
         ff = datetime.combine(fin, time(23,59,59,999999), timezone)
 
         q = session.query(FechaJustificada)
-        q = q.filter(or_(FechaJustificada.usuario_id == uid, FechaJustificada.usuario_id == None))
+        q = q.filter(or_(FechaJustificada.usuario_id == uid))
         q = q.filter(FechaJustificada.eliminado == None)
         q = q.filter(or_(and_(FechaJustificada.fecha_inicio >= fi, FechaJustificada.fecha_inicio <= ff),and_(FechaJustificada.fecha_inicio <= ff, FechaJustificada.fecha_fin >= fi)))
         q = q.options(joinedload('justificacion'))
         return q.all()
+
+    @classmethod
+    def _procesarDias(cls, j, inicio, fin):
+        if j.fecha_inicio.date() < inicio:
+            comienzo = inicio
+        else:
+            comienzo = j.fecha_inicio.date()
+        if j.fecha_fin.date() > fin:
+            final = fin
+        else:
+            final = j.fecha_fin.date()
+        return (final - comienzo).days + 1
 
     @classmethod
     def generarReporte(cls, session, usuario, inicio, fin, tzone='America/Argentina/Buenos_Aires'):
@@ -415,20 +427,12 @@ class ReporteJustificaciones:
         for j in jus:
             if j.justificacion.nombre in aux:
                 if j.fecha_fin:
-                    if j.fecha_fin.date() > fin:
-                        dias = (fin - j.fecha_inicio.date()).days
-                    else:
-                        dias = (j.fecha_fin - j.fecha_inicio).days
-                    aux[j.justificacion.nombre] += dias
+                    aux[j.justificacion.nombre] += cls._procesarDias(j,inicio,fin)
                 else:
                     aux[j.justificacion.nombre] += 1
             else:
                 if j.fecha_fin:
-                    if j.fecha_fin.date() > fin:
-                        dias = (fin - j.fecha_inicio.date()).days
-                    else:
-                        dias = (j.fecha_fin - j.fecha_inicio).days
-                    aux[j.justificacion.nombre] = dias
+                    aux[j.justificacion.nombre] = cls._procesarDias(j,inicio,fin)
                 else:
                     aux[j.justificacion.nombre] = 1
 
