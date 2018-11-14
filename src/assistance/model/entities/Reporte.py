@@ -397,7 +397,7 @@ class ReporteJustificaciones:
         ff = datetime.combine(fin, time(23,59,59,999999), timezone)
 
         q = session.query(FechaJustificada)
-        q = q.filter(or_(FechaJustificada.usuario_id == uid))
+        q = q.filter(or_(FechaJustificada.usuario_id == uid, FechaJustificada.usuario_id == None))
         q = q.filter(FechaJustificada.eliminado == None)
         q = q.filter(or_(and_(FechaJustificada.fecha_inicio >= fi, FechaJustificada.fecha_inicio <= ff),and_(FechaJustificada.fecha_inicio <= ff, FechaJustificada.fecha_fin >= fi)))
         q = q.options(joinedload('justificacion'))
