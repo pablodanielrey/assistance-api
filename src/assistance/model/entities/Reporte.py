@@ -372,3 +372,66 @@ class ReporteGeneral:
 
         rep = ReporteGeneral(fecha, lugar, reportes)
         return rep
+
+class ReporteJustificaciones:
+
+    '''
+    usuario: Usuario;
+    fecha_inicial: Date;
+    fecha_final: Date;
+    justificaciones: JustificacionRenglon[] = [];
+    '''
+
+    def __init__(self, u, inicio, fin):
+        self.usuario = u
+        self.fecha_inicial = inicio
+        self.fecha_final = fin
+        self.justificaciones = []
+
+    @classmethod
+    def _obtenerJustificaciones(cls, session, inicio, fin, tzone, uid):
+        # convierto la fecha a datetime para compararlo en la base
+        #timezone = tzlocal() if tzone is None else pytz.timezone(tzone)
+        timezone = tzlocal()
+        fi = datetime.combine(inicio, time(0), timezone)
+        ff = datetime.combine(fin, time(23,59,59,999999), timezone)
+
+        q = session.query(FechaJustificada)
+        q = q.filter(or_(FechaJustificada.usuario_id == uid, FechaJustificada.usuario_id == None))
+        q = q.filter(FechaJustificada.eliminado == None)
+        q = q.filter(or_(and_(FechaJustificada.fecha_inicio >= fi, FechaJustificada.fecha_inicio <= ff),and_(FechaJustificada.fecha_inicio <= ff, FechaJustificada.fecha_fin >= fi)))
+        q = q.options(joinedload('justificacion'))
+        return q.all()
+
+    @classmethod
+    def generarReporte(cls, session, usuario, inicio, fin, tzone='America/Argentina/Buenos_Aires'):
+        if inicio > fin:
+            return []
+
+        rep = ReporteJustificaciones(usuario, inicio, fin)
+        jus = []
+        jus = cls._obtenerJustificaciones(session, inicio, fin, tzone, usuario['id'])
+        aux = {}
+        for j in jus:
+            if j.justificacion.nombre in aux:
+                if j.fecha_fin:
+                    dias = (j.fecha_fin - j.fecha_inicio).days
+                    aux[j.justificacion.nombre] += dias
+                else:
+                    aux[j.justificacion.nombre] += 1
+            else:
+                if j.fecha_fin:
+                    dias = (j.fecha_fin - j.fecha_inicio).days
+                    aux[j.justificacion.nombre] = dias
+                else:
+                    aux[j.justificacion.nombre] = 1
+
+        for j in aux:
+            rep.justificaciones.append({
+                'nombre': j,
+                'cantidad': aux[j]
+            })
+        return rep
+
+    def __json__(self):
+        return self.__dict__

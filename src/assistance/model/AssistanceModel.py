@@ -269,6 +269,16 @@ class AssistanceModel:
         return Reporte.generarReporte(session, usr, inicio, fin, tzone)
 
     @classmethod
+    def reporteJustificaciones(cls, session, uid, inicio, fin, tzone='America/Argentina/Buenos_Aires'):
+        assert uid is not None
+        fin = fin if fin else date.today()
+        inicio = inicio if inicio else fin - timedelta(days=7)
+        usr = cls._obtener_usuario_por_uid(uid)
+        if not usr:
+            return []
+        return ReporteJustificaciones.generarReporte(session, usr, inicio, fin, tzone)
+
+    @classmethod
     def reporteGeneral(cls, session, lugares, fecha, tzone='America/Argentina/Buenos_Aires'):
         ret = []
         for lid in lugares:

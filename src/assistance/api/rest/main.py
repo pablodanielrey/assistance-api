@@ -194,6 +194,28 @@ def reporte(uid, token):
         else:
             return ('no tiene los permisos suficientes', 403)
 
+@app.route(API_BASE + '/usuarios/<uid>/justificaciones', methods=['GET'])
+@warden.require_valid_token
+@jsonapi
+def reporte_justificaciones(uid, token):
+    fecha_str = request.args.get('inicio', None)
+    inicio = parser.parse(fecha_str).date() if fecha_str else None
+
+    fecha_str = request.args.get('fin', None)
+    fin = parser.parse(fecha_str).date() if fecha_str else None
+
+    prof = warden.has_one_profile(token, ['assistance-super-admin', 'assistance-admin','assistance-operator'])
+    if prof and prof['profile']:
+        with obtener_session() as session:
+            return AssistanceModel.reporteJustificaciones(session, uid, inicio, fin)
+
+    usuario_logueado = token['sub']
+    with obtener_session() as session:
+        if AssistanceModel.chequear_acceso_reporte(session, usuario_logueado, uid):
+            return AssistanceModel.reporteJustificaciones(session, uid, inicio, fin)
+        else:
+            return ('no tiene los permisos suficientes', 403)
+
 @app.route(API_BASE + '/reportes', methods=['POST'])
 @warden.require_valid_token
 @jsonapi

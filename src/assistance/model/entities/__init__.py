@@ -2,7 +2,7 @@ from .Reloj import Reloj
 from .Marcacion import Marcacion
 from .Justificacion import Justificacion, FechaJustificada
 from .Horario import Horario
-from .Reporte import Reporte, RenglonReporte, Detalle, ReporteGeneral
+from .Reporte import Reporte, RenglonReporte, Detalle, ReporteGeneral, ReporteJustificaciones
 
 __all__ = [
     'Reloj',
@@ -13,5 +13,6 @@ __all__ = [
     'Reporte',
     'ReporteGeneral',
     'RenglonReporte',
+    'ReporteJustificaciones',
     'Detalle'
 ]
