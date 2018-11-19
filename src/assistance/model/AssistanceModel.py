@@ -134,7 +134,6 @@ class AssistanceModel:
 
     @classmethod
     def _setear_usuario_cache(cls, usr):
-        cusr = cls._codificar_para_redis(usr)        
         cls.redis_assistance.hmset('usuario_uid_{}'.format(usr['id']), cusr)
         cls.redis_assistance.hset('usuario_dni_{}'.format(usr['dni'].lower().replace(' ','')), 'uid', usr['id'])
 
@@ -142,8 +141,7 @@ class AssistanceModel:
     def _obtener_usuario_por_uid(cls, uid, token=None):
         usr = cls.redis_assistance.hgetall('usuario_uid_{}'.format(uid))
         if len(usr.keys()) > 0:
-            dusr = cls._decodificar_desde_redis(usr)
-            return dusr
+            return usr
 
         query = cls.usuarios_url + '/usuarios/' + uid
         r = cls.api(query, token=token)
