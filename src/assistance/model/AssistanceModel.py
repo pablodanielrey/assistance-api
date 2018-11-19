@@ -105,15 +105,45 @@ class AssistanceModel:
     """
 
     @classmethod
+    def _codificar_para_redis(cls, d):
+        d2 = {}
+        for k in d.keys():
+            if d[k] is None:
+                d2[k] = 'none_existentvalue'
+            elif d[k] == False:
+                d2[k] = 'false_existentvalue'
+            elif d[k] == True:
+                d2[k] = 'true_existentvalue'
+            else:
+                d2[k] = d[k]
+        return d2
+
+    @classmethod
+    def _decodificar_desde_redis(cls, d):
+        d2 = {}
+        for k in d.keys():
+            if d[k] == 'none_existentvalue':
+                d2[k] = None
+            elif d[k] == 'false_existentvalue':
+                d2[k] = False
+            elif d[k] == 'true_existentvalue':
+                d2[k] = True
+            else:
+                d2[k] = d[k]
+        return d2
+
+    @classmethod
     def _setear_usuario_cache(cls, usr):
-        cls.redis_assistance.hmset('usuario_uid_{}'.format(usr['id']), usr)
+        cusr = cls._codificar_para_redis(usr)        
+        cls.redis_assistance.hmset('usuario_uid_{}'.format(usr['id']), cusr)
         cls.redis_assistance.hset('usuario_dni_{}'.format(usr['dni'].lower().replace(' ','')), 'uid', usr['id'])
 
     @classmethod
     def _obtener_usuario_por_uid(cls, uid, token=None):
         usr = cls.redis_assistance.hgetall('usuario_uid_{}'.format(uid))
         if len(usr.keys()) > 0:
-            return usr
+            dusr = cls._decodificar_desde_redis(usr)
+            return dusr
 
         query = cls.usuarios_url + '/usuarios/' + uid
         r = cls.api(query, token=token)
