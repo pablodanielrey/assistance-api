@@ -134,7 +134,7 @@ class AssistanceModel:
 
     @classmethod
     def _setear_usuario_cache(cls, usr):
-        cls.redis_assistance.hmset('usuario_uid_{}'.format(usr['id']), cusr)
+        cls.redis_assistance.hmset('usuario_uid_{}'.format(usr['id']), usr)
         cls.redis_assistance.hset('usuario_dni_{}'.format(usr['dni'].lower().replace(' ','')), 'uid', usr['id'])
 
     @classmethod
