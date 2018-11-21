@@ -68,6 +68,7 @@ def obtener_acceso_modulos(token=None):
             'justificacion_personal_abm',
             'justificacion_general_abm',
             'justificacion_tipo_abm',
+            'justificacion_reporte',
             'horario_vista',
             'horario_abm'
         ]
@@ -82,12 +83,14 @@ def obtener_acceso_modulos(token=None):
             'reporte_detalles_avanzados',
             'justificacion_personal_a',
             'justificacion_general_a',
+            'justificacion_reporte',
             'horario_vista'
         ]
         return json.dumps(a)
 
     a = [
-        'inicio_personal'
+        'inicio_personal',
+        'justificacion_reporte'
     ]
     return json.dumps(a)            
 

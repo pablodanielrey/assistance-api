@@ -195,7 +195,7 @@ class RenglonReporte:
     entrada: Marcacion;
     salida: Marcacion;
     cantidad_horas_trabajadas: number;
-    justifcacion: FechaJustificada;
+    justificacion: FechaJustificada;
     '''
     def __init__(self, fecha, horario, marcaciones, duplicadas, justificaciones, usuario=None):
         self.fecha = fecha
@@ -387,6 +387,7 @@ class ReporteJustificaciones:
         self.fecha_inicial = inicio
         self.fecha_final = fin
         self.justificaciones = []
+        self.justificaciones_generales = []
 
     @classmethod
     def _obtenerJustificaciones(cls, session, inicio, fin, tzone, uid):
@@ -425,22 +426,27 @@ class ReporteJustificaciones:
         jus = cls._obtenerJustificaciones(session, inicio, fin, tzone, usuario['id'])
         aux = {}
         for j in jus:
-            if j.justificacion.nombre in aux:
-                if j.fecha_fin:
-                    aux[j.justificacion.nombre] += cls._procesarDias(j,inicio,fin)
-                else:
-                    aux[j.justificacion.nombre] += 1
+            jid = j.justificacion.id
+            nombre = j.justificacion.nombre
+            codigo = j.justificacion.codigo
+            general = j.justificacion.general
+            if j.fecha_fin:
+                cantidad = cls._procesarDias(j,inicio,fin)
             else:
-                if j.fecha_fin:
-                    aux[j.justificacion.nombre] = cls._procesarDias(j,inicio,fin)
-                else:
-                    aux[j.justificacion.nombre] = 1
+                cantidad = 1
+            if not jid in aux:
+                aux[jid] = {
+                    'nombre': nombre,
+                    'codigo': codigo,
+                    'general': general,
+                    'cantidad': cantidad,
+                }
+            else:
+                aux[jid]['cantidad'] += cantidad
 
-        for j in aux:
-            rep.justificaciones.append({
-                'nombre': j,
-                'cantidad': aux[j]
-            })
+        rep.justificaciones_generales = [j for k,j in aux.items() if j["general"]]
+        rep.justificaciones = [ j for k,j in aux.items() if not j["general"]]        
+               
         return rep
 
     def __json__(self):
