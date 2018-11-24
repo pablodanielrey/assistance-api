@@ -88,6 +88,18 @@ def obtener_acceso_modulos(token=None):
         ]
         return json.dumps(a)
 
+    prof = warden.has_one_profile(token, ['assistance-user'])
+    if prof and prof['profile'] == True:
+        a = [
+            'inicio_personal',
+            'reporte_personal',
+            'reporte_general',
+            'reporte_detalles_avanzados',
+            'justificacion_reporte',
+            'horario_vista'
+        ]
+        return json.dumps(a)
+
     a = [
         'inicio_personal',
         'justificacion_reporte'
@@ -120,7 +132,7 @@ def telegram_activate(codigo, token=None):
 @jsonapi
 def usuarios(uid=None, token=None):
 
-    prof = warden.has_one_profile(token, ['assistance-super-admin','assistance-admin','assistance-operator'])
+    prof = warden.has_one_profile(token, ['assistance-super-admin','assistance-admin','assistance-operator', 'assistance-user'])
     if not prof or prof['profile'] == False:
         ''' como no soy admin, entonces chequea que se este consultando a si mismo '''
         if not uid or uid != token['sub']:
@@ -185,7 +197,7 @@ def reporte(uid, token):
     fecha_str = request.args.get('fin', None)
     fin = parser.parse(fecha_str).date() if fecha_str else None
 
-    prof = warden.has_one_profile(token, ['assistance-super-admin', 'assistance-admin','assistance-operator'])
+    prof = warden.has_one_profile(token, ['assistance-super-admin', 'assistance-admin','assistance-operator','assistance-user'])
     if prof and prof['profile']:
         with obtener_session() as session:
             return AssistanceModel.reporte(session, uid, inicio, fin)
@@ -207,7 +219,7 @@ def reporte_justificaciones(uid, token):
     fecha_str = request.args.get('fin', None)
     fin = parser.parse(fecha_str).date() if fecha_str else None
 
-    prof = warden.has_one_profile(token, ['assistance-super-admin', 'assistance-admin','assistance-operator'])
+    prof = warden.has_one_profile(token, ['assistance-super-admin', 'assistance-admin','assistance-operator','assistance-user'])
     if prof and prof['profile']:
         with obtener_session() as session:
             return AssistanceModel.reporteJustificaciones(session, uid, inicio, fin)
@@ -224,7 +236,7 @@ def reporte_justificaciones(uid, token):
 @jsonapi
 def reporte_general(token):
 
-    prof = warden.has_one_profile(token, ['assistance-super-admin','assistance-admin','assistance-operator'])
+    prof = warden.has_one_profile(token, ['assistance-super-admin','assistance-admin','assistance-operator','assistance-user'])
     if not prof or prof['profile'] == False:
         return ('no tiene los permisos suficientes', 403)
 
@@ -240,7 +252,7 @@ def reporte_general(token):
 @jsonapi
 def horario(uid,token):
 
-    prof = warden.has_one_profile(token, ['assistance-super-admin','assistance-admin','assistance-operator'])
+    prof = warden.has_one_profile(token, ['assistance-super-admin','assistance-admin','assistance-operator','assistance-user'])
     if not prof or prof['profile'] == False:
         ''' como no soy admin, entonces chequea que se este consultando a si mismo '''
         if not uid or uid != token['sub']:
