@@ -299,7 +299,7 @@ class Reporte:
 
 
     @classmethod
-    def generarReporte(cls, session, usuario, inicio, fin, tzone='America/Argentina/Buenos_Aires'):
+    def generarReporte(cls, session, usuario, inicio, fin, obtenerHorario, tzone='America/Argentina/Buenos_Aires'):
         if inicio > fin:
             return []
 
@@ -307,10 +307,7 @@ class Reporte:
         for i in range(0, int((fin - inicio).days + 1)):
             actual = inicio + timedelta(days=i)
 
-            q = session.query(Horario)
-            q = q.filter(Horario.usuario_id == usuario['id'], Horario.dia_semanal == actual.weekday(), Horario.fecha_valido <= actual)
-            q = q.order_by(Horario.fecha_valido.desc())
-            horario = q.limit(1).one_or_none()
+            horario = obtenerHorario(session, usuario['id'], actual)
 
             marcaciones, duplicadas = Marcacion.obtenerMarcaciones(session, horario, usuario['id'], actual, tzone)
             marcaciones = [] if marcaciones is None else marcaciones
@@ -350,13 +347,11 @@ class ReporteGeneral:
         return self.__dict__
 
     @classmethod
-    def generarReporte(cls, session, lugar, usuarios, fecha, tzone='America/Argentina/Buenos_Aires'):
+    def generarReporte(cls, session, lugar, usuarios, fecha, obtenerHorario, tzone='America/Argentina/Buenos_Aires'):
         reportes = []
         for u in usuarios:
-            q = session.query(Horario)
-            q = q.filter(Horario.usuario_id == u["id"], Horario.dia_semanal == fecha.weekday(), Horario.fecha_valido <= fecha)
-            q = q.order_by(Horario.fecha_valido.desc())
-            horario = q.limit(1).one_or_none()
+
+            horario = obtenerHorario(session, u['id'], fecha)
 
             if horario is None:
                 marcaciones = session.query(Marcacion).filter(Marcacion.usuario_id == u["id"], Marcacion.marcacion >= fecha, Marcacion.marcacion <= fecha).all()

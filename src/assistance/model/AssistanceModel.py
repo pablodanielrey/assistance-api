@@ -218,12 +218,17 @@ class AssistanceModel:
         return uids
 
     @classmethod
+    def _obtenerHorarioHelper(cls, session, uid, fecha):
+        h = cls.horario(session, uid, fecha)
+        return h['horarios'][0] if h else None
+
+    @classmethod
     def perfil(cls, session, uid, fecha, tzone='America/Argentina/Buenos_Aires'):
         assert uid is not None
         usr = cls._obtener_usuario_por_uid(uid)
         if not usr:
             raise Exception('usuario no encontrado {}'.format(uid))
-        r = Reporte.generarReporte(session, usr, fecha, fecha, tzone)
+        r = Reporte.generarReporte(session, usr, fecha, fecha, cls._obtenerHorarioHelper, tzone)
 
         """ transformo el reporte en info de perfil """
 
@@ -294,7 +299,7 @@ class AssistanceModel:
         usr = cls._obtener_usuario_por_uid(uid)
         if not usr:
             return []
-        return Reporte.generarReporte(session, usr, inicio, fin, tzone)
+        return Reporte.generarReporte(session, usr, inicio, fin, cls._obtenerHorarioHelper, tzone)
 
     @classmethod
     def reporteJustificaciones(cls, session, uid, inicio, fin, tzone='America/Argentina/Buenos_Aires'):
@@ -331,7 +336,7 @@ class AssistanceModel:
                     raise Exception('No existe el usuario con uid {}'.format(uid))
                 usuarios.append(usr)
 
-            rep = ReporteGeneral.generarReporte(session, lugar, usuarios, fecha, tzone)
+            rep = ReporteGeneral.generarReporte(session, lugar, usuarios, fecha, cls._obtenerHorarioHelper, tzone)
             ret.append(rep)
 
         return ret
