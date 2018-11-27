@@ -1,42 +1,9 @@
+from sqlalchemy import or_, and_
+from sqlalchemy.orm import joinedload, with_polymorphic
+import uuid
+
 import contextlib
-import datetime
-
-from sqlalchemy import Column, String, ForeignKey, DateTime, Integer, TIMESTAMP, desc
-from sqlalchemy.orm import relationship
-from model_utils import Base
-
-
-
-class Asiento(Base):
-
-    __tablename__ = 'asiento'
-
-    fecha = Column(TIMESTAMP(timezone=True))
-    notas = Column(String)
-    autorizador_id = Column(String)
-
-    def __init__(self, autorizador_id, notas=None):
-        self.fecha = datetime.datetime.now()
-        self.autorizador_id = autorizador_id
-        self.notas = notas
-
-class Cuenta(Base):
-
-    __tablename__ = 'cuenta_asiento'
-
-    nombre = Column(String)
-    descripcion = Column(String)
-    usuario_id = Column(String)
-
-
-class RegistroAsiento(Base):
-
-     __tablename__ = 'registro_asiento'
-
-    cantidad = Column(Integer)
-    cuenta_id = Column(String, ForeignKey('cuenta_asiento.id'))
-    asiento_id = Column(String, ForeignKey('asiento.id'))
-    
+from .entities import Asiento, RegistroAsiento
 
 class AsientosModel:
 
@@ -55,11 +22,10 @@ class AsientosModel:
         self.session.add(r)
 
         r = RegistroAsiento()
-        r.cantidad = -1 * cantidad
+        r.cantidad = - 1 * cantidad
         r.cuenta_id = origen
         r.asiento_id = self.asiento_id
         self.session.add(r)
-
 
 @contextlib.contextmanager
 def obtener_asiento(session, autorizador_id, notas=None):
@@ -71,5 +37,26 @@ def obtener_asiento(session, autorizador_id, notas=None):
 
 class CompensatoriosModel:
 
+    CUENTA = '19544df3-2c33-4556-806f-07eaf0c7615b'
+
     def _chequear_cuentas(session):
         pass
+
+    @staticmethod
+    def _id_de_cuenta(uid):
+        return '{}_{}'.format(uid, CompensatoriosModel.CUENTA)
+
+    @classmethod
+    def cambiarSaldo(cls, session, autorizador_id, uid, cantidad, notas=None):
+        cuenta = CompensatoriosModel._id_de_cuenta(uid)
+        with obtener_asiento(session, autorizador_id, notas) as asiento:
+            asiento.transferencia(cantidad, cls.CUENTA, cuenta)
+
+    @classmethod
+    def obtenerSaldo(cls, session, uid):
+        cuenta = CompensatoriosModel._id_de_cuenta(uid)
+        q = session.query(RegistroAsiento).filter(RegistroAsiento.cuenta_id = cuenta).all()
+        saldo = 0
+        for r in q:
+            saldo = saldo + r.cantidad
+        return saldo
