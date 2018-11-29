@@ -46,10 +46,10 @@ register_encoder(app)
 
 API_BASE = os.environ['API_BASE']
 
-@app.route(API_BASE + '/config.json', methods=['GET'])
+@app.route(API_BASE + '/obtener_config', methods=['GET'])
 def config():
     volumen = os.environ['VOLUMEN_CONFIG']
-    return send_from_dirtectory(volumen, 'config.json')
+    return send_from_directory(volumen, 'config.json')
 
 @app.route(API_BASE + '/acceso_modulos', methods=['GET'])
 @warden.require_valid_token
