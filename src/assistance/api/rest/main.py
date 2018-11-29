@@ -13,7 +13,7 @@ from dateutil import parser
 from werkzeug.contrib.fixers import ProxyFix
 
 import flask
-from flask import Flask, Response, abort, make_response, jsonify, url_for, request, json, stream_with_context
+from flask import Flask, Response, abort, make_response, jsonify, url_for, request, json, stream_with_context, send_from_directory
 from flask_jsontools import jsonapi
 from dateutil import parser
 
@@ -45,6 +45,11 @@ app.wsgi_app = ProxyFix(app.wsgi_app)
 register_encoder(app)
 
 API_BASE = os.environ['API_BASE']
+
+@app.route(API_BASE + '/config.json', methods=['GET'])
+def config():
+    volumen = os.environ['VOLUMEN_CONFIG']
+    return send_from_dirtectory(volumen, 'config.json')
 
 @app.route(API_BASE + '/acceso_modulos', methods=['GET'])
 @warden.require_valid_token
