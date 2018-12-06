@@ -549,6 +549,38 @@ def eliminar_fecha_justificada(uid, jid, token):
         session.commit()
         return jid
 
+@app.route(API_BASE + '/compensatorios/<uid>', methods=['GET'])
+@warden.require_valid_token
+@jsonapi
+def compensatorios(uid, token):
+    assert uid is not None
+
+    prof = warden.has_one_profile(token, ['assistance-super-admin'])
+    if not prof or prof['profile'] == False:
+        ''' Como no es admin compruebo si es una autoconsulta '''
+        if uid != token['sub']:
+            return ('no tiene los permisos suficientes', 403)
+
+    with obtener_session() as session:
+        return AssistanceModel.compensatorios(session, uid)
+
+@app.route(API_BASE + '/compensatorios', methods=['PUT'])
+@warden.require_valid_token
+@jsonapi
+def crear_compensatorio(token):
+    prof = warden.has_one_profile(token, ['assistance-super-admin'])
+    if not prof or prof['profile'] == False:
+        return ('no tiene los permisos suficientes', 403)
+
+    id_creador_compensatorio = token['sub']
+
+    compensatorio = request.get_json()
+    logging.debug(compensatorio)
+    #with obtener_session() as session:
+    #    cid = AssistanceModel.crear_compensatorio(session, compensatorio, id_creador_compensatorio)
+    #    session.commit()
+    #    return cid
+
 @app.route(API_BASE + '*', methods=['OPTIONS'])
 def options():
     if request.method == 'OPTIONS':

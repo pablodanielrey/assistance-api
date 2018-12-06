@@ -571,6 +571,67 @@ class AssistanceModel:
         return j.id
 
     '''
+        APIs de compensatorios
+    '''
+    '''
+        export class DatosCompensatorio
+            compensatorios:  Array<Compensatorio>;
+            cantidad: number;
+            usuario: Usuario;
+
+        export class Compensatorio
+            registro_id: string;
+            fecha: Date = null;
+            notas: string = null;
+            autorizador_id: string;
+            cantidad: number;
+    '''
+
+    @classmethod
+    def compensatorios(cls, session, uid):  
+        usr = cls._obtener_usuario_por_uid(uid)
+        if not usr:
+            raise Exception('usuario no encontrado {}'.format(uid))
+
+        comp = []
+        comp.append({
+            'registro_id': '011111111111',
+            'fecha': '2018-10-10',
+            'notas': 'Prueba de compensatorio 1',
+            'autorizador_id': '111111111111111',
+            'cantidad': 10
+        })
+        comp.append({
+            'registro_id': '02222222222222',
+            'fecha': '2018-10-12',
+            'notas': 'Prueba de compensatorio 2',
+            'autorizador_id': '111111111111111',
+            'cantidad': 14
+        })
+        comp.append({
+            'registro_id': '033333333333',
+            'fecha': '2018-10-24',
+            'notas': 'Prueba de compensatorio 3',
+            'autorizador_id': '111111111111111',
+            'cantidad': 17
+        })
+        cantidad = 0
+        for i in comp:
+            cantidad +=i['cantidad']
+
+        compensatorios = {
+            'compensatorios' : comp,
+            'cantidad' : cantidad,
+            'usuario': usr
+        }
+        return compensatorios
+
+    @classmethod
+    def crear_compensatorio(cls, session, compensatorio, id_creador_compensatorio):
+        return None
+
+
+    '''
         APIs de los relojes
     '''
 
