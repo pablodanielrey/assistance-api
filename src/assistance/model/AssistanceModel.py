@@ -596,6 +596,7 @@ class AssistanceModel:
         comp = []
         comp.append({
             'registro_id': '011111111111',
+            'usuario_id': uid,
             'fecha': '2018-10-10',
             'notas': 'Prueba de compensatorio 1',
             'autorizador_id': '111111111111111',
@@ -603,6 +604,7 @@ class AssistanceModel:
         })
         comp.append({
             'registro_id': '02222222222222',
+            'usuario_id': uid,
             'fecha': '2018-10-12',
             'notas': 'Prueba de compensatorio 2',
             'autorizador_id': '111111111111111',
@@ -610,6 +612,7 @@ class AssistanceModel:
         })
         comp.append({
             'registro_id': '033333333333',
+            'usuario_id': uid,
             'fecha': '2018-10-24',
             'notas': 'Prueba de compensatorio 3',
             'autorizador_id': '111111111111111',
