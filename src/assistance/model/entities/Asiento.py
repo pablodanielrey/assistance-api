@@ -13,7 +13,7 @@ class Asiento(Base):
     autorizador_id = Column(String)
 
     def __init__(self, autorizador_id, notas=None):
-        self.fecha = datetime.datetime.now()
+        self.fecha = datetime.now()
         self.autorizador_id = autorizador_id
         self.notas = notas
 
@@ -23,5 +23,7 @@ class RegistroAsiento(Base):
     
     cantidad = Column(Integer)
     cuenta_id = Column(String)
+    
     asiento_id = Column(String, ForeignKey('asiento.id'))
+    asiento = relationship('Asiento')
     

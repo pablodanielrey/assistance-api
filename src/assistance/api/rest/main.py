@@ -576,10 +576,10 @@ def crear_compensatorio(token):
 
     compensatorio = request.get_json()
     logging.debug(compensatorio)
-    #with obtener_session() as session:
-    #    cid = AssistanceModel.crear_compensatorio(session, compensatorio, id_creador_compensatorio)
-    #    session.commit()
-    #    return cid
+    with obtener_session() as session:
+        cid = AssistanceModel.crear_compensatorio(session, compensatorio, id_creador_compensatorio)
+        session.commit()
+        return cid
 
 @app.route(API_BASE + '*', methods=['OPTIONS'])
 def options():

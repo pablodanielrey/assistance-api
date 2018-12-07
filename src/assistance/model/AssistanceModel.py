@@ -18,6 +18,7 @@ from oidc.oidc import ClientCredentialsGrant
 
 from assistance.model.zkSoftware import ZkSoftware
 from .entities import *
+from .AsientosModel import CompensatoriosModel
 
 import json
 import redis
@@ -570,6 +571,13 @@ class AssistanceModel:
         session.add(j)
         return j.id
 
+
+    """
+        /////////////////////////////////////////////////////////////////
+                        APIS DE JUSTIFICCACIONES
+        //////////////////////////////////////////////
+    """
+
     '''
         APIs de compensatorios
     '''
@@ -593,45 +601,30 @@ class AssistanceModel:
         if not usr:
             raise Exception('usuario no encontrado {}'.format(uid))
 
-        comp = []
-        comp.append({
-            'registro_id': '011111111111',
-            'usuario_id': uid,
-            'fecha': '2018-10-10',
-            'notas': 'Prueba de compensatorio 1',
-            'autorizador_id': '111111111111111',
-            'cantidad': 10
-        })
-        comp.append({
-            'registro_id': '02222222222222',
-            'usuario_id': uid,
-            'fecha': '2018-10-12',
-            'notas': 'Prueba de compensatorio 2',
-            'autorizador_id': '111111111111111',
-            'cantidad': 14
-        })
-        comp.append({
-            'registro_id': '033333333333',
-            'usuario_id': uid,
-            'fecha': '2018-10-24',
-            'notas': 'Prueba de compensatorio 3',
-            'autorizador_id': '111111111111111',
-            'cantidad': 17
-        })
-        cantidad = 0
-        for i in comp:
-            cantidad +=i['cantidad']
-
-        compensatorios = {
-            'compensatorios' : comp,
-            'cantidad' : cantidad,
+        datos_saldo = CompensatoriosModel.obtenerSaldo(session, uid)
+        datos_compensatorios = [ 
+            {
+                'creado': a['asiento'].fecha,
+                'cantidad': a['registros'][0].cantidad,
+                'notas': a['asiento'].notas,
+                'autorizador': cls._obtener_usuario_por_uid(a['asiento'].autorizador_id)
+            }
+            for a in datos_saldo['asientos']
+        ]
+        r = {
+            'compensatorios': datos_compensatorios,
+            'cantidad': datos_saldo['saldo'],
             'usuario': usr
         }
-        return compensatorios
+        return r
 
     @classmethod
     def crear_compensatorio(cls, session, compensatorio, id_creador_compensatorio):
-        return None
+        uid = compensatorio['usuario_id']
+        notas = compensatorio['notas']
+        cantidad = int(compensatorio['cantidad'])
+        aid = CompensatoriosModel.cambiarSaldo(session, id_creador_compensatorio, uid, cantidad, notas)
+        return aid
 
 
     '''
