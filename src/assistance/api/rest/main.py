@@ -546,7 +546,8 @@ def eliminar_fecha_justificada(uid, jid, token):
     if not prof or prof['profile'] == False:
         return ('no tiene los permisos suficientes', 403)
     with obtener_session() as session:
-        jid = AssistanceModel.eliminarFechaJustificada(session, jid)
+        autorizador_id = token['sub']
+        jid = AssistanceModel.eliminarFechaJustificada(session, jid, autorizador_id)
         session.commit()
         return jid
 

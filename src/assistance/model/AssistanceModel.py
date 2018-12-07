@@ -537,10 +537,25 @@ class AssistanceModel:
         justificacion.eliminado = datetime.datetime.now()
 
     @classmethod
-    def eliminarFechaJustificada(cls, session, jid):
+    def eliminarFechaJustificada(cls, session, jid, autorizador_id=None):
         justificacion = session.query(FechaJustificada).filter(FechaJustificada.id == jid).one()
         logging.info(justificacion)
         justificacion.eliminado = datetime.datetime.now()
+
+        """
+            ver como analizar estos casos para manejarlo mas genéricamente
+        """
+        if justificacion.justificacion.id == CompensatoriosModel.JUSTIFICACION:
+            cantidad = 1
+
+            if justificacion.fecha_fin:
+                cantidad = (justificacion.fecha_fin - justificacion.fecha_inicio).days + 1
+            if not autorizador_id:
+                autorizador_id = justificacion.usuario_id
+            notas = 'Compensatorio Cancelado {}'.format(justificacion.fecha_inicio.date())
+            CompensatoriosModel.cambiarSaldo(session, autorizador_id, justificacion.usuario_id, cantidad, notas)
+
+
         return justificacion.id
 
     @classmethod
@@ -578,7 +593,9 @@ class AssistanceModel:
                 cantidad = ((fj['fecha_fin'] - fj['fecha_inicio']).days + 1) * -1
             if not autorizador_id:
                 autorizador_id = fj['usuario_id']
-            CompensatoriosModel.cambiarSaldo(session, autorizador_id, fj['usuario_id'], cantidad, 'Compensatorio Tomado')
+            fecha_notas = fj['fecha_inicio'].date()
+            notas = 'Compensatorio Tomado {}'.format(fecha_notas)
+            CompensatoriosModel.cambiarSaldo(session, autorizador_id, fj['usuario_id'], cantidad, notas)
 
         return j.id
 
