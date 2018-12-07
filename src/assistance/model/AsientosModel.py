@@ -40,6 +40,7 @@ def obtener_asiento(session, autorizador_id, notas=None):
 class CompensatoriosModel:
 
     CUENTA = '19544df3-2c33-4556-806f-07eaf0c7615b'
+    JUSTIFICACION = '48773fd7-8502-4079-8ad5-963618abe725'
 
     def _chequear_cuentas(session):
         pass

@@ -553,7 +553,7 @@ class AssistanceModel:
 
 
     @classmethod
-    def justificar(cls, session, fj):
+    def justificar(cls, session, fj, autorizador_id=None):
         fj["fecha_inicio"] = parser.parse(fj["fecha_inicio"]) if fj["fecha_inicio"] else None
         if fj["fecha_inicio"] is None:
             raise Exception("Debe poseer fecha de inicio")
@@ -567,8 +567,19 @@ class AssistanceModel:
         j.fecha_fin = fj["fecha_fin"]
         j.usuario_id = fj["usuario_id"] if 'usuario_id' in fj else None
         j.justificacion_id = just["id"]
-
         session.add(j)
+
+        """
+            ver como analizar estos casos para manejarlo mas genéricamente
+        """
+        if just['id'] == CompensatoriosModel.JUSTIFICACION:
+            cantidad = -1
+            if fj['fecha_fin']:
+                cantidad = ((fj['fecha_fin'] - fj['fecha_inicio']).days + 1) * -1
+            if not autorizador_id:
+                autorizador_id = fj['usuario_id']
+            CompensatoriosModel.cambiarSaldo(session, autorizador_id, fj['usuario_id'], cantidad, 'Compensatorio Tomado')
+
         return j.id
 
 

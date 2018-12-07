@@ -533,7 +533,8 @@ def justificar(token):
     fechaJustificada = request.get_json()
     logging.debug(fechaJustificada)
     with obtener_session() as session:
-        id = AssistanceModel.justificar(session, fechaJustificada)
+        autorizador_id = token['sub']
+        id = AssistanceModel.justificar(session, fechaJustificada, autorizador_id)
         session.commit()
         return id
 
