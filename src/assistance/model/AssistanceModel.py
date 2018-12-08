@@ -538,9 +538,13 @@ class AssistanceModel:
 
     @classmethod
     def eliminarFechaJustificada(cls, session, jid, autorizador_id=None):
+
         justificacion = session.query(FechaJustificada).filter(FechaJustificada.id == jid).one()
         logging.info(justificacion)
         justificacion.eliminado = datetime.datetime.now()
+        if not autorizador_id:
+            autorizador_id = justificacion.usuario_id
+        justificacion.autorizador_id = autorizador_id
 
         """
             ver como analizar estos casos para manejarlo mas genéricamente
@@ -550,8 +554,6 @@ class AssistanceModel:
 
             if justificacion.fecha_fin:
                 cantidad = (justificacion.fecha_fin - justificacion.fecha_inicio).days + 1
-            if not autorizador_id:
-                autorizador_id = justificacion.usuario_id
             notas = 'Compensatorio Cancelado {}'.format(justificacion.fecha_inicio.date())
             CompensatoriosModel.cambiarSaldo(session, autorizador_id, justificacion.usuario_id, cantidad, notas)
 
@@ -575,6 +577,9 @@ class AssistanceModel:
 
         fj["fecha_fin"] = parser.parse(fj["fecha_fin"]) if fj["fecha_fin"] else None
 
+        if not autorizador_id:
+            autorizador_id = fj['usuario_id']
+
         just = fj["justificacion"]
         j = FechaJustificada()
         j.id = str(uuid.uuid4())
@@ -582,6 +587,7 @@ class AssistanceModel:
         j.fecha_fin = fj["fecha_fin"]
         j.usuario_id = fj["usuario_id"] if 'usuario_id' in fj else None
         j.justificacion_id = just["id"]
+        j.autorizador_id = autorizador_id
         session.add(j)
 
         """
@@ -591,8 +597,6 @@ class AssistanceModel:
             cantidad = -1
             if fj['fecha_fin']:
                 cantidad = ((fj['fecha_fin'] - fj['fecha_inicio']).days + 1) * -1
-            if not autorizador_id:
-                autorizador_id = fj['usuario_id']
             fecha_notas = fj['fecha_inicio'].date()
             notas = 'Compensatorio Tomado {}'.format(fecha_notas)
             CompensatoriosModel.cambiarSaldo(session, autorizador_id, fj['usuario_id'], cantidad, notas)
