@@ -131,6 +131,25 @@ def telegram_activate(codigo, token=None):
     }
 
 
+@app.route(API_BASE + '/usuarios/search/<search>', methods=['GET'])
+@warden.require_valid_token
+@jsonapi
+def usuarios_search(search, token=None):
+
+    prof = warden.has_one_profile(token, ['assistance-super-admin','assistance-admin','assistance-operator', 'assistance-user'])
+    if prof and prof['profile']:
+        with obtener_session() as session:
+            usuarios = AssistanceModel.usuarios_search(session, search)
+            return usuarios
+
+    autorizador_id = token['sub']
+    with obtener_session() as session:
+        usuarios = AssistanceModel.sub_usuarios_search(session, autorizador_id, search)
+        return usuarios
+    
+        
+
+
 @app.route(API_BASE + '/usuarios', methods=['GET'])
 @app.route(API_BASE + '/usuarios/<uid>', methods=['GET'])
 @warden.require_valid_token

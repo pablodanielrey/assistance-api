@@ -3,6 +3,7 @@ from sqlalchemy.orm import joinedload, with_polymorphic
 from datetime import datetime, date, timedelta
 import requests
 import os
+import re
 import uuid
 from dateutil import parser
 import datetime
@@ -453,6 +454,47 @@ class AssistanceModel:
             return []
 
         return r.json()
+
+    @classmethod
+    def usuarios_search(cls, session, search):
+        query = cls.sileg_url + '/usuarios'
+        r = cls.api(query)
+        if not r.ok:
+            raise Exception()
+        
+        usuarios = r.json()
+        uids = set([u['usuario'] for u in usuarios])
+
+        tk = cls._get_token()
+        usuarios = [cls._obtener_usuario_por_uid(uid,tk) for uid in uids]
+
+        ''' mejoro un poco el texto de search para que matchee la cadena de nombre apellido dni'''
+        rsearch = '.*{}.*'.format(search.replace('.','').replace(' ', '.*'))
+        r = re.compile(rsearch, re.I)
+        filtrados = [u for u in usuarios if r.match(u['nombre'] + ' ' + u['apellido'] + ' ' + u['dni'])]
+        return filtrados        
+
+
+    @classmethod
+    def sub_usuarios_search(cls, session, uid, search):
+        query = cls.sileg_url + '/usuarios/{}/subusuarios'.format(uid)
+        r = cls.api(query)
+        if not r.ok:
+            raise Exception()
+        
+        usuarios = r.json()
+        uids = set([u['usuario'] for u in usuarios])
+
+        tk = cls._get_token()
+        usuarios = [cls._obtener_usuario_por_uid(uid,tk) for uid in uids]
+
+        ''' mejoro un poco el texto de search para que matchee la cadena de nombre apellido dni'''
+        rsearch = '.*{}.*'.format(search.replace('.','').replace(' ', '.*'))
+        r = re.compile(rsearch, re.I)
+        filtrados = [ u for u in usuarios if r.match(u['nombre'] + ' ' + u['apellido'] + ' ' + u['dni'])]
+        return filtrados
+
+        
 
     @classmethod
     def usuarios(cls, session, search, retornarClave, offset, limit, fecha):
