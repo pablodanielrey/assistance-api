@@ -25,6 +25,7 @@ class FechaJustificada(Base):
     eliminado = Column(DateTime)
 
     usuario_id = Column(String)
+    autorizador_id = Column(String)
 
     justificacion_id = Column(String, ForeignKey('justificacion.id'))
     justificacion = relationship('Justificacion', back_populates='justificaciones')
