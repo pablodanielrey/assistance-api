@@ -12,10 +12,19 @@ import hashlib
 import logging
 logger = logging.getLogger('assistance.model.zkSoftware')
 
-
-
 import oidc
 from oidc.oidc import ClientCredentialsGrant
+
+"""
+    ###############
+    para la cache de usuarios
+"""
+from model_utils.API import API
+from model_utils.UserCache import UserCache
+from model_utils.UsersAPI import UsersAPI
+"""
+    ###############
+"""
 
 from assistance.model.zkSoftware import ZkSoftware
 from .entities import *
@@ -27,70 +36,42 @@ REDIS_HOST = os.environ.get('TELEGRAM_BOT_REDIS')
 REDIS_PORT = int(os.environ.get('TELEGRAM_BOT_REDIS_PORT', 6379))
 VERIFY_SSL = bool(int(os.environ.get('VERIFY_SSL',0)))
 
+
+SILEG_API = os.environ['SILEG_API_URL']
+USERS_API = os.environ['USERS_API_URL']
+OIDC_URL = os.environ['OIDC_URL']
+OIDC_CLIENT_ID = os.environ['OIDC_CLIENT_ID']
+OIDC_CLIENT_SECRET = os.environ['OIDC_CLIENT_SECRET']
+
+_API = API(url=OIDC_URL, 
+              client_id=OIDC_CLIENT_ID, 
+              client_secret=OIDC_CLIENT_SECRET, 
+              verify_ssl=VERIFY_SSL)
+
+_USERS_API = UsersAPI(api_url=USERS_API, api=_API)
+
 class AssistanceModel:
 
+
     verify = VERIFY_SSL
-    usuarios_url = os.environ['USERS_API_URL']
-    sileg_url = os.environ['SILEG_API_URL']
-    oidc_url = os.environ['OIDC_URL']
-    client_id = os.environ['OIDC_CLIENT_ID']
-    client_secret = os.environ['OIDC_CLIENT_SECRET']
+    sileg_url = SILEG_API
+    users_url = USERS_API
+    oidc_url = OIDC_URL
+    client_id = OIDC_CLIENT_ID
+    client_secret = OIDC_CLIENT_SECRET
     eliminar_logs_relojes = bool(int(os.environ.get('ASSISTANCE_DELETE_LOGS_SINC',0)))
+
+    api = _API
+    users_api = _USERS_API
+    cache_usuarios = UserCache(host=REDIS_HOST, 
+                                port=REDIS_PORT, 
+                                user_getter=_USERS_API._get_user_uuid,
+                                users_getter=_USERS_API._get_users_uuid,
+                                user_getter_dni=_USERS_API._get_user_dni)
+   
 
     redis_assistance = redis.StrictRedis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
 
-    @classmethod
-    def _get_token(cls):
-        ''' obtengo un token mediante el flujo client_credentials para poder llamar a la api de usuarios '''
-        grant = ClientCredentialsGrant(cls.oidc_url, cls.client_id, cls.client_secret, verify=cls.verify)
-        token = grant.get_token(grant.access_token())
-        if not token:
-            raise Exception()
-        return token
-
-    @classmethod
-    def api(cls, api, params=None, token=None):
-        if not token:
-            token = cls._get_token()
-
-        ''' se deben cheqeuar intentos de login, y disparar : SeguridadError en el caso de que se haya alcanzado el máximo de intentos '''
-        headers = {
-            'Authorization': 'Bearer {}'.format(token)
-        }
-        logging.debug(api)
-        logging.debug(params)
-        r = requests.get(api, verify=cls.verify, headers=headers, params=params)
-        logging.debug(r)
-        return r
-
-    @classmethod
-    def api_post(cls, api, data=None, token=None):
-        if not token:
-            token = cls._get_token()
-
-        ''' se deben cheqeuar intentos de login, y disparar : SeguridadError en el caso de que se haya alcanzado el máximo de intentos '''
-        headers = {
-            'Authorization': 'Bearer {}'.format(token)
-        }
-        logging.debug(api)
-        logging.debug(data)
-        r = requests.post(api, verify=cls.verify, headers=headers, json=data)
-        logging.debug(r)
-        return r
-
-    @classmethod
-    def api_delete(cls, api, token=None):
-        if not token:
-            token = cls._get_token()
-
-        ''' se deben cheqeuar intentos de login, y disparar : SeguridadError en el caso de que se haya alcanzado el máximo de intentos '''
-        headers = {
-            'Authorization': 'Bearer {}'.format(token)
-        }
-        logging.debug(api)
-        r = requests.delete(api, verify=cls.verify, headers=headers)
-        logging.debug(r)
-        return r
 
     @classmethod
     def chequear_acceso_reporte(cls, session, usuario_logueado, uid):
@@ -134,43 +115,6 @@ class AssistanceModel:
                 d2[k] = d[k]
         return d2
 
-    @classmethod
-    def _setear_usuario_cache(cls, usr):
-        cls.redis_assistance.hmset('usuario_uid_{}'.format(usr['id']), usr)
-        cls.redis_assistance.hset('usuario_dni_{}'.format(usr['dni'].lower().replace(' ','')), 'uid', usr['id'])
-
-    @classmethod
-    def _obtener_usuario_por_uid(cls, uid, token=None):
-        usr = cls.redis_assistance.hgetall('usuario_uid_{}'.format(uid))
-        if len(usr.keys()) > 0:
-            return usr
-
-        query = cls.usuarios_url + '/usuarios/' + uid
-        r = cls.api(query, token=token)
-        if not r.ok:
-            return None
-        usr = r.json()
-        cls._setear_usuario_cache(usr)
-        return usr
-
-    @classmethod
-    def _obtener_usuario_por_dni(cls, dni, token=None):
-        key = 'usuario_dni_{}'.format(dni.lower().replace(' ',''))
-        if cls.redis_assistance.hexists(key,'uid'):
-            uid = cls.redis_assistance.hget(key,'uid')
-            return cls._obtener_usuario_por_uid(uid, token)
-
-        query = cls.usuarios_url + '/usuarios/'
-        params = {}
-        params['c'] = True
-        params = {'q':dni}
-        r = cls.api(query, params=params, token=token)
-        if not r.ok:
-            raise Exception(r.text)
-        for usr in r.json():
-            cls._setear_usuario_cache(usr)
-            return usr
-        raise Exception('No se encuentra usuario con dni {}'.format(dni))
 
     """
     /////////////////////////////
@@ -180,7 +124,7 @@ class AssistanceModel:
         st = token['sub'] + str(datetime.datetime.now())
         h = hashlib.sha1(st.encode('utf-8')).hexdigest()
 
-        usr = cls._obtener_usuario_por_uid(token['sub'])
+        usr = cls.cache_usuarios.obtener_usuario_por_uid(token['sub'])
         token['nombre'] = usr['nombre']
         token['apellido'] = usr['apellido']
         token['dni'] = usr['dni']
@@ -201,7 +145,7 @@ class AssistanceModel:
         cls.redis_assistance.hset(k2,'uid',uid)
 
         k3 = 'telegram_{}'.format(uid)
-        usr = cls._obtener_usuario_por_uid(uid)
+        usr = cls.cache_usuarios.obtener_usuario_por_uid(uid)
         cls.redis_assistance.hmset(k3,{
             'u_nombre': usr['nombre'],
             'u_apellido': usr['apellido'],
@@ -214,7 +158,7 @@ class AssistanceModel:
     @classmethod
     def _obtener_uids_con_designacion(cls):
         query = cls.sileg_url + '/designaciones'
-        r = cls.api(query)
+        r = cls.api.get(query)
         desig = r.json()
         uids = set([d["usuario_id"] for d in desig if "usuario_id" in d])
         return uids
@@ -227,7 +171,7 @@ class AssistanceModel:
     @classmethod
     def perfil(cls, session, uid, fecha, tzone='America/Argentina/Buenos_Aires'):
         assert uid is not None
-        usr = cls._obtener_usuario_por_uid(uid)
+        usr = cls.cache_usuarios.obtener_usuario_por_uid(uid)
         if not usr:
             raise Exception('usuario no encontrado {}'.format(uid))
         r = Reporte.generarReporte(session, usr, fecha, fecha, cls._obtenerHorarioHelper, tzone)
@@ -262,7 +206,7 @@ class AssistanceModel:
 
         #proceso los lugares de la persona.
         query = cls.sileg_url + '/usuarios/{}/designaciones'.format(uid)
-        r = cls.api(query)
+        r = cls.api.get(query)
         oficinas = []
         if r.ok:
             desig = r.json()
@@ -298,7 +242,7 @@ class AssistanceModel:
         assert uid is not None
         fin = fin if fin else date.today()
         inicio = inicio if inicio else fin - timedelta(days=7)
-        usr = cls._obtener_usuario_por_uid(uid)
+        usr = cls.cache_usuarios.obtener_usuario_por_uid(uid)
         if not usr:
             return []
         return Reporte.generarReporte(session, usr, inicio, fin, cls._obtenerHorarioHelper, tzone)
@@ -308,7 +252,7 @@ class AssistanceModel:
         assert uid is not None
         fin = fin if fin else date.today()
         inicio = inicio if inicio else fin - timedelta(days=7)
-        usr = cls._obtener_usuario_por_uid(uid)
+        usr = cls.cache_usuarios.obtener_usuario_por_uid(uid)
         if not usr:
             return []
         return ReporteJustificaciones.generarReporte(session, usr, inicio, fin, tzone)
@@ -320,20 +264,20 @@ class AssistanceModel:
             # obtengo el lugar
             query = cls.sileg_url + '/lugares/' + lid
             params = {}
-            r = cls.api(query, params)
+            r = cls.api.get(query, params)
             if not r.ok:
                 lugar = None
             lugar = r.json()
 
             # busco los usuarios
             query = cls.sileg_url + '/designaciones/?l=' + lid
-            r = cls.api(query)
+            r = cls.api.get(query)
             desig = r.json()
             logging.info(desig)
             uids = set([d["usuario_id"] for d in desig if "usuario_id" in d])
             usuarios = []
             for uid in uids:
-                usr = cls._obtener_usuario_por_uid(uid)
+                usr = cls.cache_usuarios.obtener_usuario_por_uid(uid)
                 if not usr:
                     raise Exception('No existe el usuario con uid {}'.format(uid))
                 usuarios.append(usr)
@@ -356,7 +300,7 @@ class AssistanceModel:
         assert uid is not None
         assert session is not None
 
-        usr = cls._obtener_usuario_por_uid(uid)
+        usr = cls.cache_usuarios.obtener_usuario_por_uid(uid)
         if not usr:
             raise Exception('No existe el usuario con uid {}'.format(uid))
 
@@ -387,7 +331,7 @@ class AssistanceModel:
         assert uid is not None
         fecha = fecha if fecha else date.today()
 
-        usr = cls._obtener_usuario_por_uid(uid)
+        usr = cls.cache_usuarios.obtener_usuario_por_uid(uid)
         if not usr:
             raise Exception('No existe el usuario con uid {}'.format(uid))
 
@@ -435,7 +379,7 @@ class AssistanceModel:
 
     @classmethod
     def usuario(cls, session, uid, retornarClave=False):
-        usr = cls._obtener_usuario_por_uid(uid)
+        usr = cls.cache_usuarios.obtener_usuario_por_uid(uid)
         return {
             'usuario': usr,
             'asistencia': None
@@ -449,7 +393,7 @@ class AssistanceModel:
             params['q'] = search
 
         logging.debug(query)
-        r = cls.api(query, params)
+        r = cls.api.get(query, params)
         if not r.ok:
             return []
 
@@ -458,15 +402,15 @@ class AssistanceModel:
     @classmethod
     def usuarios_search(cls, session, search):
         query = cls.sileg_url + '/usuarios'
-        r = cls.api(query)
+        r = cls.api.get(query)
         if not r.ok:
             raise Exception()
         
         usuarios = r.json()
         uids = set([u['usuario'] for u in usuarios])
 
-        tk = cls._get_token()
-        usuarios = [cls._obtener_usuario_por_uid(uid,tk) for uid in uids]
+        tk = cls.api._get_token()
+        usuarios = cls.cache_usuarios.obtener_usuarios_por_uids(uids,tk)
 
         ''' mejoro un poco el texto de search para que matchee la cadena de nombre apellido dni'''
         rsearch = '.*{}.*'.format(search.replace('.','').replace(' ', '.*'))
@@ -478,69 +422,21 @@ class AssistanceModel:
     @classmethod
     def sub_usuarios_search(cls, session, uid, search):
         query = cls.sileg_url + '/usuarios/{}/subusuarios'.format(uid)
-        r = cls.api(query)
+        r = cls.api.get(query)
         if not r.ok:
             raise Exception()
         
         usuarios = r.json()
         uids = set([u['usuario'] for u in usuarios])
 
-        tk = cls._get_token()
-        usuarios = [cls._obtener_usuario_por_uid(uid,tk) for uid in uids]
+        tk = cls.api._get_token()
+        usuarios = [cls.cache_usuarios.obtener_usuario_por_uid(uid,tk) for uid in uids]
 
         ''' mejoro un poco el texto de search para que matchee la cadena de nombre apellido dni'''
         rsearch = '.*{}.*'.format(search.replace('.','').replace(' ', '.*'))
         r = re.compile(rsearch, re.I)
         filtrados = [ u for u in usuarios if r.match(u['nombre'] + ' ' + u['apellido'] + ' ' + u['dni'])]
         return filtrados
-
-        
-
-    @classmethod
-    def usuarios(cls, session, search, retornarClave, offset, limit, fecha):
-
-        query = cls.usuarios_url + '/usuarios/'
-        params = {}
-        if retornarClave:
-            params['c'] = True
-        params = {'q':search}
-        r = cls.api(query,params=params)
-        if not r.ok:
-            raise Exception(r.text)
-
-        uids = cls._obtener_uids_con_designacion()
-
-        usuarios = []
-        for usr in r.json():
-            cls._setear_usuario_cache(usr)
-            usuarios.append({
-                    'usuario':usr,
-                    'asistencia': usr if usr['id'] in uids else None
-                })
-        return usuarios
-
-        """
-        import re
-        r = '^.*{}.*$'.format(search.replace(' ','.*'))
-        reg = re.compile(r)
-
-        usuarios = []
-        uids = cls._obtener_uids_con_designacion()
-        token = cls._get_token()
-        for uid in uids:
-            usr = cls._obtener_usuario_por_uid(uid, token)
-            if search:
-                fn = usr['nombre'] + ' ' + usr['apellido']
-                if reg.match(fn):
-                    usuarios.append({
-                            'usuario':usr,
-                            'asistencia':None
-                        })
-
-        return usuarios
-        """
-
-
 
 
     '''
@@ -671,7 +567,7 @@ class AssistanceModel:
 
     @classmethod
     def compensatorios(cls, session, uid):  
-        usr = cls._obtener_usuario_por_uid(uid)
+        usr = cls.cache_usuarios.obtener_usuario_por_uid(uid)
         if not usr:
             raise Exception('usuario no encontrado {}'.format(uid))
 
@@ -681,7 +577,7 @@ class AssistanceModel:
                 'creado': a['asiento'].fecha,
                 'cantidad': a['registros'][0].cantidad,
                 'notas': a['asiento'].notas,
-                'autorizador': cls._obtener_usuario_por_uid(a['asiento'].autorizador_id)
+                'autorizador': cls.cache_usuarios.obtener_usuario_por_uid(a['asiento'].autorizador_id)
             }
             for a in datos_saldo['asientos']
         ]
@@ -799,11 +695,11 @@ class AssistanceModel:
         if len(logs) <= 0:
             yield
 
-        token = cls._get_token()
+        token = cls.api._get_token()
         try:
             for l in logs:
                 dni = l['PIN'].strip().lower()
-                usuario = cls._obtener_usuario_por_dni(dni, token=token)
+                usuario = cls.usuarios_cache.obtener_usuario_por_dni(dni, token=token)
                 marcacion = l['DateTime']
 
                 ms = session.query(Marcacion).filter(and_(Marcacion.usuario_id == usuario['id'], Marcacion.marcacion == marcacion)).all()
