@@ -2,6 +2,16 @@ from sqlalchemy import Column, String, ForeignKey, Boolean, DateTime, TIMESTAMP
 from sqlalchemy.orm import relationship
 from model_utils import Base
 
+
+"""
+class RegistroCambios(Base):
+
+    entidad_id = Column(String)
+    entidad = Column(String)
+    usuario_id = Column(String)
+"""
+
+
 class Justificacion(Base):
 
     __tablename__ = 'justificacion'

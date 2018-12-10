@@ -399,6 +399,8 @@ class AssistanceModel:
 
         return r.json()
 
+    """
+    esta implementación busca en todas las designaciones!!
     @classmethod
     def usuarios_search(cls, session, search):
         query = cls.sileg_url + '/usuarios'
@@ -417,6 +419,27 @@ class AssistanceModel:
         r = re.compile(rsearch, re.I)
         filtrados = [u for u in usuarios if r.match(u['nombre'] + ' ' + u['apellido'] + ' ' + u['dni'])]
         return filtrados        
+    """
+    
+    @classmethod
+    def usuarios_search(cls, session, search):
+        query = cls.sileg_url + '/usuarios'
+        r = cls.api.get(query)
+        if not r.ok:
+            raise Exception()
+        
+        usuarios = r.json()
+        uids = set([u['usuario'] for u in usuarios])
+
+        tk = cls.api._get_token()
+        usuarios = cls.cache_usuarios.obtener_usuarios_por_uids(uids,tk)
+
+        ''' mejoro un poco el texto de search para que matchee la cadena de nombre apellido dni'''
+        rsearch = '.*{}.*'.format(search.replace('.','').replace(' ', '.*'))
+        r = re.compile(rsearch, re.I)
+        filtrados = [u for u in usuarios if r.match(u['nombre'] + ' ' + u['apellido'] + ' ' + u['dni'])]
+        return filtrados        
+
 
 
     @classmethod

@@ -7,6 +7,59 @@
 		"mostrar_detalle_entrada_salida_reporte": false
 	},
 	"api":{
+		"perfiles": [
+			{
+				"perfil":"default",
+				"funciones": [
+					"inicio_personal",
+					"justificacion_reporte"
+				]
+			},
+			{
+				"perfil": "assistance-super-admin",
+				"funciones": ["super-admin"]
+			},
+			{
+				"perfil": "assistance-admin",
+				"funciones": [
+					"inicio_personal",
+					"reporte_personal",
+					"reporte_general",
+					"reporte_detalles_avanzados",
+					"justificacion_personal_abm",
+					"justificacion_general_abm",
+					"justificacion_tipo_abm",
+					"justificacion_reporte",
+					"horario_vista",
+					"horario_abm"
+				]
+			},
+			{
+				"perfil": "assistance-operator",
+				"funciones": [
+					"inicio_personal",
+					"reporte_personal",
+					"reporte_general",
+					"reporte_detalles_avanzados",
+					"justificacion_personal_a",
+					"justificacion_general_a",
+					"justificacion_reporte",
+					"horario_vista"				
+				]
+			},
+			{
+				"perfil": "assistance-user",
+				"funciones": [
+					"inicio_personal",
+					"reporte_personal",
+					"reporte_general",
+					"reporte_detalles_avanzados",
+					"justificacion_reporte",
+					"horario_vista"
+				]
+			}
+		],
+
 		"lugar_raiz": ""
 	}
 }

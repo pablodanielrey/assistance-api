@@ -46,74 +46,35 @@ register_encoder(app)
 
 API_BASE = os.environ['API_BASE']
 
-@app.route(API_BASE + '/obtener_config', methods=['GET'])
-@jsonapi
-def config():
+def _config():
     volumen = os.environ['VOLUMEN_CONFIG']
     with open(volumen + '/config.json','r') as f:
         config = json.load(f)
-        return config['ui']
-    return {}
+    return config
+
+@app.route(API_BASE + '/obtener_config', methods=['GET'])
+@jsonapi
+def retornar_config():
+    config = _config()
+    return config['ui']
 
 @app.route(API_BASE + '/acceso_modulos', methods=['GET'])
 @warden.require_valid_token
 @jsonapi
 def obtener_acceso_modulos(token=None):
 
-    prof = warden.has_one_profile(token, ['assistance-super-admin'])
-    if prof and prof['profile'] == True:
-        a = [
-            'super-admin'
-        ]
-        return json.dumps(a)
+    config = _config()
+    perfiles = config['api']['perfiles']
+    for perfil in perfiles:
+        p = perfil['perfil']
+        if warden.has_one_profile(token, [p]):
+            return perfil['funciones']
 
-    prof = warden.has_one_profile(token, ['assistance-admin'])
-    if prof and prof['profile'] == True:
-        a = [
-            'inicio_personal',
-            'reporte_personal',
-            'reporte_general',
-            'reporte_detalles_avanzados',
-            'justificacion_personal_abm',
-            'justificacion_general_abm',
-            'justificacion_tipo_abm',
-            'justificacion_reporte',
-            'horario_vista',
-            'horario_abm'
-        ]
-        return json.dumps(a)
-    
-    prof = warden.has_one_profile(token, ['assistance-operator'])
-    if prof and prof['profile'] == True:
-        a = [
-            'inicio_personal',
-            'reporte_personal',
-            'reporte_general',
-            'reporte_detalles_avanzados',
-            'justificacion_personal_a',
-            'justificacion_general_a',
-            'justificacion_reporte',
-            'horario_vista'
-        ]
-        return json.dumps(a)
+    pdefault = perfiles[0]
+    if pdefault['perfil'] != 'default':
+        raise Exception('no se encuentra perfil por defecto')
+    return pdefault['funciones']
 
-    prof = warden.has_one_profile(token, ['assistance-user'])
-    if prof and prof['profile'] == True:
-        a = [
-            'inicio_personal',
-            'reporte_personal',
-            'reporte_general',
-            'reporte_detalles_avanzados',
-            'justificacion_reporte',
-            'horario_vista'
-        ]
-        return json.dumps(a)
-
-    a = [
-        'inicio_personal',
-        'justificacion_reporte'
-    ]
-    return json.dumps(a)            
 
 @app.route(API_BASE + '/telegram_token', methods=['GET'])
 @warden.require_valid_token
