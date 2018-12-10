@@ -51,7 +51,7 @@ API_BASE = os.environ['API_BASE']
 def config():
     volumen = os.environ['VOLUMEN_CONFIG']
     with open(volumen + '/config.json','r') as f:
-        config = json.loads(f.readlines)
+        config = json.load(f)
         return config['ui']
     return {}
 
