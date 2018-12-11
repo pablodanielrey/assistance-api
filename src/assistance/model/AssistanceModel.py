@@ -27,6 +27,7 @@ from model_utils.UsersAPI import UsersAPI
 """
 
 from assistance.model.zkSoftware import ZkSoftware
+from .AssistanceCache import AssistanceCache
 from .entities import *
 from .AsientosModel import CompensatoriosModel
 
@@ -68,52 +69,68 @@ class AssistanceModel:
                                 user_getter=_USERS_API._get_user_uuid,
                                 users_getter=_USERS_API._get_users_uuid,
                                 user_getter_dni=_USERS_API._get_user_dni)
-   
 
-    redis_assistance = redis.StrictRedis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
-
+    assistance_cache = AssistanceCache(host=REDIS_HOST, port=REDIS_PORT)
 
     @classmethod
-    def chequear_acceso_reporte(cls, session, usuario_logueado, uid):
-        assert usuario_logueado is not None
+    def _config(cls):
+        volumen = os.environ['VOLUMEN_CONFIG']
+        with open(volumen + '/config.json','r') as f:
+            config = json.load(f)
+        return config
+
+    @classmethod
+    def _obtener_subusuarios(cls, uid):
+        uids = cls.assistance_cache.obtener_subusuarios(uid)
+        if not uids:
+            query = cls.sileg_url + '/usuarios/{}/subusuarios'.format(uid)
+            r = cls.api.get(query)
+            if not r.ok:
+                raise Exception()
+            usuarios = r.json()
+            uids = set([u['usuario'] for u in usuarios])
+            uids.add(uid)
+            cls.assistance_cache.setear_subusuarios(uid, uids)
+        return uids
+
+    @classmethod
+    def _obtener_subusuarios_por_lugar(cls, lid):
+        uids = cls.assistance_cache.obtener_subusuarios(lid)
+        if not uids:
+            query = cls.sileg_url + '/lugares/{}/subusuarios'.format(lid)
+            r = cls.api.get(query)
+            if not r.ok:
+                raise Exception()
+            usuarios = r.json()
+            uids = set([u['usuario'] for u in usuarios])
+            cls.assistance_cache.setear_subusuarios(lid, uids)
+        return uids
+
+    @classmethod
+    def chequear_acceso(cls, caller_id, uid):
+        """
+            chequea si un usuario tiene acceso a los datos de otro usuario
+        """
+        assert caller_id is not None
         assert uid is not None
-
-        ''' ahora chequeamos que el usuario logueado tenga permisos para consultar los reportes de uid '''
-
-        return usuario_logueado == uid
-
-
-    """
-    ////////////// MANEJO DE CACHE ////////////////////////
-    """
+        uids = cls._obtener_subusuarios(caller_id)
+        ok = uid in uids
+        return ok
 
     @classmethod
-    def _codificar_para_redis(cls, d):
-        d2 = {}
-        for k in d.keys():
-            if d[k] is None:
-                d2[k] = 'none_existentvalue'
-            elif d[k] == False:
-                d2[k] = 'false_existentvalue'
-            elif d[k] == True:
-                d2[k] = 'true_existentvalue'
-            else:
-                d2[k] = d[k]
-        return d2
-
-    @classmethod
-    def _decodificar_desde_redis(cls, d):
-        d2 = {}
-        for k in d.keys():
-            if d[k] == 'none_existentvalue':
-                d2[k] = None
-            elif d[k] == 'false_existentvalue':
-                d2[k] = False
-            elif d[k] == 'true_existentvalue':
-                d2[k] = True
-            else:
-                d2[k] = d[k]
-        return d2
+    def obtener_acceso_modulos(cls, uid):
+        """
+            si tiene subusuarios entonces retorna las funciones del perfil default-authority
+        """
+        uids = cls._obtener_subusuarios(uid)
+        if not uid:
+            return None
+        config = cls._config()
+        pgen = (p for p in config['api']['perfiles'] if p['perfil'] == 'default-authority')
+        perfil = next(pgen)
+        if not perfil:
+            raise Exception('no se encontró el perfil default-authority')
+        return perfil['funciones']
 
 
     """
@@ -156,17 +173,10 @@ class AssistanceModel:
         cls.redis_assistance.sadd('t_authorized', uid)
 
     @classmethod
-    def _obtener_uids_con_designacion(cls):
-        query = cls.sileg_url + '/designaciones'
-        r = cls.api.get(query)
-        desig = r.json()
-        uids = set([d["usuario_id"] for d in desig if "usuario_id" in d])
-        return uids
-
-    @classmethod
     def _obtenerHorarioHelper(cls, session, uid, fecha):
         h = cls.horario(session, uid, fecha)
         return h['horarios'][0] if h else None
+
 
     @classmethod
     def perfil(cls, session, uid, fecha, tzone='America/Argentina/Buenos_Aires'):
@@ -382,7 +392,6 @@ class AssistanceModel:
         usr = cls.cache_usuarios.obtener_usuario_por_uid(uid)
         return {
             'usuario': usr,
-            'asistencia': None
         }
 
     @classmethod
@@ -401,6 +410,7 @@ class AssistanceModel:
 
     """
     esta implementación busca en todas las designaciones!!
+    algo mas eficiente es buscar sobre las designaciones del lugar raiz de la config. 
     @classmethod
     def usuarios_search(cls, session, search):
         query = cls.sileg_url + '/usuarios'
@@ -422,38 +432,22 @@ class AssistanceModel:
     """
     
     @classmethod
-    def usuarios_search(cls, session, search):
-        query = cls.sileg_url + '/usuarios'
-        r = cls.api.get(query)
-        if not r.ok:
-            raise Exception()
-        
-        usuarios = r.json()
-        uids = set([u['usuario'] for u in usuarios])
-
-        tk = cls.api._get_token()
-        usuarios = cls.cache_usuarios.obtener_usuarios_por_uids(uids,tk)
+    def usuarios_search(cls, search):
+        config = cls._config()
+        lid = config['api']['lugar_raiz']
+        uids = cls._obtener_subusuarios_por_lugar(lid)
+        usuarios = cls.cache_usuarios.obtener_usuarios_por_uids(uids)
 
         ''' mejoro un poco el texto de search para que matchee la cadena de nombre apellido dni'''
         rsearch = '.*{}.*'.format(search.replace('.','').replace(' ', '.*'))
         r = re.compile(rsearch, re.I)
-        filtrados = [u for u in usuarios if r.match(u['nombre'] + ' ' + u['apellido'] + ' ' + u['dni'])]
-        return filtrados        
-
-
+        filtrados = [ u for u in usuarios if r.match(u['nombre'] + ' ' + u['apellido'] + ' ' + u['dni'])]
+        return filtrados
 
     @classmethod
-    def sub_usuarios_search(cls, session, uid, search):
-        query = cls.sileg_url + '/usuarios/{}/subusuarios'.format(uid)
-        r = cls.api.get(query)
-        if not r.ok:
-            raise Exception()
-        
-        usuarios = r.json()
-        uids = set([u['usuario'] for u in usuarios])
-
-        tk = cls.api._get_token()
-        usuarios = [cls.cache_usuarios.obtener_usuario_por_uid(uid,tk) for uid in uids]
+    def sub_usuarios_search(cls, uid, search):
+        uids = cls._obtener_subusuarios(uid)
+        usuarios = cls.cache_usuarios.obtener_usuarios_por_uids(uids)
 
         ''' mejoro un poco el texto de search para que matchee la cadena de nombre apellido dni'''
         rsearch = '.*{}.*'.format(search.replace('.','').replace(' ', '.*'))

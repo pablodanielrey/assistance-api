@@ -46,24 +46,21 @@ register_encoder(app)
 
 API_BASE = os.environ['API_BASE']
 
-def _config():
-    volumen = os.environ['VOLUMEN_CONFIG']
-    with open(volumen + '/config.json','r') as f:
-        config = json.load(f)
-    return config
-
 @app.route(API_BASE + '/obtener_config', methods=['GET'])
 @jsonapi
-def retornar_config():
-    config = _config()
+def retornar_config_ui():
+    config = AssistanceModel._config()
     return config['ui']
+
+def _acceso_modulos_modelo(uid):
+    return AssistanceModel.obtener_acceso_modulos(uid)
+
 
 @app.route(API_BASE + '/acceso_modulos', methods=['GET'])
 @warden.require_valid_token
 @jsonapi
 def obtener_acceso_modulos(token=None):
-
-    config = _config()
+    config = AssistanceModel._config()
     perfiles = config['api']['perfiles']
     for perfil in perfiles:
         p = perfil['perfil']
@@ -71,11 +68,23 @@ def obtener_acceso_modulos(token=None):
         if 'profile' in response and response['profile']:
             return perfil['funciones']
 
+    """
+        se chequea el modelo para controlar si es necesario asignarle ciertas funciones
+    """
+    autorizador_id = token['sub']
+    funciones = AssistanceModel.obtener_acceso_modulos(autorizador_id)
+    if funciones:
+        return funciones
+
+    """
+        si no matcheo anteriorment entonces retorno las funciones por defecto.
+    """
     pgen = (p for p in perfiles if p['perfil'] == 'default')
     pdefault = next(pgen)
     if not pdefault or pdefault['perfil'] != 'default':
         raise Exception('no se encuentra perfil por defecto')
     return pdefault['funciones']
+
 
 
 @app.route(API_BASE + '/telegram_token', methods=['GET'])
@@ -105,47 +114,31 @@ def usuarios_search(search, token=None):
 
     prof = warden.has_one_profile(token, ['assistance-super-admin','assistance-admin','assistance-operator', 'assistance-user'])
     if prof and prof['profile']:
-        with obtener_session() as session:
-            usuarios = AssistanceModel.usuarios_search(session, search)
-            return usuarios
+        usuarios = AssistanceModel.usuarios_search(search)
+        return usuarios
 
     autorizador_id = token['sub']
-    with obtener_session() as session:
-        usuarios = AssistanceModel.sub_usuarios_search(session, autorizador_id, search)
-        return usuarios
+    usuarios = AssistanceModel.sub_usuarios_search(autorizador_id, search)
+    return usuarios
     
-        
-
-
-@app.route(API_BASE + '/usuarios', methods=['GET'])
 @app.route(API_BASE + '/usuarios/<uid>', methods=['GET'])
 @warden.require_valid_token
 @jsonapi
 def usuarios(uid=None, token=None):
-
     prof = warden.has_one_profile(token, ['assistance-super-admin','assistance-admin','assistance-operator', 'assistance-user'])
-    if not prof or prof['profile'] == False:
-        ''' como no soy admin, entonces chequea que se este consultando a si mismo '''
-        if not uid or uid != token['sub']:
-            return ('no tiene los permisos suficientes', 403)
+    if prof and prof['profile'] == True:
+        return AssistanceModel.usuario(session, uid, retornarClave=False)
 
-    search = request.args.get('q',None)
-    offset = request.args.get('offset',None,int)
-    limit = request.args.get('limit',None,int)
-    only_internal = request.args.get('assistance',False,bool)
-    c = request.args.get('c',False,bool)
-    with obtener_session() as session:
-        if uid:
-            return AssistanceModel.usuario(session, uid, retornarClave=c)
-        else:
-            fecha_str = request.args.get('f', None)
-            fecha = parser.parse(fecha_str) if fecha_str else None
-            usuarios = AssistanceModel.usuarios(session, search=search, retornarClave=c, offset=offset, limit=limit, fecha=fecha)
-            if not only_internal:
-                return usuarios
-            else:
-                ''' retorno solo los usuarios que tienen algun registro de asistencia '''
-                return [u for u in usuarios if 'asistencia' in u and u['asistencia'] is not None]
+    autorizador_id = token['sub']
+    if AssistanceModel.chequear_acceso(autorizador_id, uid):
+        return AssistanceModel.usuario(session, uid, retornarClave=False)
+
+    ''' como no soy admin, ni tengo cargo, entonces chequea que se este consultando a si mismo '''
+    if autorizador_id == uid:
+        return AssistanceModel.usuario(session, autorizador_id, retornarClave=False)
+
+    return ('no tiene los permisos suficientes', 403)
+
 
 @app.route(API_BASE + '/lugares', methods=['GET'])
 @warden.require_valid_token
@@ -194,11 +187,11 @@ def reporte(uid, token):
             return AssistanceModel.reporte(session, uid, inicio, fin)
 
     usuario_logueado = token['sub']
-    with obtener_session() as session:
-        if AssistanceModel.chequear_acceso_reporte(session, usuario_logueado, uid):
-            return AssistanceModel.reporte(session, uid, inicio, fin)
-        else:
-            return ('no tiene los permisos suficientes', 403)
+    if AssistanceModel.chequear_acceso(usuario_logueado, uid):
+        with obtener_session() as session:
+                return AssistanceModel.reporte(session, uid, inicio, fin)
+    else:
+        return ('no tiene los permisos suficientes', 403)
 
 @app.route(API_BASE + '/usuarios/<uid>/justificaciones', methods=['GET'])
 @warden.require_valid_token
@@ -216,11 +209,11 @@ def reporte_justificaciones(uid, token):
             return AssistanceModel.reporteJustificaciones(session, uid, inicio, fin)
 
     usuario_logueado = token['sub']
-    with obtener_session() as session:
-        if AssistanceModel.chequear_acceso_reporte(session, usuario_logueado, uid):
-            return AssistanceModel.reporteJustificaciones(session, uid, inicio, fin)
-        else:
-            return ('no tiene los permisos suficientes', 403)
+    if AssistanceModel.chequear_acceso(usuario_logueado, uid):
+        with obtener_session() as session:
+                return AssistanceModel.reporteJustificaciones(session, uid, inicio, fin)
+    else:
+        return ('no tiene los permisos suficientes', 403)
 
 @app.route(API_BASE + '/reportes', methods=['POST'])
 @warden.require_valid_token

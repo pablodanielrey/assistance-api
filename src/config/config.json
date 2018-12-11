@@ -57,9 +57,18 @@
 					"inicio_personal",
 					"justificacion_reporte"
 				]
-			}			
+			},
+			{
+				"perfil":"default-authority",
+				"funciones": [
+					"inicio_personal",
+					"reporte_personal",
+					"reporte_general",
+					"justificacion_reporte",
+					"horario_vista"
+				]
+			}
 		],
-
-		"lugar_raiz": ""
+		"lugar_raiz": "06b1159e-8a83-4e4e-b8af-a8ad3dd47258"
 	}
 }
