@@ -67,11 +67,13 @@ def obtener_acceso_modulos(token=None):
     perfiles = config['api']['perfiles']
     for perfil in perfiles:
         p = perfil['perfil']
-        if warden.has_one_profile(token, [p]):
+        response = warden.has_all_profiles(token, [p])
+        if 'profile' in response and response['profile']:
             return perfil['funciones']
 
-    pdefault = perfiles[0]
-    if pdefault['perfil'] != 'default':
+    pgen = (p for p in perfiles if p['perfil'] == 'default')
+    pdefault = next(pgen)
+    if not pdefault or pdefault['perfil'] != 'default':
         raise Exception('no se encuentra perfil por defecto')
     return pdefault['funciones']
 

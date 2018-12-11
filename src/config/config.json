@@ -9,13 +9,6 @@
 	"api":{
 		"perfiles": [
 			{
-				"perfil":"default",
-				"funciones": [
-					"inicio_personal",
-					"justificacion_reporte"
-				]
-			},
-			{
 				"perfil": "assistance-super-admin",
 				"funciones": ["super-admin"]
 			},
@@ -57,7 +50,14 @@
 					"justificacion_reporte",
 					"horario_vista"
 				]
-			}
+			},
+			{
+				"perfil":"default",
+				"funciones": [
+					"inicio_personal",
+					"justificacion_reporte"
+				]
+			}			
 		],
 
 		"lugar_raiz": ""

@@ -8,6 +8,9 @@
 		},
 		{
 			"path": "/src/github/microservices_common"
+		},
+		{
+			"path": "/src/github/warden-api"
 		}
 	],
 	"settings": {}
