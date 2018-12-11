@@ -19,6 +19,18 @@ class AssistanceCache:
             return None
         return self.redis_.lrange(uk, 0, -1)
 
+    def setear_lugares(self, uid, lids=[]):
+        uk = '{}{}{}'.format(self.prefijo, uid, '_lugares')
+        for l in lids:
+            self.redis_.lpush(uk, l)
+        self.redis_.expire(uk, self.timeout)
+
+    def obtener_lugares(self, uid):
+        uk = '{}{}{}'.format(self.prefijo, uid, '_lugares')
+        if not self.redis_.exists(uk):
+            return None
+        return self.redis_.lrange(uk, 0, -1)
+
 
     @classmethod
     def _codificar_para_redis(cls, d):

@@ -28,6 +28,7 @@ from model_utils.UsersAPI import UsersAPI
 
 from assistance.model.zkSoftware import ZkSoftware
 from .AssistanceCache import AssistanceCache
+from .LugaresCache import LugaresCache, LugaresAPI, LugaresGetters
 from .entities import *
 from .AsientosModel import CompensatoriosModel
 
@@ -50,6 +51,7 @@ _API = API(url=OIDC_URL,
               verify_ssl=VERIFY_SSL)
 
 _USERS_API = UsersAPI(api_url=USERS_API, api=_API)
+_LUGARES_API = LugaresAPI(api_url=SILEG_API, api=_API)
 
 class AssistanceModel:
 
@@ -69,6 +71,10 @@ class AssistanceModel:
                                 user_getter=_USERS_API._get_user_uuid,
                                 users_getter=_USERS_API._get_users_uuid,
                                 user_getter_dni=_USERS_API._get_user_dni)
+
+    cache_lugares = LugaresCache(host=REDIS_HOST,
+                                 port=REDIS_PORT,
+                                 getters=LugaresGetters(_LUGARES_API))
 
     assistance_cache = AssistanceCache(host=REDIS_HOST, port=REDIS_PORT)
 
@@ -107,6 +113,18 @@ class AssistanceModel:
         return uids
 
     @classmethod
+    def _obtener_lugares_por_usuario(cls, uid):
+        lids = cls.assistance_cache.obtener_lugares(uid)
+        if not lids:
+            query = cls.sileg_url + '/usuarios/{}/lugares'.format(uid)
+            r = cls.api.get(query)
+            if not r.ok:
+                raise Exception()
+            lugares = r.json()
+            cls.assistance_cache.setear_lugares(uid, lugares)
+        return lids
+
+    @classmethod
     def chequear_acceso(cls, caller_id, uid):
         """
             chequea si un usuario tiene acceso a los datos de otro usuario
@@ -116,6 +134,13 @@ class AssistanceModel:
         uids = cls._obtener_subusuarios(caller_id)
         ok = uid in uids
         return ok
+
+    @classmethod
+    def chequear_acceso_lugares(cls, caller_id, lugares=[]):
+        lids = cls._obtener_lugares_por_usuario(caller_id)
+        usuario_lugares = set(lids)
+        lugares_pedidos = set(lugares)
+        return lugares_pedidos.issubset(usuario_lugares)
 
     @classmethod
     def obtener_acceso_modulos(cls, uid):
@@ -268,33 +293,14 @@ class AssistanceModel:
         return ReporteJustificaciones.generarReporte(session, usr, inicio, fin, tzone)
 
     @classmethod
-    def reporteGeneral(cls, session, lugares, fecha, tzone='America/Argentina/Buenos_Aires'):
+    def reporteGeneral(cls, session, authorized_id, lugares, fecha, tzone='America/Argentina/Buenos_Aires'):
         ret = []
         for lid in lugares:
-            # obtengo el lugar
-            query = cls.sileg_url + '/lugares/' + lid
-            params = {}
-            r = cls.api.get(query, params)
-            if not r.ok:
-                lugar = None
-            lugar = r.json()
-
-            # busco los usuarios
-            query = cls.sileg_url + '/designaciones/?l=' + lid
-            r = cls.api.get(query)
-            desig = r.json()
-            logging.info(desig)
-            uids = set([d["usuario_id"] for d in desig if "usuario_id" in d])
-            usuarios = []
-            for uid in uids:
-                usr = cls.cache_usuarios.obtener_usuario_por_uid(uid)
-                if not usr:
-                    raise Exception('No existe el usuario con uid {}'.format(uid))
-                usuarios.append(usr)
-
+            uids = cls._obtener_subusuarios_por_lugar(lid)
+            usuarios = [u for u in cls.cache_usuarios.obtener_usuarios_por_uids(uids)]
+            lugar = cls.cache_lugares.obtener_lugar_por_id(lid)
             rep = ReporteGeneral.generarReporte(session, lugar, usuarios, fecha, cls._obtenerHorarioHelper, tzone)
             ret.append(rep)
-
         return ret
 
 
@@ -395,18 +401,27 @@ class AssistanceModel:
         }
 
     @classmethod
-    def lugares(cls, session, search):
-        query = cls.sileg_url + '/lugares/'
-        params = {}
-        if search:
-            params['q'] = search
-
-        logging.debug(query)
-        r = cls.api.get(query, params)
-        if not r.ok:
+    def lugares(cls, session, autorizador_id, search=''):
+        lugares = []
+        padres_lids = cls._obtener_lugares_por_usuario(autorizador_id)
+        if not padres_lids or len(padres_lids) <= 0:
             return []
+        lids = []
+        for lid in padres_lids:
+            alids = cls.cache_lugares.obtener_sublugares_por_lugar_id(lid)
+            lids.extend(alids)
 
-        return r.json()
+        tk = _API._get_token()
+        for lid in lids:
+            lugar = cls.cache_lugares.obtener_lugar_por_id(lid, tk)
+            if lugar:
+                lugares.append(lugar)
+
+        ''' mejoro un poco el texto de search para que matchee la cadena de nombre apellido dni'''
+        rsearch = '.*{}.*'.format(search.replace('.','').replace(' ', '.*'))
+        r = re.compile(rsearch, re.I)
+        filtrados = [ l for l in lugares if r.match(l['nombre'])]
+        return filtrados
 
     """
     esta implementación busca en todas las designaciones!!

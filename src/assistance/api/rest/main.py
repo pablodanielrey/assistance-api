@@ -144,9 +144,12 @@ def usuarios(uid=None, token=None):
 @warden.require_valid_token
 @jsonapi
 def lugares(token=None):
+    uid = token['sub']
     with obtener_session() as session:
         search = request.args.get('q')
-        return AssistanceModel.lugares(session=session, search=search)
+        if not search:
+            search = ''
+        return AssistanceModel.lugares(session=session, autorizador_id=uid, search=search)
 
 @app.route(API_BASE + '/usuarios/<uid>/perfil', methods=['GET'])
 @warden.require_valid_token
@@ -218,17 +221,23 @@ def reporte_justificaciones(uid, token):
 @warden.require_valid_token
 @jsonapi
 def reporte_general(token):
-
-    prof = warden.has_one_profile(token, ['assistance-super-admin','assistance-admin','assistance-operator','assistance-user'])
-    if not prof or prof['profile'] == False:
-        return ('no tiene los permisos suficientes', 403)
-
     datos = request.get_json()
     fecha = parser.parse(datos["fecha"]).date() if 'fecha' in datos else None
     lugares = datos["lugares"]
-    logging.info(lugares)
-    with obtener_session() as session:
-        return AssistanceModel.reporteGeneral(session, lugares, fecha)
+
+    usuario_logueado = token['sub']
+
+    prof = warden.has_one_profile(token, ['assistance-super-admin','assistance-admin','assistance-operator','assistance-user'])
+    if prof and prof['profile'] == True:
+        with obtener_session() as session:
+            return AssistanceModel.reporteGeneral(session, usuario_logueado, lugares, fecha)
+
+    if AssistanceModel.chequear_acceso_lugares(usuario_logueado, lugares):
+        with obtener_session() as session:
+            return AssistanceModel.reporteGeneral(session, usuario_logueado, lugares, fecha)
+
+    return ('no tiene los permisos suficientes', 403)
+
 
 @app.route(API_BASE + '/usuarios/<uid>/horario', methods=['GET'])
 @warden.require_valid_token
