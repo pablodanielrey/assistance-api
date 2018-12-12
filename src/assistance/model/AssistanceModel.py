@@ -407,6 +407,7 @@ class AssistanceModel:
         if not padres_lids or len(padres_lids) <= 0:
             return []
         lids = []
+        lids.extend(padres_lids)
         for lid in padres_lids:
             alids = cls.cache_lugares.obtener_sublugares_por_lugar_id(lid)
             lids.extend(alids)

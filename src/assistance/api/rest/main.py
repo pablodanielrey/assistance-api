@@ -145,10 +145,10 @@ def usuarios(uid=None, token=None):
 @jsonapi
 def lugares(token=None):
     uid = token['sub']
+    search = request.args.get('q')
+    if not search:
+        search = ''
     with obtener_session() as session:
-        search = request.args.get('q')
-        if not search:
-            search = ''
         return AssistanceModel.lugares(session=session, autorizador_id=uid, search=search)
 
 @app.route(API_BASE + '/usuarios/<uid>/perfil', methods=['GET'])

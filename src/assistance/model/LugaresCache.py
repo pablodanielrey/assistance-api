@@ -73,6 +73,8 @@ class LugaresCache:
         if self.redis_.exists(uk):
             return self.redis_.lrange(uk, 0, -1)
         lids = self.getters.obtener_sublugares_por_lugar(lid)
+        if not lids:
+            return []
         self.setear_sublugares_por_lugar_id(lid, lids)
         return lids    
 
