@@ -27,7 +27,6 @@ from model_utils.UsersAPI import UsersAPI
 """
 
 from assistance.model.zkSoftware import ZkSoftware
-from .AssistanceCache import AssistanceCache
 from .LugaresCache import LugaresCache, LugaresAPI, LugaresGetters
 from .entities import *
 from .AsientosModel import CompensatoriosModel
@@ -75,8 +74,7 @@ class AssistanceModel:
     cache_lugares = LugaresCache(host=REDIS_HOST,
                                  port=REDIS_PORT,
                                  getters=LugaresGetters(_LUGARES_API))
-
-    assistance_cache = AssistanceCache(host=REDIS_HOST, port=REDIS_PORT)
+   
 
     @classmethod
     def _config(cls):
@@ -87,42 +85,12 @@ class AssistanceModel:
 
     @classmethod
     def _obtener_subusuarios(cls, uid):
-        uids = cls.assistance_cache.obtener_subusuarios(uid)
-        if not uids:
-            query = cls.sileg_url + '/usuarios/{}/subusuarios'.format(uid)
-            r = cls.api.get(query)
-            if not r.ok:
-                raise Exception()
-            usuarios = r.json()
-            uids = set([u['usuario'] for u in usuarios])
-            uids.add(uid)
-            cls.assistance_cache.setear_subusuarios(uid, uids)
+        uids = []
+        lids = cls.cache_lugares.obtener_lugares_por_usuario_id(uid)
+        for lid in lids:
+            usrs = cls.cache_lugares.obtener_subusuarios_por_lugar_id(lid)
+            uids.extend(usrs)
         return uids
-
-    @classmethod
-    def _obtener_subusuarios_por_lugar(cls, lid):
-        uids = cls.assistance_cache.obtener_subusuarios(lid)
-        if not uids:
-            query = cls.sileg_url + '/lugares/{}/subusuarios'.format(lid)
-            r = cls.api.get(query)
-            if not r.ok:
-                raise Exception()
-            usuarios = r.json()
-            uids = set([u['usuario'] for u in usuarios])
-            cls.assistance_cache.setear_subusuarios(lid, uids)
-        return uids
-
-    @classmethod
-    def _obtener_lugares_por_usuario(cls, uid):
-        lids = cls.assistance_cache.obtener_lugares(uid)
-        if not lids:
-            query = cls.sileg_url + '/usuarios/{}/lugares'.format(uid)
-            r = cls.api.get(query)
-            if not r.ok:
-                raise Exception()
-            lugares = r.json()
-            cls.assistance_cache.setear_lugares(uid, lugares)
-        return lids
 
     @classmethod
     def chequear_acceso(cls, caller_id, uid):
@@ -137,7 +105,7 @@ class AssistanceModel:
 
     @classmethod
     def chequear_acceso_lugares(cls, caller_id, lugares=[]):
-        lids = cls._obtener_lugares_por_usuario(caller_id)
+        lids = cls.cache_lugares.obtener_lugares_por_usuario_id(caller_id)
         usuario_lugares = set(lids)
         lugares_pedidos = set(lugares)
         return lugares_pedidos.issubset(usuario_lugares)
@@ -296,8 +264,8 @@ class AssistanceModel:
     def reporteGeneral(cls, session, authorized_id, lugares, fecha, tzone='America/Argentina/Buenos_Aires'):
         ret = []
         for lid in lugares:
-            uids = cls._obtener_subusuarios_por_lugar(lid)
-            usuarios = [u for u in cls.cache_usuarios.obtener_usuarios_por_uids(uids)]
+            uids = cls.cache_lugares.obtener_subusuarios_por_lugar_id(lid)
+            usuarios = cls.cache_usuarios.obtener_usuarios_por_uids(uids)
             lugar = cls.cache_lugares.obtener_lugar_por_id(lid)
             rep = ReporteGeneral.generarReporte(session, lugar, usuarios, fecha, cls._obtenerHorarioHelper, tzone)
             ret.append(rep)
@@ -401,9 +369,26 @@ class AssistanceModel:
         }
 
     @classmethod
+    def sublugares_por_lugar_id(cls, lugar_id, search=''):
+        tk = cls.api._get_token()
+        lids = cls.cache_lugares.obtener_sublugares_por_lugar_id(lugar_id, tk)
+        if not lids:
+            return []
+        lugares = []
+        for lid in lids:
+            lugar = cls.cache_lugares.obtener_lugar_por_id(lid, tk)
+            lugares.append(lugar)
+
+        ''' mejoro un poco el texto de search para que matchee la cadena de nombre apellido dni'''
+        rsearch = '.*{}.*'.format(search.replace('.','').replace(' ', '.*'))
+        r = re.compile(rsearch, re.I)
+        filtrados = [ l for l in lugares if r.match(l['nombre'])]
+        return filtrados
+
+    @classmethod
     def lugares(cls, session, autorizador_id, search=''):
         lugares = []
-        padres_lids = cls._obtener_lugares_por_usuario(autorizador_id)
+        padres_lids = cls.cache_lugares.obtener_lugares_por_usuario_id(autorizador_id)
         if not padres_lids or len(padres_lids) <= 0:
             return []
         lids = []
@@ -451,7 +436,7 @@ class AssistanceModel:
     def usuarios_search(cls, search):
         config = cls._config()
         lid = config['api']['lugar_raiz']
-        uids = cls._obtener_subusuarios_por_lugar(lid)
+        uids = cls.cache_lugares.obtener_subusuarios_por_lugar_id(lid)
         usuarios = cls.cache_usuarios.obtener_usuarios_por_uids(uids)
 
         ''' mejoro un poco el texto de search para que matchee la cadena de nombre apellido dni'''

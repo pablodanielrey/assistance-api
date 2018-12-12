@@ -148,8 +148,14 @@ def lugares(token=None):
     search = request.args.get('q')
     if not search:
         search = ''
-    with obtener_session() as session:
-        return AssistanceModel.lugares(session=session, autorizador_id=uid, search=search)
+
+    prof = warden.has_one_profile(token, ['assistance-super-admin','assistance-admin','assistance-operator', 'assistance-user'])
+    if prof and prof['profile'] == True:
+        config = AssistanceModel._config()
+        lid = config['api']['lugar_raiz']
+        return AssistanceModel.sublugares_por_lugar_id(lugar_id=lid, search=search)
+
+    return AssistanceModel.lugares(session=None, autorizador_id=uid, search=search)
 
 @app.route(API_BASE + '/usuarios/<uid>/perfil', methods=['GET'])
 @warden.require_valid_token

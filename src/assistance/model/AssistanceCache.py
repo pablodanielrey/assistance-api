@@ -6,32 +6,7 @@ class AssistanceCache:
         self.redis_ = redis.StrictRedis(host=host, port=port, decode_responses=True)
         self.prefijo = prefijo
         self.timeout = timeout
-
-    def setear_subusuarios(self, uid, uids=[]):
-        uk = '{}{}{}'.format(self.prefijo, uid, '_subusuarios')
-        for u in uids:
-            self.redis_.lpush(uk, u)
-        self.redis_.expire(uk, self.timeout)
-
-    def obtener_subusuarios(self, uid):
-        uk = '{}{}{}'.format(self.prefijo, uid, '_subusuarios')
-        if not self.redis_.exists(uk):
-            return None
-        return self.redis_.lrange(uk, 0, -1)
-
-    def setear_lugares(self, uid, lids=[]):
-        uk = '{}{}{}'.format(self.prefijo, uid, '_lugares')
-        for l in lids:
-            self.redis_.lpush(uk, l)
-        self.redis_.expire(uk, self.timeout)
-
-    def obtener_lugares(self, uid):
-        uk = '{}{}{}'.format(self.prefijo, uid, '_lugares')
-        if not self.redis_.exists(uk):
-            return None
-        return self.redis_.lrange(uk, 0, -1)
-
-
+ 
     @classmethod
     def _codificar_para_redis(cls, d):
         d2 = {}

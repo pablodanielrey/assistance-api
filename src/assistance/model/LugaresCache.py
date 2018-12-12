@@ -26,6 +26,26 @@ class LugaresAPI:
             return lids
         return None
 
+    def _get_lugares_por_uid(self, uid, token=None):
+        query = '{}/usuarios/{}/lugares'.format(self.url, uid)
+        r = self.api.get(query, token=token)
+        if not r.ok:
+            return None
+        lids = r.json()
+        if lids and len(lids) > 0:
+            return lids
+        return None
+
+    def _get_subusuarios_por_lugar(self, lid, token=None):
+        query = '{}/lugares/{}/subusuarios'.format(self.url, lid)
+        r = self.api.get(query, token=token)
+        if not r.ok:
+            return None
+        uids = r.json()
+        if uids and len(uids) > 0:
+            return uids
+        return None
+
 
 class LugaresGetters:
     def __init__(self, lugares_api):
@@ -36,6 +56,12 @@ class LugaresGetters:
 
     def obtener_sublugares_por_lugar(self, lid, token=None):
         return self.api._get_sublugares_lid(lid, token)
+
+    def obtener_subusuarios_por_lugar(self, lid, token=None):
+        return self.api._get_subusuarios_por_lugar(lid, token)
+
+    def obtener_lugares_por_usuario(self, uid, token=None):
+        return self.api._get_lugares_por_uid(uid, token)
 
 
 class LugaresCache:
@@ -68,13 +94,45 @@ class LugaresCache:
             self.redis_.lpush(uk, l)
         self.redis_.expire(uk, self.timeout)
 
-    def obtener_sublugares_por_lugar_id(self, lid):
+    def obtener_sublugares_por_lugar_id(self, lid, token=None):
         uk = '{}{}{}'.format(self.prefijo, 'sublugares', lid)
         if self.redis_.exists(uk):
             return self.redis_.lrange(uk, 0, -1)
-        lids = self.getters.obtener_sublugares_por_lugar(lid)
+        lids = self.getters.obtener_sublugares_por_lugar(lid, token)
         if not lids:
             return []
         self.setear_sublugares_por_lugar_id(lid, lids)
         return lids    
 
+    def setear_subusuarios_por_lugar_id(self, lid, uids):
+        uk = '{}{}{}'.format(self.prefijo, 'subusuarios', lid)
+        for u in uids:
+            self.redis_.lpush(uk, u)
+        self.redis_.expire(uk, self.timeout)
+
+    def obtener_subusuarios_por_lugar_id(self, lid, token=None):
+        uk = '{}{}{}'.format(self.prefijo, 'subusuarios', lid)
+        if self.redis_.exists(uk):
+            return self.redis_.lrange(uk, 0, -1)
+        desig = self.getters.obtener_subusuarios_por_lugar(lid, token)
+        if not desig:
+            return []
+        uids = [d['usuario'] for d in desig]
+        self.setear_subusuarios_por_lugar_id(lid, uids)
+        return uids
+
+    def setear_lugares_por_usuario_id(self, uid, lids):
+        uk = '{}{}{}'.format(self.prefijo, 'lugares', uid)
+        for l in lids:
+            self.redis_.lpush(uk, l)
+        self.redis_.expire(uk, self.timeout)
+
+    def obtener_lugares_por_usuario_id(self, uid, token=None):
+        uk = '{}{}{}'.format(self.prefijo, 'lugares', uid)
+        if self.redis_.exists(uk):
+            return self.redis_.lrange(uk, 0, -1)
+        lids = self.getters.obtener_lugares_por_usuario(uid, token)
+        if not lids:
+            return []
+        self.setear_lugares_por_usuario_id(uid, lids)
+        return uids
