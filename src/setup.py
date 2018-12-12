@@ -12,7 +12,7 @@
 from setuptools import setup, find_packages
 
 setup(name='assistance-api',
-          version='1.0.1.a3',
+          version='1.0.1.a4',
           description='Proyecto que implementa la api de asistencia',
           url='https://github.com/pablodanielrey/assistance-api',
           author='Desarrollo DiTeSi, FCE',
@@ -30,6 +30,7 @@ setup(name='assistance-api',
                             'dateutils>=0.6.6',
                             'requests',
                             'redis==2.10.6',
+                            'pymongo',
                             'SQLAlchemy',
                             'httplib2',
                             'pyjwt',

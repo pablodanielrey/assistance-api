@@ -37,7 +37,7 @@ REDIS_HOST = os.environ.get('TELEGRAM_BOT_REDIS')
 REDIS_PORT = int(os.environ.get('TELEGRAM_BOT_REDIS_PORT', 6379))
 VERIFY_SSL = bool(int(os.environ.get('VERIFY_SSL',0)))
 
-
+MONGO_URL = os.environ['MONGO_URL']
 SILEG_API = os.environ['SILEG_API_URL']
 USERS_API = os.environ['USERS_API_URL']
 OIDC_URL = os.environ['OIDC_URL']
@@ -71,8 +71,7 @@ class AssistanceModel:
                                 users_getter=_USERS_API._get_users_uuid,
                                 user_getter_dni=_USERS_API._get_user_dni)
 
-    cache_lugares = LugaresCache(host=REDIS_HOST,
-                                 port=REDIS_PORT,
+    cache_lugares = LugaresCache(mongo_url=MONGO_URL,
                                  getters=LugaresGetters(_LUGARES_API))
    
 
@@ -84,13 +83,26 @@ class AssistanceModel:
         return config
 
     @classmethod
+    def _obtener_nivel_maximo(cls, uid, cargos):
+        """ filtro los usuarios que podría ver de acuerdo a su cargo (solo los que tienen nivel mas alto) """
+        mismo = [u for u in cargos if u['usuario'] == uid]
+        maximo = 100
+        for c in mismo:
+            if maximo > c['cargo_nivel']:
+                maximo = c['cargo_nivel']        
+        return maximo
+
+    @classmethod
     def _obtener_subusuarios(cls, uid):
-        uids = []
+        usuarios_cargo = []
         lids = cls.cache_lugares.obtener_lugares_por_usuario_id(uid)
         for lid in lids:
             usrs = cls.cache_lugares.obtener_subusuarios_por_lugar_id(lid)
-            uids.extend(usrs)
-        return uids
+            usuarios_cargo.extend(usrs)
+
+        nivel = cls._obtener_nivel_maximo(uid, usuarios_cargo)
+        filtrados = [u for u in usuarios_cargo if u['cargo_nivel'] > nivel]
+        return filtrados
 
     @classmethod
     def chequear_acceso(cls, caller_id, uid):
@@ -99,14 +111,21 @@ class AssistanceModel:
         """
         assert caller_id is not None
         assert uid is not None
-        uids = cls._obtener_subusuarios(caller_id)
+        usuarios_cargo = cls._obtener_subusuarios(caller_id)
+        uids = [u['usuario'] for u in usuarios_cargo]
         ok = uid in uids
         return ok
 
     @classmethod
     def chequear_acceso_lugares(cls, caller_id, lugares=[]):
         lids = cls.cache_lugares.obtener_lugares_por_usuario_id(caller_id)
-        usuario_lugares = set(lids)
+        tk = cls.api._get_token()
+        acumulador = []
+        acumulador.extend(lids)
+        for lid in lids:
+            slids = cls.cache_lugares.obtener_sublugares_por_lugar_id(lid)
+            acumulador.extend(slids)
+        usuario_lugares = set(acumulador)
         lugares_pedidos = set(lugares)
         return lugares_pedidos.issubset(usuario_lugares)
 
@@ -116,7 +135,7 @@ class AssistanceModel:
             si tiene subusuarios entonces retorna las funciones del perfil default-authority
         """
         uids = cls._obtener_subusuarios(uid)
-        if not uid:
+        if not uid or len(uids) <= 0:
             return None
         config = cls._config()
         pgen = (p for p in config['api']['perfiles'] if p['perfil'] == 'default-authority')
@@ -260,11 +279,27 @@ class AssistanceModel:
             return []
         return ReporteJustificaciones.generarReporte(session, usr, inicio, fin, tzone)
 
+
+
     @classmethod
     def reporteGeneral(cls, session, authorized_id, lugares, fecha, tzone='America/Argentina/Buenos_Aires'):
         ret = []
+
+        config = cls._config()
+        raiz_lid = config['api']['lugar_raiz']
+        
+        
+        ''' busco las raices no comunes '''
+        raices = set(lugares)
         for lid in lugares:
-            uids = cls.cache_lugares.obtener_subusuarios_por_lugar_id(lid)
+            lids = cls.cache_lugares.obtener_sublugares_por_lugar_id(lid)
+            sublids = set(lids)
+            raices = raices.difference(sublids)
+
+        for lid in raices:
+            usuarios_cargos = cls.cache_lugares.obtener_subusuarios_por_lugar_id(lid)
+            nivel = cls._obtener_nivel_maximo(authorized_id, usuarios_cargos)
+            uids = [u['usuario'] for u in usuarios_cargos if u['cargo_nivel'] > nivel]
             usuarios = cls.cache_usuarios.obtener_usuarios_por_uids(uids)
             lugar = cls.cache_lugares.obtener_lugar_por_id(lid)
             rep = ReporteGeneral.generarReporte(session, lugar, usuarios, fecha, cls._obtenerHorarioHelper, tzone)
@@ -436,7 +471,8 @@ class AssistanceModel:
     def usuarios_search(cls, search):
         config = cls._config()
         lid = config['api']['lugar_raiz']
-        uids = cls.cache_lugares.obtener_subusuarios_por_lugar_id(lid)
+        usuarios_cargo = cls.cache_lugares.obtener_subusuarios_por_lugar_id(lid)
+        uids = list(set((u['usuario'] for u in usuarios_cargo)))
         usuarios = cls.cache_usuarios.obtener_usuarios_por_uids(uids)
 
         ''' mejoro un poco el texto de search para que matchee la cadena de nombre apellido dni'''
@@ -447,7 +483,8 @@ class AssistanceModel:
 
     @classmethod
     def sub_usuarios_search(cls, uid, search):
-        uids = cls._obtener_subusuarios(uid)
+        usuarios_cargo = cls._obtener_subusuarios(uid)
+        uids = list(set((u['usuario'] for u in usuarios_cargo)))
         usuarios = cls.cache_usuarios.obtener_usuarios_por_uids(uids)
 
         ''' mejoro un poco el texto de search para que matchee la cadena de nombre apellido dni'''

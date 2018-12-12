@@ -1,4 +1,5 @@
-import redis
+import pymongo
+import datetime
 
 class LugaresAPI:
 
@@ -66,73 +67,93 @@ class LugaresGetters:
 
 class LugaresCache:
 
-    def __init__(self, host, port, getters, prefijo='_lugares_', timeout=60 * 60 * 24 * 7):
-        self.redis_ = redis.StrictRedis(host=host, port=port, decode_responses=True)
+    def __init__(self, mongo_url, getters, prefijo='_lugares_', timeout=60 * 60 * 24 * 7):
+        self.mongo = pymongo.MongoClient(mongo_url).lugares
         self.prefijo = prefijo
         self.timeout = timeout
         self.getters = getters
 
+        # indices para la expiración
+        #self.mongo.createIndex({'insertadoEn':1},{'expireAfterSeconds':timeout})
+
     def setear_lugar(self, lugar):
-        uk = '{}{}{}'.format(self.prefijo, 'datos', lugar['id'])
-        self.redis_.hmset(uk, lugar)
-        self.redis_.expire(uk, self.timeout)
+        lugar['insertadoEn'] = datetime.datetime.now()
+        self.mongo.lugares.insert_one(lugar)
 
     def obtener_lugar_por_id(self, lid, token=None):
-        uk = '{}{}{}'.format(self.prefijo, 'datos', lid)
-        l = self.redis_.hgetall(uk)
-        if len(l.keys()) > 0:
-            return l
-        l = self.getters.obtener_lugar_por_id(lid, token)
-        if not l:
-            return None
-        self.setear_lugar(l)
-        return l
+        lugar = self.mongo.lugares.find_one({'id':lid})
+        if not lugar:
+            lugar = self.getters.obtener_lugar_por_id(lid, token)
+            if not lugar:
+                return None
+            self.setear_lugar(lugar)
+        if '_id' in lugar:
+            del lugar['_id']
+        return lugar
 
     def setear_sublugares_por_lugar_id(self, lid, lids=[]):
-        uk = '{}{}{}'.format(self.prefijo, 'sublugares', lid)
-        for l in lids:
-            self.redis_.lpush(uk, l)
-        self.redis_.expire(uk, self.timeout)
+        fecha = datetime.datetime.now()
+        lugares = [
+            {
+                'id':l,
+                'padre_id': lid,
+                'insertadoEn':fecha
+            }
+            for l in lids
+        ]
+        self.mongo.sublugares_lugar.insert_many(lugares)
 
     def obtener_sublugares_por_lugar_id(self, lid, token=None):
-        uk = '{}{}{}'.format(self.prefijo, 'sublugares', lid)
-        if self.redis_.exists(uk):
-            return self.redis_.lrange(uk, 0, -1)
+        lugares = self.mongo.sublugares_lugar.find({'padre_id':lid})
+        lids = [l['id'] for l in lugares]
+        if len(lids) > 0:
+            return lids
         lids = self.getters.obtener_sublugares_por_lugar(lid, token)
-        if not lids:
+        if not lids or len(lids) <= 0:
             return []
         self.setear_sublugares_por_lugar_id(lid, lids)
-        return lids    
+        return lids
 
-    def setear_subusuarios_por_lugar_id(self, lid, uids):
-        uk = '{}{}{}'.format(self.prefijo, 'subusuarios', lid)
-        for u in uids:
-            self.redis_.lpush(uk, u)
-        self.redis_.expire(uk, self.timeout)
+    def setear_subusuarios_por_lugar_id(self, lid, usuarios):
+        fecha = datetime.datetime.now()
+        for l in usuarios:
+            l['lugar_id'] = lid
+            l['insertadoEn'] = fecha        
+        self.mongo.subusuarios.insert_many(usuarios)
 
     def obtener_subusuarios_por_lugar_id(self, lid, token=None):
-        uk = '{}{}{}'.format(self.prefijo, 'subusuarios', lid)
-        if self.redis_.exists(uk):
-            return self.redis_.lrange(uk, 0, -1)
-        desig = self.getters.obtener_subusuarios_por_lugar(lid, token)
-        if not desig:
+        cusuarios = self.mongo.subusuarios.find({'lugar_id':lid})
+        usuarios = [u for u in cusuarios]
+        if len(usuarios) > 0:
+            for u in usuarios:
+                if '_id' in u:
+                    del u['_id']
+            return usuarios
+        usuarios = self.getters.obtener_subusuarios_por_lugar(lid, token)
+        if not usuarios or len(usuarios) <= 0:
             return []
-        uids = [d['usuario'] for d in desig]
-        self.setear_subusuarios_por_lugar_id(lid, uids)
-        return uids
+        self.setear_subusuarios_por_lugar_id(lid, usuarios)
+        return usuarios
 
     def setear_lugares_por_usuario_id(self, uid, lids):
-        uk = '{}{}{}'.format(self.prefijo, 'lugares', uid)
-        for l in lids:
-            self.redis_.lpush(uk, l)
-        self.redis_.expire(uk, self.timeout)
+        fecha = datetime.datetime.now()
+        lugares = [
+            {
+                'id':l,
+                'usuario_id': uid,
+                'insertadoEn':fecha
+            }
+            for l in lids
+        ]
+        self.mongo.sublugares_usuario.insert_many(lugares)
 
     def obtener_lugares_por_usuario_id(self, uid, token=None):
-        uk = '{}{}{}'.format(self.prefijo, 'lugares', uid)
-        if self.redis_.exists(uk):
-            return self.redis_.lrange(uk, 0, -1)
+        lugares = self.mongo.sublugares_usuario.find({'usuario_id':uid})
+        lids = [l['id'] for l in lugares]
+        if len(lids) > 0:
+            return lids
         lids = self.getters.obtener_lugares_por_usuario(uid, token)
         if not lids:
             return []
         self.setear_lugares_por_usuario_id(uid, lids)
-        return uids
+        return lids
