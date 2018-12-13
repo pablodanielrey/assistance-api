@@ -279,15 +279,13 @@ class AssistanceModel:
             return []
         return ReporteJustificaciones.generarReporte(session, usr, inicio, fin, tzone)
 
-
-
     @classmethod
     def reporteGeneral(cls, session, authorized_id, lugares, fecha, tzone='America/Argentina/Buenos_Aires'):
         ret = []
 
         config = cls._config()
         raiz_lid = config['api']['lugar_raiz']
-        
+
         
         ''' busco las raices no comunes '''
         raices = set(lugares)
