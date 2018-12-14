@@ -51,6 +51,7 @@ _API = API(url=OIDC_URL,
 
 _USERS_API = UsersAPI(api_url=USERS_API, api=_API)
 _LUGARES_API = LugaresAPI(api_url=SILEG_API, api=_API)
+_LUGARES_GETTER = LugaresGetters(_LUGARES_API)
 
 class AssistanceModel:
 
@@ -72,7 +73,7 @@ class AssistanceModel:
                                 user_getter_dni=_USERS_API._get_user_dni)
 
     cache_lugares = LugaresCache(mongo_url=MONGO_URL,
-                                 getters=LugaresGetters(_LUGARES_API))
+                                 getters=_LUGARES_GETTER)
    
 
     @classmethod
@@ -86,6 +87,8 @@ class AssistanceModel:
     def _obtener_nivel_maximo(cls, uid, cargos):
         """ filtro los usuarios que podría ver de acuerdo a su cargo (solo los que tienen nivel mas alto) """
         mismo = [u for u in cargos if u['usuario'] == uid]
+        if not mismo or len(mismo) <= 0:
+            return None
         maximo = 100
         for c in mismo:
             if maximo > c['cargo_nivel']:
@@ -280,28 +283,70 @@ class AssistanceModel:
         return ReporteJustificaciones.generarReporte(session, usr, inicio, fin, tzone)
 
     @classmethod
+    def _buscar_lugar_en_arbol(cls, lid, arbol):
+        if arbol['lugar'] == lid:
+            return True
+        for h in arbol['hijos']:
+            if cls._buscar_lugar_en_arbol(lid, h):
+                return True
+        return False
+
+    @classmethod
+    def reporteGeneralAdmin(cls, session, lugares, fecha, tzone='America/Argentina/Buenos_Aires'):
+        ret = []
+        for lid in lugares:
+            usuarios_cargos = cls.cache_lugares.obtener_subusuarios_por_lugar_id(lid)
+            uids = [u['usuario'] for u in usuarios_cargos]
+            usuarios = cls.cache_usuarios.obtener_usuarios_por_uids(uids)
+            lugar = cls.cache_lugares.obtener_lugar_por_id(lid)
+
+            ''' genero el reporte para el lugar '''
+            rep = ReporteGeneral.generarReporte(session, lugar, usuarios, fecha, cls._obtenerHorarioHelper, tzone)
+            ret.append(rep)
+        return ret
+
+    @classmethod
     def reporteGeneral(cls, session, authorized_id, lugares, fecha, tzone='America/Argentina/Buenos_Aires'):
         ret = []
 
-        config = cls._config()
-        raiz_lid = config['api']['lugar_raiz']
-
-        
-        ''' busco las raices no comunes '''
-        raices = set(lugares)
+        """ busco los arboles de los lugares con los cargos """
+        arboles = []
+        tk = _API._get_token()
         for lid in lugares:
-            lids = cls.cache_lugares.obtener_sublugares_por_lugar_id(lid)
-            sublids = set(lids)
-            raices = raices.difference(sublids)
+            #arbol = _LUGARES_API._get_arbol_por_lid(lid, tk)
+            arbol = cls.cache_lugares.obtener_arbol_por_lugar_id(lid, tk)
+            if arbol:
+                arboles.append(arbol)
 
-        for lid in raices:
-            usuarios_cargos = cls.cache_lugares.obtener_subusuarios_por_lugar_id(lid)
+        ''' agrego los lugars donde la persona tiene cargo. asi estoy seguro de encontrar el nivel por cada subarbol '''
+        lugares_con_cargo = cls.cache_lugares.obtener_lugares_por_usuario_id(authorized_id, tk)
+        for lid in lugares_con_cargo:
+            if lid not in lugares:
+                #arbol = _LUGARES_API._get_arbol_por_lid(lid, tk)
+                arbol = cls.cache_lugares.obtener_arbol_por_lugar_id(lid, tk)
+                if arbol:
+                    arboles.append(arbol)
+
+        for lid in lugares:
+            ''' busco el arbol de profundiad máxima que contenga lid (necesario para obtener el cargo de authorized_id ya que esta en la raiz)'''
+            raices = [a for a in arboles if cls._buscar_lugar_en_arbol(lid, a)]
+            raices.sort(key=lambda n: n['profundidad'], reverse=True)
+            maximo = raices[0]
+
+            ''' obtengo el cargo que contiene en el arbol '''
+            usuarios_cargos = maximo['usuarios']
             nivel = cls._obtener_nivel_maximo(authorized_id, usuarios_cargos)
+
+            ''' obtengo los usuarios que tienen cargos mas bajos '''
+            usuarios_cargos = cls.cache_lugares.obtener_subusuarios_por_lugar_id(lid)
             uids = [u['usuario'] for u in usuarios_cargos if u['cargo_nivel'] > nivel]
             usuarios = cls.cache_usuarios.obtener_usuarios_por_uids(uids)
             lugar = cls.cache_lugares.obtener_lugar_por_id(lid)
+
+            ''' genero el reporte para el lugar '''
             rep = ReporteGeneral.generarReporte(session, lugar, usuarios, fecha, cls._obtenerHorarioHelper, tzone)
             ret.append(rep)
+
         return ret
 
 

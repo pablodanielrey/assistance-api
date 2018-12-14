@@ -17,6 +17,14 @@ class LugaresAPI:
             return lid
         return None
 
+    def _get_arbol_por_lid(self, lid, token=None):
+        query = '{}/lugares/{}/arbol'.format(self.url, lid)
+        r = self.api.get(query, token=token)
+        if not r.ok:
+            return None
+        arbol = r.json()
+        return arbol
+
     def _get_sublugares_lid(self, lid, token=None):
         query = '{}/lugares/{}/sublugares'.format(self.url, lid)
         r = self.api.get(query, token=token)
@@ -64,6 +72,9 @@ class LugaresGetters:
     def obtener_lugares_por_usuario(self, uid, token=None):
         return self.api._get_lugares_por_uid(uid, token)
 
+    def obtener_arbol_por_lugar(self, lid, token=None):
+        return self.api._get_arbol_por_lid(lid, token)
+
 
 class LugaresCache:
 
@@ -90,6 +101,22 @@ class LugaresCache:
         if '_id' in lugar:
             del lugar['_id']
         return lugar
+
+    def setear_arbol_por_lugar_id(self, lid, arbol):
+        arbol['id'] = lid
+        arbol['insertadoEn'] = datetime.datetime.now()
+        self.mongo.arboles.insert_one(arbol)
+
+    def obtener_arbol_por_lugar_id(self, lid, token=None):
+        arbol = self.mongo.arboles.find_one({'id':lid})
+        if not arbol:
+            arbol = self.getters.obtener_arbol_por_lugar(lid, token)
+            if not arbol:
+                return None
+            self.setear_arbol_por_lugar_id(lid, arbol)
+        if '_id' in arbol:
+            del arbol['_id']
+        return arbol
 
     def setear_sublugares_por_lugar_id(self, lid, lids=[]):
         fecha = datetime.datetime.now()

@@ -236,7 +236,7 @@ def reporte_general(token):
     prof = warden.has_one_profile(token, ['assistance-super-admin','assistance-admin','assistance-operator','assistance-user'])
     if prof and prof['profile'] == True:
         with obtener_session() as session:
-            return AssistanceModel.reporteGeneral(session, usuario_logueado, lugares, fecha)
+            return AssistanceModel.reporteGeneralAdmin(session, lugares, fecha)
 
     if AssistanceModel.chequear_acceso_lugares(usuario_logueado, lugares):
         with obtener_session() as session:
