@@ -80,8 +80,8 @@ class LugaresGetters:
 
 class LugaresCache:
 
-    def __init__(self, mongo_url, getters, prefijo='_lugares_', timeout=60 * 15):
-        self.mongo = pymongo.MongoClient(mongo_url).lugares
+    def __init__(self, mongo_url, getters, prefijo='_assistance_', timeout=60 * 15):
+        self.mongo = pymongo.MongoClient(mongo_url)['{}_{}'.format(prefijo, self.__class__.__name__)]
         self.prefijo = prefijo
         self.timeout = timeout
         self.getters = getters
