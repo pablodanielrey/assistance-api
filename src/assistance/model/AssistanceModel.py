@@ -313,7 +313,6 @@ class AssistanceModel:
         arboles = []
         tk = _API._get_token()
         for lid in lugares:
-            #arbol = _LUGARES_API._get_arbol_por_lid(lid, tk)
             arbol = cls.cache_lugares.obtener_arbol_por_lugar_id(lid, tk)
             if arbol:
                 arboles.append(arbol)
@@ -322,7 +321,6 @@ class AssistanceModel:
         lugares_con_cargo = cls.cache_lugares.obtener_lugares_por_usuario_id(authorized_id, tk)
         for lid in lugares_con_cargo:
             if lid not in lugares:
-                #arbol = _LUGARES_API._get_arbol_por_lid(lid, tk)
                 arbol = cls.cache_lugares.obtener_arbol_por_lugar_id(lid, tk)
                 if arbol:
                     arboles.append(arbol)
