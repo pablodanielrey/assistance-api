@@ -22,6 +22,9 @@ class JustificacionReporte:
         self.codigo = fj.justificacion.codigo
         self.tipo = fj.justificacion.id
         self.descripcion = fj.justificacion.descripcion
+        self.notas = fj.notas
+        self.creador_id = fj.creador_id
+        self.eliminador_id = fj.eliminador_id
 
     def __json__(self):
         return self.__dict__

@@ -574,11 +574,10 @@ class AssistanceModel:
     def eliminarFechaJustificada(cls, session, jid, autorizador_id=None):
 
         justificacion = session.query(FechaJustificada).filter(FechaJustificada.id == jid).one()
-        logging.info(justificacion)
         justificacion.eliminado = datetime.datetime.now()
         if not autorizador_id:
             autorizador_id = justificacion.usuario_id
-        justificacion.autorizador_id = autorizador_id
+        justificacion.eliminador_id = autorizador_id
 
         """
             ver como analizar estos casos para manejarlo mas genéricamente
@@ -620,8 +619,9 @@ class AssistanceModel:
         j.fecha_inicio = fj["fecha_inicio"]
         j.fecha_fin = fj["fecha_fin"]
         j.usuario_id = fj["usuario_id"] if 'usuario_id' in fj else None
+        j.notas = fj['notas']
         j.justificacion_id = just["id"]
-        j.autorizador_id = autorizador_id
+        j.creador_id = autorizador_id
         session.add(j)
 
         """

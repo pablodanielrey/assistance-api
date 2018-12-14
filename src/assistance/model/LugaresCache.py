@@ -1,4 +1,6 @@
 import pymongo
+from pymongo.operations import IndexModel
+
 import datetime
 
 class LugaresAPI:
@@ -78,14 +80,16 @@ class LugaresGetters:
 
 class LugaresCache:
 
-    def __init__(self, mongo_url, getters, prefijo='_lugares_', timeout=60 * 60 * 24 * 7):
+    def __init__(self, mongo_url, getters, prefijo='_lugares_', timeout=60 * 15):
         self.mongo = pymongo.MongoClient(mongo_url).lugares
         self.prefijo = prefijo
         self.timeout = timeout
         self.getters = getters
 
         # indices para la expiración
-        #self.mongo.createIndex({'insertadoEn':1},{'expireAfterSeconds':timeout})
+        for c in ['lugares','arboles','sublugares_lugar','sublugares_usuario','subusuarios']:
+            self.mongo.drop_collection(c)
+            self.mongo[c].create_index('insertadoEn',expireAfterSeconds=self.timeout)
 
     def setear_lugar(self, lugar):
         lugar['insertadoEn'] = datetime.datetime.now()
