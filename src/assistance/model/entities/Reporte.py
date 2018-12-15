@@ -401,6 +401,7 @@ class ReporteJustificaciones:
         q = q.filter(or_(FechaJustificada.usuario_id == uid, FechaJustificada.usuario_id == None))
         q = q.filter(or_(and_(FechaJustificada.fecha_inicio >= fi, FechaJustificada.fecha_inicio <= ff),and_(FechaJustificada.fecha_inicio <= ff, FechaJustificada.fecha_fin >= fi)))
         q = q.options(joinedload('justificacion'))
+        q = q.order_by(FechaJustificada.fecha_inicio)
         return q.all()
 
     @classmethod
