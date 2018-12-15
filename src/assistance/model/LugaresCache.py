@@ -92,7 +92,7 @@ class LugaresCache:
             self.mongo[c].create_index('insertadoEn',expireAfterSeconds=self.timeout)
 
     def setear_lugar(self, lugar):
-        lugar['insertadoEn'] = datetime.datetime.now()
+        lugar['insertadoEn'] = datetime.datetime.utcnow()
         self.mongo.lugares.insert_one(lugar)
 
     def obtener_lugar_por_id(self, lid, token=None):
@@ -108,7 +108,7 @@ class LugaresCache:
 
     def setear_arbol_por_lugar_id(self, lid, arbol):
         arbol['id'] = lid
-        arbol['insertadoEn'] = datetime.datetime.now()
+        arbol['insertadoEn'] = datetime.datetime.utcnow()
         self.mongo.arboles.insert_one(arbol)
 
     def obtener_arbol_por_lugar_id(self, lid, token=None):
@@ -123,7 +123,7 @@ class LugaresCache:
         return arbol
 
     def setear_sublugares_por_lugar_id(self, lid, lids=[]):
-        fecha = datetime.datetime.now()
+        fecha = datetime.datetime.utcnow()
         lugares = [
             {
                 'id':l,
@@ -146,7 +146,7 @@ class LugaresCache:
         return lids
 
     def setear_subusuarios_por_lugar_id(self, lid, usuarios):
-        fecha = datetime.datetime.now()
+        fecha = datetime.datetime.utcnow()
         for l in usuarios:
             l['lugar_id'] = lid
             l['insertadoEn'] = fecha        
@@ -167,7 +167,7 @@ class LugaresCache:
         return usuarios
 
     def setear_lugares_por_usuario_id(self, uid, lids):
-        fecha = datetime.datetime.now()
+        fecha = datetime.datetime.utcnow()
         lugares = [
             {
                 'id':l,

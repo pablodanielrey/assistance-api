@@ -73,7 +73,7 @@ class AssistanceModel:
                                 user_getter_dni=_USERS_API._get_user_dni)
 
     cache_lugares = LugaresCache(mongo_url=MONGO_URL,
-                                 getters=_LUGARES_GETTER)
+                                 getters=_LUGARES_GETTER, timeout=60 * 60)
    
 
     @classmethod
