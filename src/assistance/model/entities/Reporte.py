@@ -384,8 +384,10 @@ class ReporteJustificaciones:
         self.usuario = u
         self.fecha_inicial = inicio
         self.fecha_final = fin
+        self.suma_justificaciones = []
+        self.suma_justificaciones_generales = []
         self.justificaciones = []
-        self.justificaciones_generales = []
+        self.justificaciones_eliminadas = []
 
     @classmethod
     def _obtenerJustificaciones(cls, session, inicio, fin, tzone, uid):
@@ -397,7 +399,6 @@ class ReporteJustificaciones:
 
         q = session.query(FechaJustificada)
         q = q.filter(or_(FechaJustificada.usuario_id == uid, FechaJustificada.usuario_id == None))
-        q = q.filter(FechaJustificada.eliminado == None)
         q = q.filter(or_(and_(FechaJustificada.fecha_inicio >= fi, FechaJustificada.fecha_inicio <= ff),and_(FechaJustificada.fecha_inicio <= ff, FechaJustificada.fecha_fin >= fi)))
         q = q.options(joinedload('justificacion'))
         return q.all()
@@ -420,10 +421,16 @@ class ReporteJustificaciones:
             return []
 
         rep = ReporteJustificaciones(usuario, inicio, fin)
-        jus = []
-        jus = cls._obtenerJustificaciones(session, inicio, fin, tzone, usuario['id'])
+        busqueda_jus = []
+        busqueda_jus = cls._obtenerJustificaciones(session, inicio, fin, tzone, usuario['id'])
         aux = {}
-        for j in jus:
+        jus = []
+        jus_elim = []
+        for j in busqueda_jus:
+            if j.eliminado:
+                jus_elim.append(j)
+                continue
+            jus.append(j)
             jid = j.justificacion.id
             nombre = j.justificacion.nombre
             codigo = j.justificacion.codigo
@@ -442,8 +449,10 @@ class ReporteJustificaciones:
             else:
                 aux[jid]['cantidad'] += cantidad
 
-        rep.justificaciones_generales = [j for k,j in aux.items() if j["general"]]
-        rep.justificaciones = [ j for k,j in aux.items() if not j["general"]]        
+        rep.suma_justificaciones_generales = [j for k,j in aux.items() if j["general"]]
+        rep.suma_justificaciones = [ j for k,j in aux.items() if not j["general"]]
+        rep.justificaciones = jus
+        rep.justificaciones_eliminadas = jus_elim
                
         return rep
 
