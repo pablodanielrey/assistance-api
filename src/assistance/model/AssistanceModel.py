@@ -795,7 +795,7 @@ class AssistanceModel:
         try:
             for l in logs:
                 dni = l['PIN'].strip().lower()
-                usuario = cls.usuarios_cache.obtener_usuario_por_dni(dni, token=token)
+                usuario = cls.cache_usuarios.obtener_usuario_por_dni(dni, token=token)
                 marcacion = l['DateTime']
 
                 ms = session.query(Marcacion).filter(and_(Marcacion.usuario_id == usuario['id'], Marcacion.marcacion == marcacion)).all()
