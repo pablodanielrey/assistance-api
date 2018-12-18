@@ -423,15 +423,15 @@ class ReporteJustificaciones:
 
         rep = ReporteJustificaciones(usuario, inicio, fin)
         busqueda_jus = []
-        busqueda_jus = cls._obtenerJustificaciones(session, inicio, fin, tzone, usuario['id'])
+        busqueda_jus = rep._obtenerJustificaciones(session, inicio, fin, tzone, usuario['id'])
         aux = {}
-        jus = []
-        jus_elim = []
+        justificaciones = []
+        justificaciones_eliminadas = []
         for j in busqueda_jus:
             if j.eliminado:
-                jus_elim.append(j)
+                justificaciones_eliminadas.append(j)
                 continue
-            jus.append(j)
+            justificaciones.append(j)
             jid = j.justificacion.id
             nombre = j.justificacion.nombre
             codigo = j.justificacion.codigo
@@ -451,9 +451,9 @@ class ReporteJustificaciones:
                 aux[jid]['cantidad'] += cantidad
 
         rep.suma_justificaciones_generales = [j for k,j in aux.items() if j["general"]]
-        rep.suma_justificaciones = [ j for k,j in aux.items() if not j["general"]]
-        rep.justificaciones = jus
-        rep.justificaciones_eliminadas = jus_elim
+        rep.suma_justificaciones = [j for k,j in aux.items() if not j["general"]]
+        rep.justificaciones = justificaciones
+        rep.justificaciones_eliminadas = justificaciones_eliminadas
                
         return rep
 

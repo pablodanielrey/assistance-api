@@ -273,6 +273,17 @@ class AssistanceModel:
         return Reporte.generarReporte(session, usr, inicio, fin, cls._obtenerHorarioHelper, tzone)
 
     @classmethod
+    def _procesar_justificacion_reporte(cls, j):
+        r = j.__json__()
+        if j.creador_id:
+            r['creador'] = cls.cache_usuarios.obtener_usuario_por_uid(j.creador_id)
+        if j.actualizador_id:
+            r['actualizador'] = cls.cache_usuarios.obtener_usuario_por_uid(j.actualizador_id)
+        if j.eliminador_id:
+            r['eliminador'] = cls.cache_usuarios.obtener_usuario_por_uid(j.eliminador_id)
+        return r
+
+    @classmethod
     def reporteJustificaciones(cls, session, uid, inicio, fin, tzone='America/Argentina/Buenos_Aires'):
         assert uid is not None
         fin = fin if fin else date.today()
@@ -280,7 +291,15 @@ class AssistanceModel:
         usr = cls.cache_usuarios.obtener_usuario_por_uid(uid)
         if not usr:
             return []
-        return ReporteJustificaciones.generarReporte(session, usr, inicio, fin, tzone)
+        reporte = ReporteJustificaciones.generarReporte(session, usr, inicio, fin, tzone)
+
+        '''
+            agrego el usuario a las justificaciones para la visual del reporte
+        '''
+        reporte.justificaciones = [cls._procesar_justificacion_reporte(j) for j in reporte.justificaciones]
+        reporte.justificaciones_eliminadas = [cls._procesar_justificacion_reporte(j) for j in reporte.justificaciones_eliminadas]
+
+        return reporte
 
     @classmethod
     def _buscar_lugar_en_arbol(cls, lid, arbol):
