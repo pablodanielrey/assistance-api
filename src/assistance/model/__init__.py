@@ -30,13 +30,3 @@ from .AssistanceModel import AssistanceModel
 __all__ = [
     'AssistanceModel'
 ]
-
-def crear_tablas():
-    engine = create_engine('postgresql://{}:{}@{}:{}/{}'.format(
-        os.environ['ASSISTANCE_DB_USER'],
-        os.environ['ASSISTANCE_DB_PASSWORD'],
-        os.environ['ASSISTANCE_DB_HOST'],
-        port,
-        os.environ['ASSISTANCE_DB_NAME']
-    ), echo=True)
-    Base.metadata.create_all(engine)
