@@ -1,6 +1,7 @@
 from sqlalchemy import or_, and_
 from sqlalchemy.orm import joinedload, with_polymorphic
 from datetime import datetime, date, timedelta
+import pytz
 import requests
 import os
 import re
@@ -796,6 +797,29 @@ class AssistanceModel:
         logger.info('enviando a redis {}'.format(m2))
         cls.redis_assistance.sadd('telegram', m2)
         #cls.redis_assistance.sadd('correos', m2)
+
+    @classmethod
+    def crear_log_por_usuario(cls, session, uid, tz='America/Argentina/Buenos_Aires'):
+        logger = logging.getLogger('assistance.model.zkSoftware')
+
+        token = cls.api._get_token()
+        usuario = cls.cache_usuarios.obtener_usuario_por_uid(uid, token=token)
+        dni = usuario['dni']
+
+        log = Marcacion()
+        log.id = str(uuid.uuid4())
+        log.usuario_id = uid
+        #esta como reloj remoto en la base - TODO: analizar cual es la mejor opción.
+        log.dispositivo_id = '95d40ffa-1e13-4f6f-905a-b3a2140bd57d'
+        # 3 => remoto
+        log.tipo = 3
+        log.marcacion = datetime.datetime.now().astimezone(pytz.timezone(tz))
+        session.add(log)
+
+        r = {'estado':'agregada', 'marcacion':log, 'dni':dni, 'nombre':usuario['nombre'], 'apellido':usuario['apellido']}
+        logger.info(r)
+        return r
+
 
     @classmethod
     def sincronizar_reloj(cls, session, rid):
