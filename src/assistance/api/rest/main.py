@@ -86,6 +86,45 @@ def obtener_acceso_modulos(token=None):
     return pdefault['funciones']
 
 
+"""
+    manejo de eventos de ejemplo 
+"""
+
+class Evento:
+    id = ''
+    evento = ''
+    mensaje = ''
+    enviado = datetime.datetime.now()
+
+
+@app.route(API_BASE + '/sse', methods=['GET'])
+def sse():
+    def eventStream():
+        while True:
+            envio = datetime.datetime.now()
+            eventos = []
+            with obtener_session() as session:
+                # obtengo los eventos y los retorno
+                eventos.extend([
+                    'id: {}\nevent: {}\ndata: {}\n\n'.format(e.id, e.evento, e.mensaje) 
+                    for e in session.query(Evento).filter.(Evento.enviado == None).all()
+                    ]
+                )
+            
+            for e in eventos:
+                yield e
+                
+            with obtener_session() as session:
+                for e in session.query(Evento).filter.(Evento.enviado == None).all():
+                    e.enviado = envio
+                session.commit()
+    
+    return Response(eventStream(), mimetye='text/event-stream')
+                
+"""
+    //////////////////
+"""
+
 
 @app.route(API_BASE + '/telegram_token', methods=['GET'])
 @warden.require_valid_token
