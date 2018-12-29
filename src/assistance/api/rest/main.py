@@ -367,12 +367,39 @@ def crear_horario(token):
         session.commit()
         return  True
 
+import datetime
+
 @app.route(API_BASE + '/usuarios/<uid>/logs', methods=['GET'])
 @warden.require_valid_token
 @jsonapi
 def logs_por_usuario(uid,token):
-    #return AssistanceModel.reporte(uid=uid, inicio=inicio, fin=fin)
-    return None
+   
+    prof = warden.has_one_profile(token, ['assistance-super-admin', 'assistance-admin', 'assistance-operator'])
+    if not prof or prof['profile'] == False:
+        return ('no tiene los permisos suficientes', 403)
+
+    inicio = datetime.datetime.now()
+    fin = inicio + datetime.timedelta(days=1)
+    marcaciones = []
+    with obtener_session() as session:
+        reporte = AssistanceModel.reporte(session, uid=uid, inicio=inicio, fin=fin)
+        for r in reporte.reportes:
+            marcaciones.extend(r.marcaciones)
+            marcaciones.extend(r.duplicadas)
+    return marcaciones
+
+@app.route(API_BASE + '/usuarios/<uid>/logs', methods=['POST'])
+@warden.require_valid_token
+@jsonapi
+def crear_log_por_usuario(uid, token=None):
+    prof = warden.has_one_profile(token, ['assistance-super-admin', 'assistance-admin'])
+    if not prof or prof['profile'] == False:
+        return ('no tiene los permisos suficientes', 403)
+
+    with obtener_session() as session:
+        r = AssistanceModel.crear_log_por_usuario(session, uid)
+        session.commit()
+        return r
 
 @app.route(API_BASE + '/logs/<fecha>', methods=['GET'])
 @warden.require_valid_token

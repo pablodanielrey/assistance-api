@@ -4,7 +4,9 @@
 		"mostrar_detalle_reporte": true,
 		"mostrar_detalle_avanzado_reporte": false,
 		"mostrar_detalle_horas_reporte": false,
-		"mostrar_detalle_entrada_salida_reporte": false
+		"mostrar_detalle_entrada_salida_reporte": false,
+		"mostrar_creador_justificaciones": true,
+        "mostrar_eliminador_justificaciones": true
 	},
 	"api":{
 		"perfiles": [
