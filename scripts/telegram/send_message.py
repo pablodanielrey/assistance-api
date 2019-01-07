@@ -2,6 +2,7 @@
 import telegram
 from telegram.ext import Updater, MessageHandler, Filters
 import sys
+import json
 
 def new_member(bot, update):
     print(update)
@@ -17,15 +18,20 @@ def text(bot, update):
 
 if __name__ == '__main__':
 
-    tk = sys.argv[1]
+    config = {}
+    with open('/etc/telegram/bot.cfg', 'r') as f:
+        config = json.loads(f.read())
 
-    if len(sys.argv) > 2:
+    tk = config['token']
+    print(tk)
+
+    if len(sys.argv) > 1:
+        grupo = config['grupo']
+
         bot = telegram.Bot(token=tk)
-        grupo = sys.argv[2]
         bot.send_message(chat_id=grupo, text='prueba de mensaje a grupo')
 
     else:
-
         updater = Updater(tk)
 
         updater.dispatcher.add_handler(MessageHandler(Filters.status_update.new_chat_members, new_member))
