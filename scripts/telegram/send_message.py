@@ -27,9 +27,9 @@ if __name__ == '__main__':
 
     if len(sys.argv) > 1:
         grupo = config['grupo']
-
+        texto = sys.argv[1]
         bot = telegram.Bot(token=tk)
-        bot.send_message(chat_id=grupo, text='prueba de mensaje a grupo')
+        bot.send_message(chat_id=grupo, text=texto)
 
     else:
         updater = Updater(tk)
