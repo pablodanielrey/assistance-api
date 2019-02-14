@@ -89,6 +89,7 @@ def obtener_acceso_modulos(token=None):
 """
     manejo de eventos de ejemplo 
 """
+import datetime
 
 class Evento:
     id = ''
@@ -107,7 +108,7 @@ def sse():
                 # obtengo los eventos y los retorno
                 eventos.extend([
                     'id: {}\nevent: {}\ndata: {}\n\n'.format(e.id, e.evento, e.mensaje) 
-                    for e in session.query(Evento).filter.(Evento.enviado == None).all()
+                    for e in session.query(Evento).filter(Evento.enviado == None).all()
                     ]
                 )
             
@@ -115,7 +116,7 @@ def sse():
                 yield e
                 
             with obtener_session() as session:
-                for e in session.query(Evento).filter.(Evento.enviado == None).all():
+                for e in session.query(Evento).filter(Evento.enviado == None).all():
                     e.enviado = envio
                 session.commit()
     
