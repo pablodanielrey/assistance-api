@@ -21,7 +21,7 @@
             "request": "launch",
             "module": "flask",
             "env": {
-                "FLASK_APP": "assistance.api.rest.main",
+                "FLASK_APP": "assistance.api.rest.main:app",
                 "LC_ALL": "es_AR.utf-8",
                 "LANG": "es_AR.utf-8"
             },

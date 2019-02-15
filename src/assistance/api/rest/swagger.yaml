@@ -1,0 +1,35 @@
+swagger: "2.0"
+info:
+  description: "Api de asistencia"
+  version: "1.0.1a4"
+  title: "Assistance-API"
+  contact:
+    email: "ditesi@econo.unlp.edu.ar"
+  license:
+    name: "GNU GENERAL PUBLIC LICENSE"
+    url: "http://www.apache.org/licenses/LICENSE-2.0.html"
+host: "api.econo.unlp.edu.ar"
+basePath: "/assistance/api/v1.0"
+schemes:
+- "https"
+paths:
+  /modulos:
+    get:
+      summary: "Obtiene los módulos permitidos por el nivel de acceso del usuario autentificado"
+      description: "Retorna la lista de módulos permitidos"
+      operationId: "assistance.api.rest.modules.list"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      responses:
+        200:
+          description: "Lista de módulos permitidos"
+          schema:
+            type: array
+            items:
+              type: string
+        401:
+          description: "No autentificado"
+        403:
+          description: "No tiene permisos para acceder al método"
