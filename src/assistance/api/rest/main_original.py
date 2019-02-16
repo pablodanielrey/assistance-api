@@ -285,7 +285,7 @@ def reporte_general(token):
     return ('no tiene los permisos suficientes', 403)
 
 
-@app.route(API_BASE + '/usuarios/<uid>/horario', methods=['GET'])
+@app.route(API_BASE + '/usuarios/<uid>/horarios', methods=['GET'])
 @warden.require_valid_token
 @jsonapi
 def horario(uid,token):
@@ -305,7 +305,7 @@ def horario(uid,token):
     return ('no tiene los permisos suficientes', 403)
 
 
-@app.route(API_BASE + '/usuarios/<uid>/horario/<hid>', methods=['DELETE'])
+@app.route(API_BASE + '/usuarios/<uid>/horarios/<hid>', methods=['DELETE'])
 @warden.require_valid_token
 @jsonapi
 def eliminar_horarios(uid, hid, token):
@@ -315,12 +315,6 @@ def eliminar_horarios(uid, hid, token):
         ''' como no soy admin, entonces chequea que se este consultando a si mismo '''
         if not uid or uid != token['sub']:
             return ('no tiene los permisos suficientes', 403)
-
-    fecha_str = request.args.get('fecha_inicio', None)
-    inicio = parser.parse(fecha_str).date() if fecha_str else None
-
-    fecha_str = request.args.get('fecha_fin', None)
-    fin = parser.parse(fecha_str).date() if fecha_str else None
 
     with obtener_session() as session:
         h = AssistanceModel.eliminar_horario(session, uid, hid)

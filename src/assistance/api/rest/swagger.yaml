@@ -11,13 +11,49 @@ info:
 host: "api.econo.unlp.edu.ar"
 basePath: "/assistance/api/v1.0"
 schemes:
-- "https"
+  - "http"
+  - "https"
+
+components:
+  schemas:
+    Marcacion:
+      type: object
+      properties:
+        id:
+          type: string
+        usuario_id:
+          type: string
+        dispositivo_id:
+          type: string
+        tipo:
+          type: integer
+        marcacion:
+          type: date-time
+
+    Horario:
+      type: object
+      properties:
+        fecha_valido:
+          type: date
+        dia_semanal:
+          type: integer
+        hora_entrada:
+          type: integer
+        hora_salida:
+          type: integer
+        usuario_id:
+          type: string
+        eliminado:
+          type: date-time
+
 paths:
   /modulos:
     get:
       summary: "Obtiene los módulos permitidos por el nivel de acceso del usuario autentificado"
       description: "Retorna la lista de módulos permitidos"
       operationId: "assistance.api.rest.modules.list"
+      tags:
+       - "ui"
       consumes:
       - "application/json"
       produces:
@@ -33,3 +69,295 @@ paths:
           description: "No autentificado"
         403:
           description: "No tiene permisos para acceder al método"
+  
+  /usuarios/{id}:
+    get:
+        summary: Obtiene los datos del usuario identificado por id
+        description: Retorna los completos del usuario
+        operationId: assistance.api.rest.users.get
+        tags:
+          - "usuarios"
+        parameters:
+          - in: path
+            name: id
+            schema: 
+              type: string
+            required: true
+            description: id del usuario a obtener los datos
+        produces:
+          - "application/json"
+        responses:
+          200:
+            description: "datos completos del usuario"
+
+  /usuarios/{id}/perfil:
+    get:
+        summary: Obtiene los datos de perfil del usuario identificado por id
+        description: Retorna los datos del perfil
+        operationId: assistance.api.rest.users.profile
+        tags:
+          - "usuarios"
+        parameters:
+          - in: path
+            name: id
+            schema: 
+              type: string
+            required: true
+            description: id del usuario a obtener los datos de perfil
+        produces:
+          - "application/json"
+        responses:
+          200:
+            description: "datos de perfil del usuario"
+
+  /usuarios/{id}/reporte:
+    get:
+        summary: Obtiene el reporte de asistencia del usuario identificado por id
+        description: Retorna un reporte de asistencia del usuario, el reporte por defecto consta de una semana finalizando en la fecha actual.
+        operationId: assistance.api.rest.users.report
+        tags:
+          - "usuarios"
+        parameters:
+          - in: path
+            name: id
+            description: id del usuario del cual se va a obtener el reporte
+            schema: 
+              type: string
+            required: true
+          - in: query
+            name: inicio
+            description: fecha de inicio del reporte. la fecha es inclusiva
+            schema:
+              type: string
+              format: date
+          - in: query
+            name: fin
+            description: fecha de fin del reporte. la fecha es inclusiva
+            schema:
+              type: string
+              format: date
+        produces:
+          - "application/json"
+        responses:
+          200:
+            description: "reporte de asistencia del usuario"
+
+  /usuarios/{id}/justificaciones:
+    get:
+        summary: Obtiene el reporte de justificaciones del usuario identificado por id
+        description: Retorna un reporte de justificaciones del usuario, el reporte por defecto consta de una semana finalizando en la fecha actual.
+        operationId: assistance.api.rest.users.justifications
+        tags:
+          - "usuarios"
+        parameters:
+          - in: path
+            name: id
+            description: id del usuario del cual se va a obtener el reporte
+            schema: 
+              type: string
+            required: true
+          - in: query
+            name: inicio
+            description: fecha de inicio del reporte. la fecha es inclusiva
+            schema:
+              type: string
+              format: date
+          - in: query
+            name: fin
+            description: fecha de fin del reporte. la fecha es inclusiva
+            schema:
+              type: string
+              format: date
+        produces:
+          - "application/json"
+        responses:
+          200:
+            description: "reporte de justificaciones del usuario"
+
+  /usuarios/{id}/horarios:
+    get:
+        summary: Obtiene los horarios del usuario identificado por id
+        description: Retorna un listado de horarios del usuario, el listado de horarios es por defecto en la fecha actual.
+        operationId: assistance.api.rest.users.timetable
+        tags:
+          - "usuarios"
+          - "horarios"
+        parameters:
+          - in: path
+            name: id
+            description: id del usuario del cual se van a obtener los horarios
+            schema: 
+              type: string
+            required: true
+          - in: query
+            name: fecha
+            description: fecha a la que están aplicados los horarios de la persona
+            schema:
+              type: string
+              format: date
+        produces:
+          - "application/json"
+        responses:
+          200:
+            description: "Lista de horarios de la persona para la fecha determinada"
+            schema:
+              type: object
+              properties:
+                usuario:
+                  type: object
+                horasSemanales:
+                  type: object
+                  properties:
+                    horas:
+                      type: integer
+                    minSem:
+                      type: integer
+                horarios:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Horario'
+          
+  /usuarios/{id}/horarios/{hid}:
+    delete:
+        summary: Elimina un horario de una persona.
+        description: Elimina el horario, identificado por hid, de la persona identificada por id
+        operationId: assistance.api.rest.users.delete_timetable
+        tags:
+          - "usuarios"
+          - "horarios"
+        parameters:
+          - in: path
+            name: id
+            description: id del usuario del cual se van a obtener los horarios
+            schema: 
+              type: string
+            required: true
+          - in: path
+            name: hid
+            description: id del horario a eliminar
+            schema: 
+              type: string
+            required: true
+        produces:
+          - "application/json"
+        responses:
+          200:
+            description: "Eliminación se completó exitosamente"
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                horario:
+                  type: string
+
+  /usuarios/{id}/historial_horarios:
+    get:
+        summary: Obtiene el historial de los horarios del usuario identificado por id
+        description: Retorna un listado de horarios del usuario ya eliminados.
+        operationId: assistance.api.rest.users.historic_timetable
+        tags:
+          - "usuarios"
+          - "horarios"
+        parameters:
+          - in: path
+            name: id
+            description: id del usuario del cual se van a obtener los horarios
+            schema: 
+              type: string
+            required: true
+          - in: query
+            name: fecha_inicio
+            description: fecha inicio del reporte de horarios históricos (es inclusiva)
+            schema:
+              type: string
+              format: date
+          - in: query
+            name: fecha_fin
+            description: fecha fin del reporte de horarios históricos (es inclusiva)
+            schema:
+              type: string
+              format: date
+          - in: query
+            name: timezone
+            description: Zona horaria de las fechas especificadas.
+            schema:
+              type: string
+              default: America/Argentina/Buenos_Aires
+        produces:
+          - "application/json"
+        responses:
+          200:
+            description: "Lista de horarios eliminados de la persona dentro de las fechas determinadas"
+            schema:
+              type: object
+              properties:
+                usuario:
+                  type: object
+                historial:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      horario:
+                        type: object
+                      creador:
+                        type: object
+
+  /usuarios/{id}/logs:
+    get:
+        summary: Obtiene las marcaciones del usuario identificado por id
+        description: Retorna un listado de marcaciones del usuario del día actual.
+        operationId: assistance.api.rest.users.logs
+        tags:
+          - "usuarios"
+          - "marcaciones"
+        parameters:
+          - in: path
+            name: id
+            description: id del usuario del cual se van a obtener las marcaciones
+            schema: 
+              type: string
+            required: true
+        produces:
+          - "application/json"
+        responses:
+          200:
+            description: "Lista de marcaciones de la persona para el día actual"
+            schema:
+              type: array
+              items:
+                type: object
+    post:
+        summary: Crea un registro de marcacion para el usuario.
+        description: Crea una marcación en el momento actual para el usuario identificado por id.
+        operationId: assistance.api.rest.users.crear_log
+        tags:
+          - "usuarios"
+          - "marcaciones"
+        parameters:
+          - in: path
+            name: id
+            description: id del usuario
+            schema: 
+              type: string
+            required: true
+        produces:
+          - "application/json"
+        responses:
+          200:
+            description: "Datos de la marcación creada"
+            schema:
+              type: object
+              properties:
+                estado:
+                  type: string
+                marcacion:
+                  type: object
+                dni:
+                  type: string
+                nombre:
+                  type: string
+                apellido:
+                  type: string
+  
