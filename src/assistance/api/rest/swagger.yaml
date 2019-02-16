@@ -1,4 +1,4 @@
-swagger: "2.0"
+openapi: "3.0.0"
 info:
   description: "Api de asistencia"
   version: "1.0.1a4"
@@ -8,11 +8,8 @@ info:
   license:
     name: "GNU GENERAL PUBLIC LICENSE"
     url: "http://www.apache.org/licenses/LICENSE-2.0.html"
-host: "api.econo.unlp.edu.ar"
-basePath: "/assistance/api/v1.0"
-schemes:
-  - "http"
-  - "https"
+servers:
+  - url: https://api.econo.unlp.edu.ar/assistance/api/v1.0
 
 components:
   schemas:
@@ -54,17 +51,15 @@ paths:
       operationId: "assistance.api.rest.modules.list"
       tags:
        - "ui"
-      consumes:
-      - "application/json"
-      produces:
-      - "application/json"
       responses:
         200:
           description: "Lista de módulos permitidos"
-          schema:
-            type: array
-            items:
-              type: string
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
         401:
           description: "No autentificado"
         403:
@@ -84,11 +79,10 @@ paths:
               type: string
             required: true
             description: id del usuario a obtener los datos
-        produces:
-          - "application/json"
         responses:
           200:
             description: "datos completos del usuario"
+
 
   /usuarios/{id}/perfil:
     get:
@@ -104,8 +98,6 @@ paths:
               type: string
             required: true
             description: id del usuario a obtener los datos de perfil
-        produces:
-          - "application/json"
         responses:
           200:
             description: "datos de perfil del usuario"
@@ -136,8 +128,6 @@ paths:
             schema:
               type: string
               format: date
-        produces:
-          - "application/json"
         responses:
           200:
             description: "reporte de asistencia del usuario"
@@ -168,8 +158,6 @@ paths:
             schema:
               type: string
               format: date
-        produces:
-          - "application/json"
         responses:
           200:
             description: "reporte de justificaciones del usuario"
@@ -195,27 +183,27 @@ paths:
             schema:
               type: string
               format: date
-        produces:
-          - "application/json"
         responses:
           200:
             description: "Lista de horarios de la persona para la fecha determinada"
-            schema:
-              type: object
-              properties:
-                usuario:
-                  type: object
-                horasSemanales:
+            content:
+              application/json:
+                schema:
                   type: object
                   properties:
-                    horas:
-                      type: integer
-                    minSem:
-                      type: integer
-                horarios:
-                  type: array
-                  items:
-                    $ref: '#/components/schemas/Horario'
+                    usuario:
+                      type: object
+                    horasSemanales:
+                      type: object
+                      properties:
+                        horas:
+                          type: integer
+                        minSem:
+                          type: integer
+                    horarios:
+                      type: array
+                      items:
+                        $ref: '#/components/schemas/Horario'
           
   /usuarios/{id}/horarios/{hid}:
     delete:
@@ -238,18 +226,18 @@ paths:
             schema: 
               type: string
             required: true
-        produces:
-          - "application/json"
         responses:
           200:
             description: "Eliminación se completó exitosamente"
-            schema:
-              type: object
-              properties:
-                status:
-                  type: string
-                horario:
-                  type: string
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    status:
+                      type: string
+                    horario:
+                      type: string
 
   /usuarios/{id}/historial_horarios:
     get:
@@ -284,25 +272,25 @@ paths:
             schema:
               type: string
               default: America/Argentina/Buenos_Aires
-        produces:
-          - "application/json"
         responses:
           200:
             description: "Lista de horarios eliminados de la persona dentro de las fechas determinadas"
-            schema:
-              type: object
-              properties:
-                usuario:
+            content:
+              application/json:
+                schema:
                   type: object
-                historial:
-                  type: array
-                  items:
-                    type: object
-                    properties:
-                      horario:
+                  properties:
+                    usuario:
+                      type: object
+                    historial:
+                      type: array
+                      items:
                         type: object
-                      creador:
-                        type: object
+                        properties:
+                          horario:
+                            type: object
+                          creador:
+                            type: object
 
   /usuarios/{id}/logs:
     get:
@@ -319,15 +307,15 @@ paths:
             schema: 
               type: string
             required: true
-        produces:
-          - "application/json"
         responses:
           200:
             description: "Lista de marcaciones de la persona para el día actual"
-            schema:
-              type: array
-              items:
-                type: object
+            content:
+              application/json:
+                schema:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Marcacion'
     post:
         summary: Crea un registro de marcacion para el usuario.
         description: Crea una marcación en el momento actual para el usuario identificado por id.
@@ -342,22 +330,22 @@ paths:
             schema: 
               type: string
             required: true
-        produces:
-          - "application/json"
         responses:
           200:
             description: "Datos de la marcación creada"
-            schema:
-              type: object
-              properties:
-                estado:
-                  type: string
-                marcacion:
+            content:
+              application/json:
+                schema:
                   type: object
-                dni:
-                  type: string
-                nombre:
-                  type: string
-                apellido:
-                  type: string
+                  properties:
+                    estado:
+                      type: string
+                    marcacion:
+                      type: object
+                    dni:
+                      type: string
+                    nombre:
+                      type: string
+                    apellido:
+                      type: string
   
