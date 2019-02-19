@@ -13,6 +13,18 @@ servers:
 
 components:
   schemas:
+    Usuario: 
+      type: object
+      properties:
+        id:
+          type: string
+        nombre:
+          type: string
+        apellido:
+          type: string
+        dni:
+          type: string
+
     Marcacion:
       type: object
       properties:
@@ -42,6 +54,41 @@ components:
           type: string
         eliminado:
           type: date-time
+       
+
+    Justificacion:
+      type: object
+      properties:
+        nombre:
+          type: string
+        descripcion:
+          type: string
+        codigo:
+          type: string
+        general:
+          type: string
+        eliminado:
+          type: date-time
+
+    FechaJustificada:
+      type: object
+      properties:
+        fecha_inicio:
+          type: date-time
+        fecha_fin:
+          type: date-time
+        eliminado:
+          type: date-time
+        usuario_id:
+          type: string
+        notas:
+          type: string
+        justificacion:
+          type: object
+          schema:
+            $ref: '#/components/schemas/Justificacion'
+
+            
 
 paths:
   /modulos:
@@ -83,6 +130,30 @@ paths:
           200:
             description: "datos completos del usuario"
 
+  /usuarios/search/{search}:
+    get:
+        summary: Obtiene los usuarios que matchean la regexp = search.
+        description: Retorna todos los usuarios que matchean la expresión regular search
+        operationId: assistance.api.rest.users.search
+        tags:
+          - "usuarios"
+        parameters:
+          - in: path
+            name: search
+            schema:
+              type: string
+            required: true
+            description: expresión regular a matchear contra el dni, nombre y/o apellido
+        responses:
+          200:
+            description: lista de usuarios que cumplen la regexp
+            content:
+              application/json:
+                schema:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Usuario'
+
 
   /usuarios/{id}/perfil:
     get:
@@ -102,35 +173,7 @@ paths:
           200:
             description: "datos de perfil del usuario"
 
-  /usuarios/{id}/reporte:
-    get:
-        summary: Obtiene el reporte de asistencia del usuario identificado por id
-        description: Retorna un reporte de asistencia del usuario, el reporte por defecto consta de una semana finalizando en la fecha actual.
-        operationId: assistance.api.rest.users.report
-        tags:
-          - "usuarios"
-        parameters:
-          - in: path
-            name: id
-            description: id del usuario del cual se va a obtener el reporte
-            schema: 
-              type: string
-            required: true
-          - in: query
-            name: inicio
-            description: fecha de inicio del reporte. la fecha es inclusiva
-            schema:
-              type: string
-              format: date
-          - in: query
-            name: fin
-            description: fecha de fin del reporte. la fecha es inclusiva
-            schema:
-              type: string
-              format: date
-        responses:
-          200:
-            description: "reporte de asistencia del usuario"
+
 
   /usuarios/{id}/justificaciones:
     get:
@@ -138,7 +181,7 @@ paths:
         description: Retorna un reporte de justificaciones del usuario, el reporte por defecto consta de una semana finalizando en la fecha actual.
         operationId: assistance.api.rest.users.justifications
         tags:
-          - "usuarios"
+          - "justificaciones"
         parameters:
           - in: path
             name: id
@@ -162,13 +205,30 @@ paths:
           200:
             description: "reporte de justificaciones del usuario"
 
+
+  /horarios:
+    put:
+        summary: Crea un nuevo horario para una persona
+        operationId: assistance.api.rest.timetable.create
+        tags:
+          - "horarios"
+        requestBody:
+          description: Horarios a crear para una persona
+          required: true
+          content:
+            application/json:
+              schema:
+                $ref: '#/content/schemas/Horario'
+          responses:
+            200:
+              description: horarios correctamente creados
+
   /usuarios/{id}/horarios:
     get:
         summary: Obtiene los horarios del usuario identificado por id
         description: Retorna un listado de horarios del usuario, el listado de horarios es por defecto en la fecha actual.
-        operationId: assistance.api.rest.users.timetable
+        operationId: assistance.api.rest.timetable.user
         tags:
-          - "usuarios"
           - "horarios"
         parameters:
           - in: path
@@ -193,6 +253,7 @@ paths:
                   properties:
                     usuario:
                       type: object
+                      $ref: '#/components/schemas/Usuario'
                     horasSemanales:
                       type: object
                       properties:
@@ -204,14 +265,13 @@ paths:
                       type: array
                       items:
                         $ref: '#/components/schemas/Horario'
-          
+
   /usuarios/{id}/horarios/{hid}:
     delete:
         summary: Elimina un horario de una persona.
-        description: Elimina el horario, identificado por hid, de la persona identificada por id
-        operationId: assistance.api.rest.users.delete_timetable
+        description: Elimina el horario, identificado por hid
+        operationId: assistance.api.rest.timetable.delete
         tags:
-          - "usuarios"
           - "horarios"
         parameters:
           - in: path
@@ -243,9 +303,8 @@ paths:
     get:
         summary: Obtiene el historial de los horarios del usuario identificado por id
         description: Retorna un listado de horarios del usuario ya eliminados.
-        operationId: assistance.api.rest.users.historic_timetable
+        operationId: assistance.api.rest.timetable.historic
         tags:
-          - "usuarios"
           - "horarios"
         parameters:
           - in: path
@@ -292,13 +351,13 @@ paths:
                           creador:
                             type: object
 
+
   /usuarios/{id}/logs:
     get:
         summary: Obtiene las marcaciones del usuario identificado por id
         description: Retorna un listado de marcaciones del usuario del día actual.
         operationId: assistance.api.rest.users.logs
         tags:
-          - "usuarios"
           - "marcaciones"
         parameters:
           - in: path
@@ -321,7 +380,6 @@ paths:
         description: Crea una marcación en el momento actual para el usuario identificado por id.
         operationId: assistance.api.rest.users.crear_log
         tags:
-          - "usuarios"
           - "marcaciones"
         parameters:
           - in: path
@@ -349,3 +407,119 @@ paths:
                     apellido:
                       type: string
   
+
+
+  /usuarios/{id}/reporte:
+    get:
+        summary: Obtiene el reporte de asistencia del usuario identificado por id
+        description: Retorna un reporte de asistencia del usuario, el reporte por defecto consta de una semana finalizando en la fecha actual.
+        operationId: assistance.api.rest.reports.user
+        tags:
+          - "reportes"
+        parameters:
+          - in: path
+            name: id
+            description: id del usuario del cual se va a obtener el reporte
+            schema: 
+              type: string
+            required: true
+          - in: query
+            name: inicio
+            description: fecha de inicio del reporte. la fecha es inclusiva
+            schema:
+              type: string
+              format: date
+          - in: query
+            name: fin
+            description: fecha de fin del reporte. la fecha es inclusiva
+            schema:
+              type: string
+              format: date
+        responses:
+          200:
+            description: "reporte de asistencia del usuario"
+
+  /reportes:
+    post:
+        summary: Retorna un reporte general para los lugares determinados a partir de una fecha
+        description: Retorna una lista de reportes generales de los lugares pasados parámetro. El reporte se genera en una fecha determinada por parámetros
+        operationId: assistance.api.rest.reports.general
+        tags:
+          - "reportes"
+        requestBody:
+          description: Parámetros a usar para generar el reporte
+          required: true
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  fecha:
+                    type: date
+                  lugares:
+                    type: array
+                    items:
+                      type: string
+        responses:
+          200:
+            description: reporte de asistencia de los lugares consultados en la fecha indicada
+
+
+  /justificaciones/{jid}:
+    get:
+      summary: Retorna una justificación
+      description: Retorna una justificació determinada por jid
+      operationId: assistance.api.rest.justifications.get
+      tags:
+        - justificaciones
+      parameters:
+        - in: path
+          name: jid
+          schema:
+            type: string
+          required: true
+      responses:
+        200:
+          content:
+            application/json:
+              
+              schema:
+                type: object  
+                $ref: '#/components/schemas/Justificacion'
+
+  /justificaciones:
+    get:
+      summary: Retorna todas las justificaciones
+      description: Retorna todas las justificaciones existentes en el sistema
+      operationId: assistance.api.rest.justifications.list
+      tags:
+        - justificaciones
+      responses:
+        200:
+          description: lista de justificaciones existentes en el sistema
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Justificacion'
+    put:
+      summary: Crea una justificación nueva en el sistema
+      opertionId: assistance.api.rest.justifications.create
+      tags:
+        - justificaciones
+      requestBody:
+          description: Parámetros a usar para generar el reporte
+          required: true
+          content:
+            application/json:
+              schema:
+                type: object
+                $ref: '#/components/schemas/Justificacion'
+      responses:
+        200:
+          description: id de la justificación creada
+          content:
+            application/json:
+              schema:
+                type: string

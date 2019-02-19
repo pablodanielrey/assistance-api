@@ -396,12 +396,6 @@ def crear_log_por_usuario(uid, token=None):
         session.commit()
         return r
 
-@app.route(API_BASE + '/logs/<fecha>', methods=['GET'])
-@warden.require_valid_token
-@jsonapi
-def logs_por_fecha(fecha,token):
-    #return AssistanceModel.reporte(uid=uid, inicio=inicio, fin=fin)
-    return None
 
 @app.route(API_BASE + '/relojes', methods=['GET'])
 @warden.require_valid_token
