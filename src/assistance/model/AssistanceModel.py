@@ -610,7 +610,6 @@ class AssistanceModel:
             notas = 'Compensatorio Cancelado {}'.format(justificacion.fecha_inicio.date())
             CompensatoriosModel.cambiarSaldo(session, autorizador_id, justificacion.usuario_id, cantidad, notas)
 
-
         return justificacion.id
 
     @classmethod
