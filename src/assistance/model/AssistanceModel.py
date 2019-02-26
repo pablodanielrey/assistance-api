@@ -115,6 +115,8 @@ class AssistanceModel:
         """
         assert caller_id is not None
         assert uid is not None
+        if caller_id == uid:
+            return True
         usuarios_cargo = cls._obtener_subusuarios(caller_id)
         uids = [u['usuario'] for u in usuarios_cargo]
         ok = uid in uids
