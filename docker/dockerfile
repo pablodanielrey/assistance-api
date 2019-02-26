@@ -16,7 +16,7 @@ COPY docker/supervisor/rest.conf /etc/supervisor/conf.d
 COPY docker/supervisor/telegram.conf /etc/supervisor/conf.d
 COPY scripts /scripts
 COPY src /src
-RUN cd /src && pip3 update && pip3 install --trusted-host pypi.econo.unlp.edu.ar --upgrade -e .
+RUN cd /src && pip3 install --trusted-host pypi.econo.unlp.edu.ar --upgrade -e .
 
 WORKDIR /src
 
