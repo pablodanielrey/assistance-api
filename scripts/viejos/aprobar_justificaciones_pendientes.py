@@ -87,7 +87,7 @@ if __name__ == '__main__':
                         tjid = str(uuid.uuid4())
                         tfecha = datetime.datetime.now()
                         cur2.execute('insert into assistance.justification_status (id,status,user_id,justification_id,created,date) values (%s,%s,%s,%s,%s,%s)', (tjid, 2, '1', jid, tfecha, tfecha))
-                        cur2.commit()
+                        conn2.commit()
 
             for jnn in jdate:
                 jn = jnn['t']
@@ -106,7 +106,7 @@ if __name__ == '__main__':
                         tjid = str(uuid.uuid4())
                         tfecha = datetime.datetime.now()
                         cur2.execute('insert into assistance.justification_status (id,status,user_id,justification_id,created,date) values (%s,%s,%s,%s,%s,%s)', (tjid, 2, '1', jid, tfecha, tfecha))
-                        cur2.commit()
+                        conn2.commit()
 
             for jnn in rango:
                 jn = jnn['t']
@@ -125,7 +125,7 @@ if __name__ == '__main__':
                         tjid = str(uuid.uuid4())
                         tfecha = datetime.datetime.now()
                         cur2.execute('insert into assistance.justification_status (id,status,user_id,justification_id,created,date) values (%s,%s,%s,%s,%s,%s)', (tjid, 2, '1', jid, tfecha, tfecha))
-                        cur2.commit()
+                        conn2.commit()
 
 
         finally:
