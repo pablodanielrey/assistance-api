@@ -640,7 +640,7 @@ class AssistanceModel:
         j.fecha_inicio = fj["fecha_inicio"]
         j.fecha_fin = fj["fecha_fin"]
         j.usuario_id = fj["usuario_id"] if 'usuario_id' in fj else None
-        j.notas = fj['notas']
+        j.notas = fj['notas'] if 'notas' in fj else ''
         j.justificacion_id = just["id"]
         j.creador_id = autorizador_id
         session.add(j)
