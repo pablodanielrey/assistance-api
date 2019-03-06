@@ -41,7 +41,9 @@ setup(name='assistance-api',
                             'gunicorn',
                             'microservices_common>=2.0.4a4',
                             'warden-api',
-                            'python-telegram-bot'],
+                            'python-telegram-bot',
+                            'PyZatt',
+                            'PrettyTable'],
           entry_points={
             'console_scripts': [
                 'rest=assistance.api.rest.main:main'
