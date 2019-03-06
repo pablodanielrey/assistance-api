@@ -6,7 +6,7 @@ import logging
 logging.getLogger().setLevel(logging.INFO)
 
 
-ip_address = '163.10.56.25'
+ip_address = '163.10.56.204'
 machine_port = 4370
 
 
