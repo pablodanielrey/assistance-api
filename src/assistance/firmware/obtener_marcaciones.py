@@ -3,6 +3,7 @@ import os.path
 import pyzk.pyzk as pyzk
 from pyzk.zkmodules.defs import *
 import logging
+import json
 logging.getLogger().setLevel(logging.INFO)
 
 
@@ -16,9 +17,13 @@ z.disable_device()
 z.read_att_log()
 z.print_attlog()
 
-for u in z.att_log:
-    for l in u:
-        print("User: {} Marcacion: {}".format(user_id,att_time))
+
+for l in z.att_log:
+    print("User: {} Marcacion: {}".format(l.user_id, l.att_time))
+
+
+with open('/tmp/marcaciones.json', 'w') as outfile:
+    json.dump(data, outfile)
 
 z.enable_device()
 z.disconnect()
