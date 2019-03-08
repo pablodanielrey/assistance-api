@@ -26,12 +26,11 @@ for u in z.users.values():
     huellas = []
     contador = 0
     for h,f in u.user_fptmps:
-        if h != 0:
-            huellas.append({
-                'dedo' : contador,
-                'huella' : _decodeBytearray(h),
-                'flag' : f
-            })
+        huellas.append({
+            'dedo' : contador,
+            'huella' : _decodeBytearray(h),
+            'flag' : f
+        })
         contador += 1
     datos[u.user_id] = {
         'huellas' : huellas,
