@@ -5,6 +5,7 @@ from pyzk.zkmodules.defs import *
 import logging
 import json
 import binascii
+import hashlib
 logging.getLogger().setLevel(logging.INFO)
 
 def _decodeBytearray(dato):
@@ -28,11 +29,14 @@ for u in z.users.values():
     for h,f in u.user_fptmps:
         if h != 0:
             huella = _decodeBytearray(h)
+            hashHuella = hashlib.md5(h).hexdigest()
         else:
             huella = 0
+            hashHuella = None
         huellas.append({
             'dedo' : contador,
             'huella' : huella,
+            'hashHuella' : hashHuella,
             'flag' : f
         })
         contador += 1
