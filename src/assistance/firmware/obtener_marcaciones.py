@@ -13,12 +13,16 @@ z = pyzk.ZKSS()
 z.connect_net(ip_address, machine_port)
 z.disable_device()
 
-z.read_att_log()
+#La funcion read_att_log da error cuando no puede obtener marcaciones por lo tanto creé una "Contencion" del error
+try:
+    z.read_att_log()
+except:
+    pass
 
 datos = {}
 datos['logs'] = []
 for l in z.att_log:
-    print("User: {} Marcacion: {}".format(l.user_id, l.att_time))
+    print('Usuario: {} Marcacion: {}'.format(l.user_id,l.att_time))
     datos['logs'].append({
             'usuario' : l.user_id,
             'tipo' : l.ver_type,
