@@ -4,12 +4,8 @@ import pyzk.pyzk as pyzk
 from pyzk.zkmodules.defs import *
 import logging
 import json
-import binascii
+from ZKSoftware import *
 logging.getLogger().setLevel(logging.INFO)
-
-
-def _decodeBytearray(dato):
-    return binascii.hexlify(dato).decode('ascii')
 
 ip_address = '163.10.56.25'
 machine_port = 4370
@@ -27,7 +23,7 @@ for u in z.users.values():
     contador = 0
     for h,f in u.user_fptmps:
         if h != 0:
-            huella = _decodeBytearray(h)
+            huella = decodeBytearray(h)
         else:
             huella = 0
         huellas.append({

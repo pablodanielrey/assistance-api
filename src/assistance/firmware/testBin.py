@@ -4,12 +4,9 @@ import pyzk.pyzk as pyzk
 from pyzk.zkmodules.defs import *
 import logging
 import json
-import binascii
+from ZKSoftware import *
 import hashlib
 logging.getLogger().setLevel(logging.INFO)
-
-def _encodeBytearray(dato):
-    return binascii.unhexlify(dato)
 
 try:
     with open('/tmp/usuarios.json','r') as f:
@@ -46,7 +43,7 @@ for i in range(len(usuarios)):
     contador = 0
     for h in usuarios[i]['huellas']:
         if h['huella'] != 0:
-            huellasArchivo[contador] = _encodeBytearray(h['huella'])
+            huellasArchivo[contador] = encodeBytearray(h['huella'])
             contador += 1
 
 md51 = hashlib.md5(huellasReloj[0]).hexdigest()
