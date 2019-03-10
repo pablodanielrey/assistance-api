@@ -10,28 +10,30 @@ ip_address = '163.10.56.25'
 machine_port = 4370
 
 z = pyzk.ZKSS()
-z.connect_net(ip_address, machine_port)
-z.disable_device()
+try:    
+    z.connect_net(ip_address, machine_port)
+    z.disable_device()
 
-#La funcion read_att_log da error cuando no puede obtener marcaciones por lo tanto creé una "Contencion" del error
-try:
-    z.read_att_log()
-except:
-    pass
+    #La funcion read_att_log da error cuando no puede obtener marcaciones por lo tanto creé una "Contencion" del error
+    try:
+        z.read_att_log()
+    except:
+        pass
 
-datos = {}
-datos['logs'] = []
-for l in z.att_log:
-    print('Usuario: {} Marcacion: {}'.format(l.user_id,l.att_time))
-    datos['logs'].append({
-            'usuario' : l.user_id,
-            'tipo' : l.ver_type,
-            'marcacion' : '{}'.format(l.att_time),
-            'estado' : l.ver_state
-    })
+    datos = {}
+    datos['logs'] = []
+    for l in z.att_log:
+        print('Usuario: {} Marcacion: {}'.format(l.user_id,l.att_time))
+        datos['logs'].append({
+                'usuario' : l.user_id,
+                'tipo' : l.ver_type,
+                'marcacion' : '{}'.format(l.att_time),
+                'estado' : l.ver_state
+        })
 
-with open('/tmp/logs.json', 'w') as outfile:
-    json.dump(datos, outfile)
-
-z.enable_device()
-z.disconnect()
+    with open('/tmp/logs.json', 'w') as outfile:
+        json.dump(datos, outfile)
+        
+    z.enable_device()
+finally:
+    z.disconnect()

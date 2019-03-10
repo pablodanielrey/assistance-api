@@ -15,11 +15,13 @@ respuesta = input("ESTA SEGURO? S/n: ")
 if respuesta == 'S':
     print('ELIMINANDO DATOS...')
     z = pyzk.ZKSS()
-    z.connect_net(ip_address, machine_port)
-    z.disable_device()
-    z.clear_data(4)
-    z.enable_device()
-    z.disconnect()
+    try:
+        z.connect_net(ip_address, machine_port)
+        z.disable_device()
+        z.clear_data(4)
+        z.enable_device()
+    finally:
+        z.disconnect()
     print('PROCESO TERMINADO.')
 else:
     print('NO SE HA BORRADO EL RELOJ')

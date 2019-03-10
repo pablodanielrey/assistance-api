@@ -7,10 +7,6 @@ from ZKSoftware import *
 ip_address = '163.10.56.25'
 machine_port = 4370
 
-z = pyzk.ZKSS()
-z.connect_net(ip_address, machine_port)
-z.disable_device()
-
 user_id = '11223345'
 user_name = 'Prueba'
 user_password = ''
@@ -20,13 +16,18 @@ not_enabled = 0
 user_group = 1
 user_tzs = [1,0,0]
 
-z.read_all_user_id()
-z.set_user_info(user_id,name=user_name,password=user_password,
-    card_no=card_number,admin_lv=admin_level, neg_enabled=not_enabled,
-    user_group=user_group,user_tzs=user_tzs)
+z = pyzk.ZKSS()
+try:
+    z.connect_net(ip_address, machine_port)
+    z.disable_device()
 
-z.enable_device()
-z.disconnect()
+    z.read_all_user_id()
+    z.set_user_info(user_id,name=user_name,password=user_password,
+        card_no=card_number,admin_lv=admin_level, neg_enabled=not_enabled,
+        user_group=user_group,user_tzs=user_tzs)
+    z.enable_device()
+finally:
+    z.disconnect()
 
 #El indice interno del reloj (user_sn) comienza en 1 y es secuencial
 #Al insertar usuarios, previamente hay que borrar el reloj entero o bien obtener el ultimo indice actual +1 para el siguiente usuario

@@ -19,30 +19,31 @@ except Exception as e:
     sys.exit(1)
 
 z = pyzk.ZKSS()
-z.connect_net(ip_address, machine_port)
-z.disable_device()
+try:
+    z.connect_net(ip_address, machine_port)
+    z.disable_device()
 
-z.read_all_user_id()
-usuarios = usuarios['usuarios']
-for i in range(len(usuarios)):
-    user_id = usuarios[i]['user_id']
-    user_name = usuarios[i]['user_name']
-    user_password = usuarios[i]['user_password']
-    card_number = usuarios[i]['card_number']
-    admin_level = usuarios[i]['admin_level']
-    not_enabled = usuarios[i]['not_enabled']
-    user_group = usuarios[i]['user_group']
-    user_tzs = usuarios[i]['user_tzs']
-    z.set_user_info(user_id,name=user_name,password=user_password,
-        card_no=card_number,admin_lv=admin_level, neg_enabled=not_enabled,
-        user_group=user_group,user_tzs=user_tzs)
-    
-    for h in usuarios[i]['huellas']:
-        if h['fp'] != 0:
-            fp = encodeBytearray(h['fp'])
-            fp_index = h['fp_index']
-            fp_flag = h['fp_flag']
-            z.upload_fp(user_id=user_id,fp=fp,fp_index=fp_index,fp_flag=fp_flag)
+    z.read_all_user_id()
+    usuarios = usuarios['usuarios']
+    for i in range(len(usuarios)):
+        user_id = usuarios[i]['user_id']
+        user_name = usuarios[i]['user_name']
+        user_password = usuarios[i]['user_password']
+        card_number = usuarios[i]['card_number']
+        admin_level = usuarios[i]['admin_level']
+        not_enabled = usuarios[i]['not_enabled']
+        user_group = usuarios[i]['user_group']
+        user_tzs = usuarios[i]['user_tzs']
+        z.set_user_info(user_id,name=user_name,password=user_password,
+            card_no=card_number,admin_lv=admin_level, neg_enabled=not_enabled,
+            user_group=user_group,user_tzs=user_tzs)
 
-z.enable_device()
-z.disconnect()
+        for h in usuarios[i]['huellas']:
+            if h['fp'] != 0:
+                fp = encodeBytearray(h['fp'])
+                fp_index = h['fp_index']
+                fp_flag = h['fp_flag']
+                z.upload_fp(user_id=user_id,fp=fp,fp_index=fp_index,fp_flag=fp_flag)
+    z.enable_device()
+finally:
+    z.disconnect()
