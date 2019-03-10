@@ -12,7 +12,7 @@ ip_address = '163.10.56.25'
 machine_port = 4370
 
 try:
-    with open('/tmp/usuarios.json','r') as f:
+    with open('/tmp/usuarios_modificados.json','r') as f:
         usuarios = json.load(f)
 except Exception as e:
     print('Error: {}'.format(e))
@@ -22,12 +22,9 @@ z = pyzk.ZKSS()
 z.connect_net(ip_address, machine_port)
 z.disable_device()
 
-#El indice interno del reloj (user_sn) comienza en 1 y es secuencial
-#Al insertar usuarios, previamente hay que borrar el reloj entero o bien obtener el ultimo indice actual +1 para el siguiente usuario
-
+z.read_all_user_id()
 usuarios = usuarios['usuarios']
 for i in range(len(usuarios)):
-    user_sn = usuarios[i]['user_sn']
     user_id = usuarios[i]['user_id']
     user_name = usuarios[i]['user_name']
     user_password = usuarios[i]['user_password']
@@ -36,18 +33,16 @@ for i in range(len(usuarios)):
     not_enabled = usuarios[i]['not_enabled']
     user_group = usuarios[i]['user_group']
     user_tzs = usuarios[i]['user_tzs']
+    z.set_user_info(user_id,name=user_name,password=user_password,
+        card_no=card_number,admin_lv=admin_level, neg_enabled=not_enabled,
+        user_group=user_group,user_tzs=user_tzs)
     
-    usuario = empaquetar_usuario(user_sn,user_id,admin_level,not_enabled,user_password,
-    user_name,card_number,user_group,user_tzs)
-    
-    subir_info_usuario(z,user_sn,usuario)
-
     for h in usuarios[i]['huellas']:
-        if h['huella'] != 0:
-            fp = encodeBytearray(h['huella'])
+        if h['fp'] != 0:
+            fp = encodeBytearray(h['fp'])
             fp_index = h['fp_index']
             fp_flag = h['fp_flag']
-            subir_huella(z,user_sn, fp, pf_index, fp_flag)
+            z.upload_fp(user_id=user_id,fp=fp,fp_index=fp_index,fp_flag=fp_flag)
 
 z.enable_device()
 z.disconnect()
