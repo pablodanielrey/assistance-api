@@ -7,6 +7,8 @@ import json
 from ZKSoftware import *
 logging.getLogger().setLevel(logging.INFO)
 
+"""Obtiene las huellas registradas en el reloj biometrico"""
+
 ip_address = '163.10.56.25'
 machine_port = 4370
 

@@ -8,6 +8,7 @@ import hashlib
 from ZKSoftware import *
 logging.getLogger().setLevel(logging.INFO)
 
+"""Obtiene la lista de usuarios que estan creados en el reloj biometrico y sus huellas"""
 
 ip_address = '163.10.56.25'
 machine_port = 4370

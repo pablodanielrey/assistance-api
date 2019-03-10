@@ -5,6 +5,7 @@ from pyzk.zkmodules.defs import *
 import logging
 logging.getLogger().setLevel(logging.INFO)
 
+"""Elimina todos los datos del reloj"""
 
 ip_address = '163.10.56.25'
 machine_port = 4370

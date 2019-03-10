@@ -6,6 +6,8 @@ import logging
 import json
 logging.getLogger().setLevel(logging.INFO)
 
+"""Obtiene las marcaciones que estan almacenadas en el reloj biometrico"""
+
 ip_address = '163.10.56.25'
 machine_port = 4370
 

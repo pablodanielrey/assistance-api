@@ -1,6 +1,8 @@
 import pyzk.pyzk as pyzk
 import pyzk.zkmodules.defs as defs
 
+"""Obtiene los datos de las variables internas del dispositivo"""
+
 ip_address = '163.10.56.25'
 machine_port = 4370
 
@@ -35,7 +37,7 @@ try:
     print('User max id width = |{0}|'.format(z.get_device_info('~PIN2Width')))
     print('Firmware version = |{0}|'.format(z.get_firmware_version()))
     print("---------------------------------------------------")
-    
+
     print("ESTADO DEL DISPOSITIVO")
     print('Device state = |{0}|'.format(z.get_device_state()))
 

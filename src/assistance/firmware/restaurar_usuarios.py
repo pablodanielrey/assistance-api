@@ -8,6 +8,8 @@ import json
 from ZKSoftware import *
 logging.getLogger().setLevel(logging.INFO)
 
+"""Restaura desde un json los usuarios y sus huellas al reloj biometrico"""
+
 ip_address = '163.10.56.25'
 machine_port = 4370
 

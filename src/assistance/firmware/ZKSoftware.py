@@ -1,6 +1,8 @@
 import struct
 import binascii
 
+"""Codigo comun de ayuda y pruebas para propia implementacion de funciones de zk"""
+
 def decodeBytearray(dato):
     return binascii.hexlify(dato).decode('ascii')
 
