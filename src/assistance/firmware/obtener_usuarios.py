@@ -25,6 +25,9 @@ try:
     datos = {}
     datos['usuarios'] = []
     for u in z.users.values():
+        print('Usuario ID: {}'.format(u.user_id))
+        print('Usuario ID: {}'.format(u.user_id))
+        print('Usuario ID: {}'.format(u.user_id))
         huellas = []
         contador = 0
         for h,f in u.user_fptmps:
