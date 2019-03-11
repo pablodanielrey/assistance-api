@@ -1,6 +1,8 @@
 import pyzk.pyzk as pyzk
 from pyzk.zkmodules.defs import *
 from ZKSoftware import *
+import logging
+logging.getLogger().setLevel(logging.INFO)
 
 """Template de pruebas"""
 
@@ -13,7 +15,9 @@ try:
     z.disable_device()
     ##################Comandos a probar ########################
     
-    leer_todos_usuarios_id(z)
+    #usuarios = leer_usuarios(z)
+    huellas = leer_huellas(z)
+    logging.info(huellas) 
 
     ############################################################
     z.enable_device()
