@@ -14,7 +14,7 @@ ip_address = '163.10.56.25'
 machine_port = 4370
 
 try:
-    with open('/tmp/usuarios_modificados.json','r') as f:
+    with open('/tmp/usuarios.json','r') as f:
         usuarios = json.load(f)
 except Exception as e:
     print('Error: {}'.format(e))
