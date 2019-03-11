@@ -2,8 +2,6 @@ import time
 import os.path
 import pyzk.pyzk as pyzk
 from pyzk.zkmodules.defs import *
-import logging
-logging.getLogger().setLevel(logging.INFO)
 
 """Elimina todos los datos del reloj"""
 
@@ -19,7 +17,7 @@ if respuesta == 'S':
     try:
         z.connect_net(ip_address, machine_port)
         z.disable_device()
-        z.clear_data(4)
+        z.clear_data()
         z.enable_device()
     finally:
         z.disconnect()
