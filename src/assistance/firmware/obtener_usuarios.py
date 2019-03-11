@@ -8,7 +8,7 @@ import hashlib
 from ZKSoftware import *
 logging.getLogger().setLevel(logging.INFO)
 
-"""Obtiene la lista de usuarios que estan creados en el reloj biometrico y sus huellas"""
+"""Obtiene la lista de usuarios que estan creados en el reloj biometrico y sus huellas usando personalizacion de obtencion"""
 
 ip_address = '163.10.56.25'
 machine_port = 4370
@@ -18,43 +18,34 @@ try:
     z.connect_net(ip_address, machine_port)
     z.disable_device()
 
-    z.read_all_user_id()
-    z.read_all_fptmp()
-    z.print_users_summary()
+    usuarios = leer_usuarios(z)
+    huellas = leer_huellas(z)
 
     datos = {}
     datos['usuarios'] = []
-    for u in z.users.values():
-        print('Usuario ID: {}'.format(u.user_id))
-        print('Usuario ID: {}'.format(u.user_id))
-        print('Usuario ID: {}'.format(u.user_id))
-        huellas = []
-        contador = 0
-        for h,f in u.user_fptmps:
-            if h != 0:
-                huella = decodeBytearray(h)
-                hashHuella = hashlib.md5(h).hexdigest()
-            else:
-                huella = 0
-                hashHuella = None
-            huellas.append({
-                'fp_index' : contador,
-                'fp' : huella,
-                'hashFp' : hashHuella,
-                'fp_flag' : f
-            })
-            contador += 1
+    for u in usuarios:
+        huellas_usuario = []
+        if u['user_sn'] in huellas.keys():
+            for h in huellas[u['user_sn']]:
+                huella = decodeBytearray(h['fp'])
+                hashHuella = hashlib.md5(h['fp']).hexdigest()
+                huellas_usuario.append({
+                    'fp_index' : h['fp_idx'],
+                    'fp' : huella,
+                    'hashFp' : hashHuella,
+                    'fp_flag' : h['fp_flag']
+                })
         datos['usuarios'].append({
-            'user_sn': u.user_sn,
-            'user_id': u.user_id,
-            'user_name': u.user_name,
-            'user_password': u.user_password,
-            'card_number': u.card_number,
-            'admin_level': u.admin_level,
-            'not_enabled': u.not_enabled,
-            'user_group': u.user_group,
-            'user_tzs': u.user_tzs,
-            'huellas': huellas
+            'user_sn': u['user_sn'],
+            'user_id': u['user_id'],
+            'user_name': u['user_name'],
+            'user_password': u['user_password'],
+            'card_number': u['card_number'],
+            'admin_level': u['permission_token'] >> 1,
+            'not_enabled': u['permission_token'] & 1,
+            'user_group': u['user_group'],
+            'user_tzs': [u['user_tz1'],u['user_tz2'],u['user_tz3']],
+            'huellas': huellas_usuario
         })
 
     with open('/tmp/usuarios.json', 'w') as outfile:
