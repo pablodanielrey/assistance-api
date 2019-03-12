@@ -26,9 +26,6 @@ try:
     z.read_all_user_id()
     z.read_all_fptmp()
     z.print_users_summary()
-    huellas = leer_huellas(z)
-    for h in huellas.keys():
-        print(h)
 
     ############################################################
     z.enable_device()

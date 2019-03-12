@@ -113,3 +113,65 @@ def leer_huellas(z):
         # Saltea a siguiente huella
         i += tmp_size+6
     return huellas
+
+
+    """
+    Para hacer funcionar el metodo read_all_user_id solo hace falta reemplazar el metodo por este otro que corrige el problema de los datos erroneos en strings
+    
+    def _decodificar_str(self,s):
+        '''Corta la cadena hasta el primer valor invalido'''
+        i = 0
+        while i < len(s) and s[i] != 0x00:
+            i += 1
+        return s[:i]
+    
+    def read_all_user_id(self):
+        '''
+        Requests all the users info, except the fingerprint templates.
+
+        :return: None. Stores the users info in the ZKUsers dict.
+        '''
+        self.send_command(cmd=CMD_DATA_WRRQ,
+                          data=bytearray.fromhex('0109000500000000000000'))
+
+        # receive dataset with users info
+        users_dataset = self.recv_long_reply()
+        total_size_dataset = len(users_dataset)
+
+        # clear the users dict
+        self.users = {}
+
+        # skip first 4 bytes (size + zeros)
+        i = 4
+        while i < total_size_dataset:
+            (user_sn,perm_token, password, user_name, card_no, group_no, tz, tz1, tz2, tz3, user_id) = struct.unpack('<HB8s24sIBHHHH9s15x',users_dataset[i:i+72])
+            
+            password = self._decodificar_str(password).decode('ascii')
+            user_name = self._decodificar_str(user_name).decode('ascii')
+            user_id = self._decodificar_str(user_id).decode('ascii')
+            if tz == 1:
+                user_tzs = [0]*3
+                user_tzs[0] = tz1
+                user_tzs[1] = tz2
+                user_tzs[2] = tz3
+            else:
+                user_tzs = []
+            
+            
+            # append user to the list of users
+            self.add_user(user_sn)
+            # set the corresponding info
+            self.users[user_sn].set_user_info(
+                                            user_id=user_id,
+                                            user_sn=user_sn,
+                                            name=user_name,
+                                            password=password,
+                                            card_no=card_no,
+                                            admin_lv=perm_token >> 1,
+                                            neg_enabled=perm_token & 1,
+                                            user_group=group_no,
+                                            user_tzs=user_tzs
+                                            )
+            # every user entry is 72 bytes long
+            i += 72
+    """
