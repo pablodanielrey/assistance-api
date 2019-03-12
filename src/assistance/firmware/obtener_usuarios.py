@@ -27,12 +27,10 @@ try:
         huellas_usuario = []
         if u['user_sn'] in huellas.keys():
             for h in huellas[u['user_sn']]:
-                huella = decodeBytearray(h['fp'])
-                hashHuella = hashlib.md5(h['fp']).hexdigest()
                 huellas_usuario.append({
                     'fp_index' : h['fp_idx'],
-                    'fp' : huella,
-                    'hashFp' : hashHuella,
+                    'fp' : h['fp'],
+                    'fp_hash' : h['fp_hash'],
                     'fp_flag' : h['fp_flag']
                 })
         datos['usuarios'].append({
@@ -50,7 +48,7 @@ try:
 
     with open('/tmp/usuarios.json', 'w') as outfile:
         json.dump(datos, outfile)
-
+    
     z.enable_device()
 finally:
     z.disconnect()
