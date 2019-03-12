@@ -1,6 +1,14 @@
+import time
+import os.path
+import json
+import hashlib
+import base64
+
 import pyzk.pyzk as pyzk
 from pyzk.zkmodules.defs import *
+
 from ZKSoftware import *
+
 import logging
 logging.getLogger().setLevel(logging.INFO)
 
@@ -15,9 +23,8 @@ try:
     z.disable_device()
     ##################Comandos a probar ########################
     
-    #usuarios = leer_usuarios(z)
-    huellas = leer_huellas(z)
-    logging.info(huellas) 
+    z.read_all_user_id()
+    z.print_users_summary()
 
     ############################################################
     z.enable_device()
