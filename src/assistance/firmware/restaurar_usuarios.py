@@ -41,11 +41,10 @@ try:
             user_group=user_group,user_tzs=user_tzs)
 
         for h in usuarios[i]['huellas']:
-            if h['fp'] != 0:
-                fp = encodeBytearray(h['fp'])
-                fp_index = h['fp_index']
-                fp_flag = h['fp_flag']
-                z.upload_fp(user_id=user_id,fp=fp,fp_index=fp_index,fp_flag=fp_flag)
+            fp = encodeBytearray(h['fp'])
+            fp_index = h['fp_index']
+            fp_flag = h['fp_flag']
+            z.upload_fp(user_id=user_id,fp=fp,fp_index=fp_index,fp_flag=fp_flag)
     z.enable_device()
 finally:
     z.disconnect()
