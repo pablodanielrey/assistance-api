@@ -1,6 +1,8 @@
 import struct
 import binascii
 import logging
+import base64
+import hashlib
 logging.getLogger().setLevel(logging.INFO)
 
 """Codigo comun de ayuda y pruebas para propia implementacion de funciones de zk"""
@@ -11,13 +13,25 @@ def decodeBytearray(dato):
 def encodeBytearray(dato):
     return binascii.unhexlify(dato)
 
+def decodeBytearrayBase64(dato):
+    """Transforma bytes a string base64 para almacenar"""
+    return binascii.b2a_base64(dato, newline=False).decode('ascii')
+
+def encodeBytearrayBase64(dato):
+    """Transforma base64 a bytes para enviar"""
+    retorno = binascii.a2b_base64(dato.encode('ascii'))
+    print(retorno)
+    return retorno
+
 def decodificar_str(s):
+    """Corta la cadena hasta el primer valor invalido"""
     i = 0
     while i < len(s) and s[i] != 0x00:
         i += 1
     return s[:i]
 
 def decodificar_info_usuario(data):
+    """Retorna diccionario de usuario decodificado desde bytes"""
     (sn,permission, passw, name, card, group, tz, tz1, tz2, tz3, uid) = struct.unpack('<HB8s24sIBHHHH9s15x',data)
     return {
         'user_sn': sn,
@@ -83,14 +97,16 @@ def leer_huellas(z):
         if user_sn in huellas.keys(): 
             huellas[user_sn].append({
                 'fp_idx': fp_idx,
-                'fp': fp,
+                'fp': decodeBytearray(fp),
+                'fp_hash': hashlib.md5(fp).hexdigest(),
                 'fp_flag': fp_flg        
             })
         else:
             huellas[user_sn] = []
             huellas[user_sn].append({
                 'fp_idx': fp_idx,
-                'fp': fp,
+                'fp': decodeBytearray(fp),
+                'fp_hash': hashlib.md5(fp).hexdigest(),
                 'fp_flag': fp_flg        
             })
                         
