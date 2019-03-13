@@ -6,12 +6,15 @@ from defs import *
 
 class AttLog:
     def __init__(self,user_id,att_time,ver_type,ver_state):
-        self.user_id = ''
-        self.att_time = ''
-        self.ver_type = ''
-        self.ver_state = ''
+        self.user_id = user_id
+        self.att_time = att_time
+        self.ver_type = ver_type
+        self.ver_state = ver_state
 
-
+    def retornar(self):
+        return {
+            'user_id' : self.user_id            
+        }
 
 class ZKSoftware:
     
@@ -22,7 +25,6 @@ class ZKSoftware:
         self.session_id = 0
         self.reply_number = 0
         self.connected_flg = False
-        #self.recvd.ack() = 0
 
     """
         ----------------------------
@@ -465,16 +467,10 @@ class ZKSoftware:
             # Correccion de datos
             user_id = self._decodificar_str(user_id).decode('ascii')
             att_time = self._decode_time(self.last_payload_data[i+27:i+31])
-            
+            # Creacion de Attlog
             log = AttLog(user_id,att_time,ver_type,ver_state)
-            # append attendance entry
+            # Guarda el log
             att_logs.append(log)
-            print('---------')
-            print(user_sn)
-            print(user_id)
-            print(att_time)
-            print(ver_type)
-            print(ver_state)
             i += 40
         return att_logs
 
@@ -488,23 +484,23 @@ class ZKSoftware:
             self.disable_device()
 
             att_log = self._read_att_log()
-            datos = {}
-            datos['logs'] = []
-            for l in att_log:
-                print(type(l.att_time))
-                pDate = datetime.datetime.strptime(l.att_time,'%Y-%m-%d %H:%M:%S').replace(microsecond=0,tzinfo=None)
-                zpDate = self.timezone.localize(pDate)
-                d = {
-                    'PIN':l.user_id,
-                    'DateTime': zpDate,
-                    'Verified':l.ver_state,
-                    'WorkCode':l.ver_state
-                }
-                datos.append(d)            
 
-            self.enable_device()
-        
+            self.enable_device()            
         finally:
             self.disconnect()
+
+        datos = {'logs':[]}
+        for l in att_log:
+            #pDate = datetime.datetime.strptime(l.att_time,'%Y-%m-%d %H:%M:%S').replace(microsecond=0,tzinfo=None)
+            pDate = l.att_time.replace(microsecond=0,tzinfo=None)
+            zpDate = self.timezone.localize(pDate)
+            zpDate = datetime.datetime.strftime(zpDate,'%Y-%m-%d %H:%M:%S')
+            d = {
+                'PIN':l.user_id,
+                'DateTime': zpDate,
+                'Verified':l.ver_state,
+                'WorkCode':l.ver_state
+            }
+            datos['logs'].append(d)
 
         return datos        
