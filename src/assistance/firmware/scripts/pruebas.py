@@ -26,7 +26,8 @@ try:
     z.read_all_user_id()
     z.read_all_fptmp()
     z.print_users_summary()
-
+    z.read_att_log()
+    z.print_attlog()
     ############################################################
     z.enable_device()
 finally:
