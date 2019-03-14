@@ -67,7 +67,9 @@
 					"reporte_personal",
 					"reporte_general",
 					"justificacion_reporte",
-					"horario_vista"
+					"horario_vista",
+					"justificacion_personal_abm",
+					"justificacion_personal_a"					
 				]
 			}
 		],

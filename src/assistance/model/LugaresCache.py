@@ -136,7 +136,10 @@ class LugaresCache:
         self.mongo.sublugares_lugar.insert_many(lugares)
 
     def obtener_sublugares_por_lugar_id(self, lid, token=None):
-        lugares = self.mongo.sublugares_lugar.find({'padre_id':lid})
+        parametros = {
+            'padre_id': lid
+        }
+        lugares = self.mongo.sublugares_lugar.find(parametros)
         lids = [l['id'] for l in lugares]
         if len(lids) > 0:
             return lids

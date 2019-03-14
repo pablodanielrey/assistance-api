@@ -88,12 +88,11 @@ class AssistanceModel:
     def _obtener_nivel_maximo(cls, uid, cargos):
         """ filtro los usuarios que podría ver de acuerdo a su cargo (solo los que tienen nivel mas alto) """
         mismo = [u for u in cargos if u['usuario'] == uid]
-        if not mismo or len(mismo) <= 0:
-            return None
         maximo = 100
-        for c in mismo:
-            if maximo > c['cargo_nivel']:
-                maximo = c['cargo_nivel']        
+        if mismo and len(mismo) > 0:
+            for c in mismo:
+                if maximo > c['cargo_nivel']:
+                    maximo = c['cargo_nivel']        
         return maximo
 
     @classmethod
@@ -125,7 +124,6 @@ class AssistanceModel:
     @classmethod
     def chequear_acceso_lugares(cls, caller_id, lugares=[]):
         lids = cls.cache_lugares.obtener_lugares_por_usuario_id(caller_id)
-        tk = cls.api._get_token()
         acumulador = []
         acumulador.extend(lids)
         for lid in lids:
@@ -359,7 +357,7 @@ class AssistanceModel:
 
             ''' obtengo los usuarios que tienen cargos mas bajos '''
             usuarios_cargos = cls.cache_lugares.obtener_subusuarios_por_lugar_id(lid)
-            uids = [u['usuario'] for u in usuarios_cargos if u['cargo_nivel'] > nivel]
+            uids = [u['usuario'] for u in usuarios_cargos if 'cargo_nivel' in u and u['cargo_nivel'] and u['cargo_nivel'] > nivel]
             usuarios = cls.cache_usuarios.obtener_usuarios_por_uids(uids)
             lugar = cls.cache_lugares.obtener_lugar_por_id(lid)
 
