@@ -498,7 +498,7 @@ class ZKSoftware:
             d = {
                 'PIN':l.user_id,
                 'DateTime': zpDate,
-                'Verified':l.ver_state,
+                'Verified':l.ver_type,
                 'WorkCode':l.ver_state
             }
             datos['logs'].append(d)
