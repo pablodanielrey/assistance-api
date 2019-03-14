@@ -11,11 +11,6 @@ class AttLog:
         self.ver_type = ver_type
         self.ver_state = ver_state
 
-    def retornar(self):
-        return {
-            'user_id' : self.user_id            
-        }
-
 class ZKSoftware:
     
     def __init__(self, ip, port, timezone='America/Argentina/Buenos_Aires'):
@@ -39,7 +34,8 @@ class ZKSoftware:
     def _create_packet(self, cmd_code, data=None, session_id=None,
                       reply_number=None):
         """
-        Creates a packet, given the code and the other optional fields.
+        Crea un paquete con los datos pasados como parametro.
+
         :param cmd_code: Int, Command/reply identifier(see defs.py).
         :param data: Bytearray, data to be placed in the data field
         of the payload.
@@ -80,8 +76,8 @@ class ZKSoftware:
 
     def _send_command(self, cmd, data=None):
         """
-        Sends a packet with a given command, payload data field
-        may be also included.
+        Envia un paquete con el comando y los datos asociados si son incluidos
+
         :param cmd: Integer, command id.
         :param data: Bytearray, data to be placed in the data field
         of the payload.
@@ -91,7 +87,8 @@ class ZKSoftware:
 
     def _send_packet(self, zkp):
         """
-        Sends a given complete packet.
+        Envia un paquete completo.
+
         :param zkp: Bytearray, packet to send.
         :return: None.
         """
@@ -99,7 +96,7 @@ class ZKSoftware:
     
     def _recv_packet(self, buff_size=4096):
         """
-        Receives data from the device.
+        Recibe datos desde el dispositivo.
 
         :param buff_size: Int, maximum amount of data to receive,
         if not specified, is set to 1024.
@@ -109,7 +106,7 @@ class ZKSoftware:
 
     def _recv_reply(self, buff_size=1024):
         """
-        Receives data from the device.
+        Recibe respuesta desde el dispositivo.
         :param buff_size: Int, maximum amount of data to receive,
         if not specified, is set to 1024, also updates the reply number,
         and stores fields of the packet to the attributes:
@@ -127,7 +124,8 @@ class ZKSoftware:
 
     def _recv_long_reply(self, buff_size=4096):
         """
-        Receives a large dataset from the device.
+        Recibe un dataset grande desde el dispositivo.
+        
         :param buff_size: Int, maximum amount of data to receive,
         if not specified, is set to 1024.
         :return: Bytearray, received dataset, if the it extract the dataset,
@@ -209,7 +207,8 @@ class ZKSoftware:
     
     def _checksum16(self, payload):
         """
-        Calculates checksum of packet.
+        Calcula el checksum del paquete
+
         :param payload: Bytearray, data to which the checksum is going
         to be applied.
         :return: Int, checksum result given as a number.
@@ -233,8 +232,8 @@ class ZKSoftware:
 
     def _parse_ans(self, zkp):
         """
-        Checks fixed fields of a given packet and extracts the reply code,
-        session code, reply counter and data of payload, to the attributes:
+        Comprueba los campos del paquete, extrae la respuesta, codigo, contador y 
+        los guarda en los atributos correspondientes:
         - self.last_reply_code
         - self.last_session_code
         - self.last_reply_counter
@@ -274,8 +273,8 @@ class ZKSoftware:
    
     def _is_valid_payload(self, p):
         """
-        Checks if a given packet payload is valid, considering the checksum,
-        where the payload is given with the checksum.
+        Comprueba si el contenido del paquete es valido comprobando el checksum.
+
         :param p: Bytearray, with the payload contents.
         :return: Bool, if the payload is consistent, returns True,
         otherwise returns False.
@@ -290,7 +289,7 @@ class ZKSoftware:
 
     def _recvd_ack(self):
         """
-        Checks if the last reply returned an acknowledge packet.
+        Comprueba si la ultima respuesta fue paquete ACK.
 
         :return: Bool, True if the last reply was an CMD_ACK_OK reply,
         returns False if otherwise.
@@ -308,7 +307,7 @@ class ZKSoftware:
 
     def _set_device_info(self, param_name, new_value):
         """
-        Sets a parameter of the device.
+        Configura en el dispositivo los parametros enviados.
 
         :param param_name: String, parameter to modify, see the protocol
         terminal spec to see a list of valid param names and valid values.
@@ -328,13 +327,12 @@ class ZKSoftware:
     
     """
         ----------------------------
-        Nivel intermedio conexiones / Desconexiones
+        Envio de Comandos
         ----------------------------
     """
-    def connect_net(self, ip_addr, dev_port):
+    def _connect_net(self, ip_addr, dev_port):
         """
-        Connects to the machine, sets the socket connection and inits session
-        by sending the connect command.
+        Establece la conexion con el dispositivo, configura el socket e inicia la sesion.
         :param ip_addr: String, ip address of the device.
         :param dev_port: Int, port number.
         :return: Bool, returns True if connection is successful,
@@ -362,9 +360,9 @@ class ZKSoftware:
         self.connected_flg = self._recvd_ack()
         return self.connected_flg
 
-    def disconnect(self):
+    def _disconnect(self):
         """
-        Terminates connection with the given device.
+        Termina la conexion previamente abierta.
         :return: Bool, returns True if disconnection command was
         processed successfully, also clears the flag self.connected_flg.
         """
@@ -378,16 +376,9 @@ class ZKSoftware:
 
         return self._recvd_ack()
     
-    
-    """
-        ----------------------------
-        Activacion / Desactivacion de dispositivo
-        ----------------------------
-    """
-
-    def enable_device(self):
+    def _enable_device(self):
         """
-        Enables the device, puts the machine in normal operation.
+        Activa el dispositivo.
         :return: Bool, returns True if the device acknowledges
         the enable command.
         """
@@ -395,10 +386,9 @@ class ZKSoftware:
         self._recv_reply()
         return self._recvd_ack()
 
-    def disable_device(self, timer=None):
+    def _disable_device(self, timer=None):
         """
-        Disables the device, disables the fingerprint, keyboard
-        and RF card modules.
+        Desactiva el dispositivo, huellas, teclado, y modulo RF.
         :param timer: Integer, disable timer, if it is omitted, an enable
         command must be send to make the device return to normal operation.
         :return: Bool, returns True if the device acknowledges
@@ -412,12 +402,33 @@ class ZKSoftware:
         self._recv_reply()
         return self._recvd_ack()
     
-        
-    """ Codificadores / Decodificadores """
+    def _refresh_data(self):
+        """
+        Refresh data on device (fingerprints, user info and settings).
+
+        :return: None.
+        """
+        self._send_command(cmd=CMD_REFRESHDATA)
+        self._recv_reply()
+
+    def _clear_att_log(self):
+        """
+        Delete the attendance log record on the machine.
+
+        :return: None.
+        """
+        self._send_command(cmd=CMD_CLEAR_ATTLOG)
+        self._recv_reply()
+        self._refresh_data()
     
+    """
+        ----------------------------
+        Codificadores / Decodificadores
+        ----------------------------
+    """    
     def _decode_time(self, enc_t_arr):
         """
-        Decodes time, as given on ZKTeco get/set time commands.
+        Decodifica el tiempo de Bytearray (Segun especificacion de ZK) a datetime.
         :param enc_t_arr: Bytearray, with the time field stored in little endian.
         :return: Datetime object, with the extracted date.
         """
@@ -432,7 +443,7 @@ class ZKSoftware:
         return datetime.datetime(year, month, day, hour, mins, secs)
 
     def _decodificar_str(self, s):
-        """Corta la cadena hasta el primer valor invalido"""
+        """Retorna la cadena hasta el primer valor invalido"""
         i = 0
         while i < len(s) and s[i] != 0x00:
             i += 1
@@ -445,7 +456,8 @@ class ZKSoftware:
     """   
     def _read_att_log(self):
         """
-        Requests the attendance log.
+        Obtiene los logs del dispositivo y los decodifica.
+
         :return: None. Stores the attendance log entries
         in the att_log attribute.
         """
@@ -454,9 +466,13 @@ class ZKSoftware:
 
         att_logs = []
 
-        # Obtiene numero de registros
-        att_count = struct.unpack('<H', datos[0:2])[0]/40
-        att_count = int(att_count)
+        try:    
+            # Obtiene numero de registros
+            att_count = struct.unpack('<H', datos[0:2])[0]/40
+            att_count = int(att_count)
+        except:
+            # Cado donde no hay marcaciones y da error el tamaño de buffer
+            att_count = 0
 
         # Se saltea el tamaño de los logs y zeros
         i = 4
@@ -474,20 +490,25 @@ class ZKSoftware:
             i += 40
         return att_logs
 
+    
     """
-        -----------------------------
+        Metodos Publicos
     """
 
     def obtener_marcaciones(self):
+        """
+        Devuelve las marcaciones registradas en el dispositivo como un json de logs.
+
+        """
         try:    
-            self.connect_net(self.ip, self.port)
-            self.disable_device()
+            self._connect_net(self.ip, self.port)
+            self._disable_device()
 
             att_log = self._read_att_log()
 
-            self.enable_device()            
+            self._enable_device()            
         finally:
-            self.disconnect()
+            self._disconnect()
 
         datos = {'logs':[]}
         for l in att_log:
@@ -503,4 +524,20 @@ class ZKSoftware:
             }
             datos['logs'].append(d)
 
-        return datos        
+        return datos
+
+    def borrar_marcaciones(self):
+        """
+        Elimina el registro de marcaciones en el dispositivo.
+
+        :return: None.
+        """
+        try:    
+            self._connect_net(self.ip, self.port)
+            self._disable_device()
+
+            self._clear_att_log()
+
+            self._enable_device()            
+        finally:
+            self._disconnect()
