@@ -39,7 +39,7 @@ setup(name='assistance-api',
                             'xmltodict',
                             'pytz',
                             'gunicorn',
-                            'microservices_common>=2.0.4a4',
+                            'microservices_common>=2.0.5a4',
                             'warden-api',
                             'python-telegram-bot'],
           entry_points={
