@@ -26,8 +26,8 @@ from model_utils.UsersAPI import UsersAPI
 """
     ###############
 """
+from .RelojesModel import sincronizar
 
-from assistance.model.zkSoftware import ZkSoftware
 from .LugaresCache import LugaresCache, LugaresAPI, LugaresGetters
 from .entities import *
 from .AsientosModel import CompensatoriosModel
@@ -822,6 +822,20 @@ class AssistanceModel:
 
     @classmethod
     def sincronizar_reloj(cls, session, rid):
+        token = cls.api._get_token()
+        borrar = False
+        estados = sincronizar(session, 
+                                rid=rid, 
+                                zona_horaria='America/Argentina/Buenos_Aires', 
+                                borrar=borrar, 
+                                cache_usuarios=cls.cache_usuarios, 
+                                token=token)
+        for e in estados:
+            yield e
+        
+
+    @classmethod
+    def sincronizar_reloj_viejoooooo(cls, session, rid):
         logger = logging.getLogger('assistance.model.zkSoftware')
 
         reloj = session.query(Reloj).filter(Reloj.id == rid).one()

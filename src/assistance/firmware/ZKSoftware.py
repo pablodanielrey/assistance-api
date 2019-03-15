@@ -11,6 +11,10 @@ class AttLog:
         self.ver_type = ver_type
         self.ver_state = ver_state
 
+    def __json__(self):
+        d = self.__dict__
+        return json.dumps(d)
+
 class ZKSoftware:
     
     def __init__(self, ip, port, timezone='America/Argentina/Buenos_Aires'):
@@ -360,7 +364,7 @@ class ZKSoftware:
         self.connected_flg = self._recvd_ack()
         return self.connected_flg
 
-    def _disconnect(self):
+    def disconnect(self):
         """
         Termina la conexion previamente abierta.
         :return: Bool, returns True if disconnection command was
@@ -376,7 +380,10 @@ class ZKSoftware:
 
         return self._recvd_ack()
     
-    def _enable_device(self):
+    def connect(self):
+        self._connect_net(self.ip, self.port)
+
+    def enable_device(self):
         """
         Activa el dispositivo.
         :return: Bool, returns True if the device acknowledges
@@ -386,7 +393,7 @@ class ZKSoftware:
         self._recv_reply()
         return self._recvd_ack()
 
-    def _disable_device(self, timer=None):
+    def disable_device(self, timer=None):
         """
         Desactiva el dispositivo, huellas, teclado, y modulo RF.
         :param timer: Integer, disable timer, if it is omitted, an enable
@@ -500,16 +507,7 @@ class ZKSoftware:
         Devuelve las marcaciones registradas en el dispositivo como un json de logs.
 
         """
-        try:    
-            self._connect_net(self.ip, self.port)
-            self._disable_device()
-
-            att_log = self._read_att_log()
-
-            self._enable_device()            
-        finally:
-            self._disconnect()
-
+        att_log = self._read_att_log()
         datos = {'logs':[]}
         for l in att_log:
             #pDate = datetime.datetime.strptime(l.att_time,'%Y-%m-%d %H:%M:%S').replace(microsecond=0,tzinfo=None)
@@ -532,12 +530,4 @@ class ZKSoftware:
 
         :return: None.
         """
-        try:    
-            self._connect_net(self.ip, self.port)
-            self._disable_device()
-
-            self._clear_att_log()
-
-            self._enable_device()            
-        finally:
-            self._disconnect()
+        self._clear_att_log()
