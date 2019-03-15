@@ -48,7 +48,7 @@ class RelojesModel:
                 log.id = str(uuid.uuid4())
                 log.usuario_id = usuario['id']
                 log.dispositivo_id = rid
-                log.tipo = mapeo_marcacion[l.ver_type] if l.ver_type in mapeo_marcacion[l.ver_type] else l.ver_type
+                log.tipo = mapeo_marcacion[l.ver_type] if l.ver_type in mapeo_marcacion else l.ver_type
                 log.marcacion = marcacion
                 session.add(log)
                 r = {'estado':'nueva', 'marcacion':log, 'dni':dni, 'nombre':usuario['nombre'], 'apellido':usuario['apellido']}
