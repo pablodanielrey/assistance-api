@@ -1,6 +1,10 @@
 import pytz
 import logging
 
+from sqlalchemy import or_, and_
+from sqlalchemy.orm import joinedload, with_polymorphic
+from datetime import datetime, date, timedelta
+
 from assistance.firmware.ZKSoftware import ZKSoftware
 from assistance.model.entities import Reloj, Marcacion
 
