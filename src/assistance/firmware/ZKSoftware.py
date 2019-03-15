@@ -2,7 +2,7 @@ import socket
 import struct
 import datetime
 import pytz
-from defs import *
+from .defs import *
 
 class AttLog:
     def __init__(self,user_id,att_time,ver_type,ver_state):
@@ -507,22 +507,24 @@ class ZKSoftware:
         Devuelve las marcaciones registradas en el dispositivo como un json de logs.
 
         """
-        att_log = self._read_att_log()
-        datos = {'logs':[]}
+        return self._read_att_log()
+        """
+        datos = []
         for l in att_log:
             #pDate = datetime.datetime.strptime(l.att_time,'%Y-%m-%d %H:%M:%S').replace(microsecond=0,tzinfo=None)
             pDate = l.att_time.replace(microsecond=0,tzinfo=None)
             zpDate = self.timezone.localize(pDate)
-            zpDate = datetime.datetime.strftime(zpDate,'%Y-%m-%d %H:%M:%S')
+            #zpDate = datetime.datetime.strftime(zpDate,'%Y-%m-%d %H:%M:%S')
             d = {
                 'PIN':l.user_id,
                 'DateTime': zpDate,
                 'Verified':l.ver_type,
                 'WorkCode':l.ver_state
             }
-            datos['logs'].append(d)
+            datos.append(d)
 
         return datos
+        """
 
     def borrar_marcaciones(self):
         """

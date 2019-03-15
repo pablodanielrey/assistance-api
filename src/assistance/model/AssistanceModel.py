@@ -26,7 +26,7 @@ from model_utils.UsersAPI import UsersAPI
 """
     ###############
 """
-from .RelojesModel import sincronizar
+from .RelojesModel import RelojesModel
 
 from .LugaresCache import LugaresCache, LugaresAPI, LugaresGetters
 from .entities import *
@@ -824,7 +824,7 @@ class AssistanceModel:
     def sincronizar_reloj(cls, session, rid):
         token = cls.api._get_token()
         borrar = False
-        estados = sincronizar(session, 
+        estados = RelojesModel.sincronizar(session, 
                                 rid=rid, 
                                 zona_horaria='America/Argentina/Buenos_Aires', 
                                 borrar=borrar, 

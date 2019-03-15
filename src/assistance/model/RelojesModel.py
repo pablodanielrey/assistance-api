@@ -1,5 +1,8 @@
 import pytz
+import logging
+
 from assistance.firmware.ZKSoftware import ZKSoftware
+from assistance.model.entities import Reloj, Marcacion
 
 class RelojesModel:
 
@@ -7,7 +10,7 @@ class RelojesModel:
     MARCACION_INTERNA = {
         'CLAVE':0,
         'HUELLA':1,
-        'TARJETA':2
+        'TARJETA':2,
         'REMOTO':100
     }
 
@@ -54,8 +57,8 @@ class RelojesModel:
         return estados
 
     @classmethod
-    def _localizar_fechas(marcaciones, zona_horaria='America/Argentina/Buenos_Aires'):
-        timezone = pytz.timezone(timezone)
+    def _localizar_fechas(cls, marcaciones, zona_horaria='America/Argentina/Buenos_Aires'):
+        timezone = pytz.timezone(zona_horaria)
         for l in marcaciones:
             pDate = l.att_time.replace(microsecond=0,tzinfo=None)
             zpDate = timezone.localize(pDate)
@@ -81,7 +84,7 @@ class RelojesModel:
                     estados = cls._insertar_marcaciones(
                                             session=session,
                                             rid=reloj.id, 
-                                            mapeo_marcaciones=mapeo_marcaciones, 
+                                            mapeo_marcacion=mapeo_marcaciones, 
                                             cache_usuarios=cache_usuarios, 
                                             token=token, 
                                             marcaciones=marcaciones)
@@ -94,7 +97,7 @@ class RelojesModel:
                 estados = cls._insertar_marcaciones(
                                         session=session,
                                         rid=reloj.id, 
-                                        mapeo_marcaciones=mapeo_marcaciones, 
+                                        mapeo_marcacion=mapeo_marcaciones, 
                                         cache_usuarios=cache_usuarios, 
                                         token=token, 
                                         marcaciones=marcaciones)
