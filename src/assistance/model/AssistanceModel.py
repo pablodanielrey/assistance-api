@@ -823,7 +823,7 @@ class AssistanceModel:
     @classmethod
     def sincronizar_reloj(cls, session, rid):
         token = cls.api._get_token()
-        borrar = False
+        borrar = cls.eliminar_logs_relojes
         estados = RelojesModel.sincronizar(session, 
                                 rid=rid, 
                                 zona_horaria='America/Argentina/Buenos_Aires', 
