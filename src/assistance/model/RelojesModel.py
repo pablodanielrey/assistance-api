@@ -57,7 +57,7 @@ class RelojesModel:
             else:
                 for m in ms:
                     r = {'estado':'duplicada', 'marcacion':m, 'dni':dni, 'nombre':usuario['nombre'], 'apellido':usuario['apellido']}
-                    logger_duplicadas.info(r)
+                    logger_duplicada.info(r)
                     estados.append(r)
         return estados
 
