@@ -182,15 +182,18 @@ def usuarios_search(search, token=None):
 def usuarios(uid=None, token=None):
     prof = warden.has_one_profile(token, ['assistance-super-admin','assistance-admin','assistance-operator', 'assistance-user'])
     if prof and prof['profile'] == True:
-        return AssistanceModel.usuario(session, uid, retornarClave=False)
+        with obtener_session() as session:
+            return AssistanceModel.usuario(session, uid, retornarClave=False)
 
     autorizador_id = token['sub']
     if AssistanceModel.chequear_acceso(autorizador_id, uid):
-        return AssistanceModel.usuario(session, uid, retornarClave=False)
+        with obtener_session() as session:
+            return AssistanceModel.usuario(session, uid, retornarClave=False)
 
     ''' como no soy admin, ni tengo cargo, entonces chequea que se este consultando a si mismo '''
     if autorizador_id == uid:
-        return AssistanceModel.usuario(session, autorizador_id, retornarClave=False)
+        with obtener_session() as session:
+            return AssistanceModel.usuario(session, autorizador_id, retornarClave=False)
 
     return ('no tiene los permisos suficientes', 403)
 
@@ -556,14 +559,27 @@ def reloj_huellas(rid, token):
 @jsonapi
 def justificacion(jid, token):
     with obtener_session() as session:
-        return AssistanceModel.justificacion(session, jid)
+        j = AssistanceModel.justificacion(session, jid)
+        if not j:
+            return (404, 'Justificacion No existente')
 
-@app.route(API_BASE + '/justificaciones', methods=['GET'])
+@app.route(API_BASE + '/justificaciones/<uid>/permitidas', methods=['GET'])
 @warden.require_valid_token
 @jsonapi
-def justificaciones(token):
-    with obtener_session() as session:
-        return AssistanceModel.justificaciones(session)
+def justificaciones(uid, token):
+
+    prof = warden.has_one_profile(token, ['assistance-super-admin','assistance-admin','assistance-operator'])
+    if prof and prof['profile'] == True:
+        with obtener_session() as session:
+            return AssistanceModel.justificaciones(session)
+
+    autorizador_id = token['sub']
+    if AssistanceModel.chequear_acceso(autorizador_id, uid):
+        with obtener_session() as session:
+            return AssistanceModel.justificacionesParaUsuario(session, uid)
+
+    return ('no tiene los permisos suficientes', 403)
+        
 
 @app.route(API_BASE + '/justificaciones', methods=['PUT'])
 @warden.require_valid_token

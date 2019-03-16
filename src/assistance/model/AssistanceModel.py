@@ -29,6 +29,7 @@ from model_utils.UsersAPI import UsersAPI
 from .RelojesModel import RelojesModel
 
 from .LugaresCache import LugaresCache, LugaresAPI, LugaresGetters
+from .CargosCache import CargosCache, CargosAPI, CargosGetters
 from .entities import *
 from .AsientosModel import CompensatoriosModel
 
@@ -54,6 +55,9 @@ _USERS_API = UsersAPI(api_url=USERS_API, api=_API)
 _LUGARES_API = LugaresAPI(api_url=SILEG_API, api=_API)
 _LUGARES_GETTER = LugaresGetters(_LUGARES_API)
 
+_CARGOS_API = CargosAPI(api_url=SILEG_API, api=_API)
+_CARGOS_GETTER = CargosGetters(_CARGOS_API)
+
 class AssistanceModel:
 
 
@@ -75,6 +79,9 @@ class AssistanceModel:
 
     cache_lugares = LugaresCache(mongo_url=MONGO_URL,
                                  getters=_LUGARES_GETTER, timeout=60 * 60)
+
+    cache_cargos = CargosCache(mongo_url=MONGO_URL,
+                                getters=_CARGOS_GETTER, timeout=60 * 60)
    
 
     @classmethod
@@ -564,9 +571,68 @@ class AssistanceModel:
         return session.query(Justificacion).filter(Justificacion.eliminado == None).all()
 
 
+    """
+        //////////////// manejar las justificaciones para determinados cargos /////////////////
+    """
+
+    @classmethod
+    def _es_planta(cls, cargo):
+        r = re.compile(r'.*?\w\d\d.*')
+        if r.match(cargo['nombre']):
+            return True
+        return False
+
+    @classmethod
+    def _es_contrato(cls, cargo):
+        r = re.compile(r'.*Contrato.*')
+        if r.match(cargo['nombre']):
+            return True
+        return False
+
+    @classmethod
+    def _es_beca(cls, cargo):
+        r = re.compile(r'.*Beca.*')
+        if r.match(cargo['nombre']):
+            return True
+        return False
+
+    @classmethod
+    def justificacionesParaUsuario(cls, session, uid):
+        designaciones = cls.cache_cargos.obtener_cargos_por_usuario_id(uid)
+        cargos_no_docentes = [c['cargo'] for c in designaciones if 'No Docente' in c['cargo']['tipo']]
+        if len(cargos_no_docentes) <= 0:
+            return []
+
+        just = session.query(Justificacion).filter(Justificacion.eliminado == None).all()
+
+        aa = 'e0dfcef6-98bb-4624-ae6c-960657a9a741'
+        compensatorio = '48773fd7-8502-4079-8ad5-963618abe725'
+        bs = 'fa64fdbd-31b0-42ab-af83-818b3cbecf46'
+        a102 = '4d7bf1d4-9e17-4b95-94ba-4ca81117a4fb'
+        pe = 'b70013e3-389a-46d4-8b98-8e4ab75335d0'
+
+        todos = set([aa, compensatorio, bs])
+        planta = set([a102, pe]).union(todos)
+        becas = set([pe]).union(todos)
+
+        conjunto = set().union(todos)
+        for c in cargos_no_docentes:
+            if cls._es_planta(c):
+                conjunto = conjunto.union(planta)
+            if cls._es_beca(c):
+                conjunto = conjunto.union(becas)
+
+        justificaciones = [j for j in just if j.id in conjunto]
+        return justificaciones
+
+
+    """
+        ////////////////////////////////////
+    """
+
     @classmethod
     def justificacion(cls, session, jid):
-        return session.query(Justificacion).filter(Justificacion.id == jid).one()
+        return session.query(Justificacion).filter(Justificacion.id == jid).one_or_none()
 
     @classmethod
     def crear_justificacion(cls, session, justificacion):
