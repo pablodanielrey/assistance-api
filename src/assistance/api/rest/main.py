@@ -673,6 +673,16 @@ def eliminar_fecha_justificada(uid, jid, token):
     return ('no tiene los permisos suficientes', 403)
 
 
+@app.route(API_BASE + '/reporte_justificaciones_realizadas/<cantidad>', methods=['GET'])
+@jsonapi
+def reporte_justificaciones_realizadas(cantidad=10):
+
+    #prof = warden.has_one_profile(token, ['assistance-super-admin','assistance-admin','assistance-operator'])
+    #if prof and prof['profile'] == True:
+    with obtener_session() as session:
+        return AssistanceModel.reporte_justificaciones_realizadas(session, cantidad)
+
+
 
 @app.route(API_BASE + '/compensatorios/<uid>', methods=['GET'])
 @warden.require_valid_token
