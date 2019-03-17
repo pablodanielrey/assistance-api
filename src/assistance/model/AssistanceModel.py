@@ -656,6 +656,14 @@ class AssistanceModel:
         justificacion = session.query(Justificacion).filter(Justificacion.id == jid).one()
         justificacion.eliminado = datetime.datetime.now()
 
+
+    @classmethod
+    def eliminarFechaJustificadaJefe(cls, session, jid, autorizador_id=None, uid=None):
+        justificacion = session.query(FechaJustificada).filter(FechaJustificada.id == jid).one()
+        if justificacion.usuario_id != uid:
+            raise Exception('usuario erróneo')
+        return cls.eliminarFechaJustificada(session, jid, autorizador_id)
+
     @classmethod
     def eliminarFechaJustificada(cls, session, jid, autorizador_id=None):
 

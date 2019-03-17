@@ -624,7 +624,7 @@ def actualizar_justificacion(jid, token):
 @jsonapi
 def justificar(token):
     fechaJustificada = request.get_json()
-    
+
     prof = warden.has_one_profile(token, ['assistance-super-admin', 'assistance-admin','assistance-operator'])
     if prof and prof['profile'] == True:
         with obtener_session() as session:
@@ -635,6 +635,9 @@ def justificar(token):
 
     autorizador_id = token['sub']
     uid = fechaJustificada['usuario_id']
+    if autorizador_id == uid:
+        return ('no tiene los permisos suficientes', 403)
+
     if AssistanceModel.chequear_acceso(autorizador_id, uid):
         with obtener_session() as session:
             id = AssistanceModel.justificar(session, fechaJustificada, autorizador_id)
@@ -649,14 +652,27 @@ def justificar(token):
 @warden.require_valid_token
 @jsonapi
 def eliminar_fecha_justificada(uid, jid, token):
+    autorizador_id = token['sub']
+
     prof = warden.has_one_profile(token, ['assistance-super-admin', 'assistance-admin'])
-    if not prof or prof['profile'] == False:
+    if prof or prof['profile'] == True:
+        with obtener_session() as session:
+            jid = AssistanceModel.eliminarFechaJustificada(session, jid, autorizador_id)
+            session.commit()
+            return jid
+
+    if autorizador_id == uid:
         return ('no tiene los permisos suficientes', 403)
-    with obtener_session() as session:
-        autorizador_id = token['sub']
-        jid = AssistanceModel.eliminarFechaJustificada(session, jid, autorizador_id)
-        session.commit()
-        return jid
+
+    if AssistanceModel.chequear_acceso(autorizador_id, uid):
+        with obtener_session() as session:
+            id = AssistanceModel.eliminarFechaJustificadaJefe(session, jid, autorizador_id, uid)
+            session.commit()
+            return id
+
+    return ('no tiene los permisos suficientes', 403)
+
+
 
 @app.route(API_BASE + '/compensatorios/<uid>', methods=['GET'])
 @warden.require_valid_token
