@@ -623,16 +623,27 @@ def actualizar_justificacion(jid, token):
 @warden.require_valid_token
 @jsonapi
 def justificar(token):
-    prof = warden.has_one_profile(token, ['assistance-super-admin', 'assistance-admin','assistance-operator'])
-    if not prof or prof['profile'] == False:
-        return ('no tiene los permisos suficientes', 403)
     fechaJustificada = request.get_json()
-    logging.debug(fechaJustificada)
-    with obtener_session() as session:
-        autorizador_id = token['sub']
-        id = AssistanceModel.justificar(session, fechaJustificada, autorizador_id)
-        session.commit()
-        return id
+    
+    prof = warden.has_one_profile(token, ['assistance-super-admin', 'assistance-admin','assistance-operator'])
+    if prof and prof['profile'] == True:
+        with obtener_session() as session:
+            autorizador_id = token['sub']
+            id = AssistanceModel.justificar(session, fechaJustificada, autorizador_id)
+            session.commit()
+            return id
+
+    autorizador_id = token['sub']
+    uid = fechaJustificada['usuario_id']
+    if AssistanceModel.chequear_acceso(autorizador_id, uid):
+        with obtener_session() as session:
+            id = AssistanceModel.justificar(session, fechaJustificada, autorizador_id)
+            session.commit()
+            return id
+
+    return ('no tiene los permisos suficientes', 403)
+
+
 
 @app.route(API_BASE + '/usuarios/<uid>/justificaciones/<jid>', methods=['DELETE'])
 @warden.require_valid_token
