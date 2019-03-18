@@ -746,7 +746,13 @@ class AssistanceModel:
         if not autorizador_id:
             autorizador_id = fj['usuario_id']
 
+        #Consulta justificacion existente
         just = fj["justificacion"]
+        q = session.query(FechaJustificada).filter(and_(FechaJustificada.usuario_id == fj['usuario_id'], FechaJustificada.justificacion_id == just['id']))
+        q = q.filter(and_(FechaJustificada.eliminado == None, FechaJustificada.fecha_inicio == fj['fecha_inicio'],FechaJustificada.fecha_fin == fj['fecha_fin']))
+        if q.count() > 0:
+            raise Exception('Fecha justificada existente para ese usuario')
+                
         j = FechaJustificada()
         j.id = str(uuid.uuid4())
         j.fecha_inicio = fj["fecha_inicio"]
