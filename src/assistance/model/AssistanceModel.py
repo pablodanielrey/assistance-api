@@ -986,7 +986,6 @@ class AssistanceModel:
             --------------
         """
 
-
         estados = RelojesModel.sincronizar(session, 
                                 rid=rid, 
                                 zona_horaria='America/Argentina/Buenos_Aires', 
