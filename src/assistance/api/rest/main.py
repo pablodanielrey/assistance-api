@@ -679,6 +679,8 @@ def reporte_justificaciones_realizadas(cantidad=10):
 
     #prof = warden.has_one_profile(token, ['assistance-super-admin','assistance-admin','assistance-operator'])
     #if prof and prof['profile'] == True:
+
+    cantidad = int(cantidad)
     with obtener_session() as session:
         return AssistanceModel.reporte_justificaciones_realizadas(session, cantidad)
 
