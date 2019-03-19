@@ -628,6 +628,18 @@ class AssistanceModel:
 
     @classmethod
     def reporte_justificaciones_realizadas(cls, session, cantidad=10):
+
+        def _obtener_oficinas(uid,token):
+            cargos = cls.cache_cargos.obtener_cargos_por_usuario_id(uid,token)
+            acc = []
+            for c in cargos:
+                if not c['historico']:
+                    #oficina = f"{c['lugar']['nombre']} {c['cargo']['nombre']}"
+                    oficina = c['lugar']['nombre']
+                    if oficina not in acc:
+                        acc.append(oficina)
+            return acc
+
         justificaciones = []
         token = cls.api._get_token()
         for j in session.query(FechaJustificada).order_by(FechaJustificada.fecha_inicio.desc()).limit(cantidad).options(joinedload('justificacion')).all():
@@ -637,31 +649,40 @@ class AssistanceModel:
                 r['usuario'] = {
                     'nombre': c['nombre'],
                     'apellido': c['apellido'],
-                    'dni': c['dni']
+                    'dni': c['dni'],
+                    'oficinas': _obtener_oficinas(c['id'],token)
                 }
             c = cls.cache_usuarios.obtener_usuario_por_uid(j.creador_id, token=token) if j.creador_id else None
             if c:
                 r['creador'] = {
                     'nombre': c['nombre'],
                     'apellido': c['apellido'],
-                    'dni': c['dni']
+                    'dni': c['dni'],
+                    'oficinas': _obtener_oficinas(c['id'],token)
                 }
             c = cls.cache_usuarios.obtener_usuario_por_uid(j.actualizador_id, token=token) if j.actualizador_id else None
             if c:
                 r['actualizador'] = {
                     'nombre': c['nombre'],
                     'apellido': c['apellido'],
-                    'dni': c['dni']
+                    'dni': c['dni'],
+                    'oficinas': _obtener_oficinas(c['id'],token)
                 }
             c = cls.cache_usuarios.obtener_usuario_por_uid(j.eliminador_id, token=token) if j.eliminador_id else None
             if c:
                 r['eliminador'] = {
                     'nombre': c['nombre'],
                     'apellido': c['apellido'],
-                    'dni': c['dni']
+                    'dni': c['dni'],
+                    'oficinas': _obtener_oficinas(c['id'],token)
                 }
             justificaciones.append(r)
 
+        try:
+            off = [j['usuario']['oficinas'] for j in justificaciones if 'usuario' in j]
+            logging.info(off)
+        except:
+            pass
         return justificaciones
         
         
