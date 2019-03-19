@@ -51,12 +51,12 @@ class RelojesModel:
                 log.tipo = mapeo_marcacion[l.ver_type] if l.ver_type in mapeo_marcacion else l.ver_type
                 log.marcacion = marcacion
                 session.add(log)
-                r = {'estado':'nueva', 'marcacion':log, 'dni':dni, 'nombre':usuario['nombre'], 'apellido':usuario['apellido']}
+                r = {'estado':'nueva', 'marcacion':json.dumps(log), 'dni':dni, 'nombre':usuario['nombre'], 'apellido':usuario['apellido']}
                 logger_marcacion.info(r)
                 estados.append(r)
             else:
                 for m in ms:
-                    r = {'estado':'duplicada', 'marcacion':m, 'dni':dni, 'nombre':usuario['nombre'], 'apellido':usuario['apellido']}
+                    r = {'estado':'duplicada', 'marcacion':json.dumps(m), 'dni':dni, 'nombre':usuario['nombre'], 'apellido':usuario['apellido']}
                     logger_duplicada.info(r)
                     estados.append(r)
         return estados

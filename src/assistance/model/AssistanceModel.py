@@ -972,11 +972,21 @@ class AssistanceModel:
         logger.info(r)
         return r
 
-
     @classmethod
     def sincronizar_reloj(cls, session, rid):
         token = cls.api._get_token()
         borrar = cls.eliminar_logs_relojes
+        """
+            TODO: analizar para despues eliminar esto. por ahora se borran los logs solo en determinados horarios.
+        """
+        ahora = datetime.datetime.now().time()
+        if not datetime.time(3,13) < ahora < datetime.time(3,37):
+           borrar = False 
+        """
+            --------------
+        """
+
+
         estados = RelojesModel.sincronizar(session, 
                                 rid=rid, 
                                 zona_horaria='America/Argentina/Buenos_Aires', 
@@ -985,68 +995,4 @@ class AssistanceModel:
                                 token=token)
         for e in estados:
             yield e
-        
-
-    @classmethod
-    def sincronizar_reloj_viejoooooo(cls, session, rid):
-        logger = logging.getLogger('assistance.model.zkSoftware')
-
-        reloj = session.query(Reloj).filter(Reloj.id == rid).one()
-        zona_horaria = reloj.zona_horaria
-        if not zona_horaria:
-            zona_horaria = 'America/Argentina/Buenos_Aires'
-        zk = {'reloj':reloj, 'api':ZkSoftware(host=reloj.ip, port=reloj.puerto, timezone=zona_horaria)}
-        logs = zk['api'].getAttLog()
-        if len(logs) <= 0:
-            yield
-
-        token = cls.api._get_token()
-        try:
-            for l in logs:
-                dni = l['PIN'].strip().lower()
-                usuario = cls.cache_usuarios.obtener_usuario_por_dni(dni, token=token)
-                marcacion = l['DateTime']
-
-                ms = session.query(Marcacion).filter(and_(Marcacion.usuario_id == usuario['id'], Marcacion.marcacion == marcacion)).all()
-                if len(ms) <= 0:
-                    log = Marcacion()
-                    log.id = str(uuid.uuid4())
-                    log.usuario_id = usuario['id']
-                    log.dispositivo_id = zk['reloj'].id
-                    log.tipo = l['Verified']
-                    log.marcacion = marcacion
-                    session.add(log)
-                    r = {'estado':'agregada', 'marcacion':log, 'dni':dni, 'nombre':usuario['nombre'], 'apellido':usuario['apellido']}
-                    logger.info(r)
-
-                    try:
-                        cls._publicar_en_redis(dni, usuario, log)
-                    except Exception as e:
-                        logger.exception(e)
-
-
-                    yield r
-                else:
-
-                    """
-                    try:
-                        cls._publicar_en_redis(dni, usuario, m)
-                    except Exception as e:
-                        logger.exception(e)
-                    """
-                    
-                    for m in ms:
-                        yield {'estado':'existente', 'marcacion':m, 'dni':dni}
-                        logger.warn('Marcación duplicada {} {} {}'.format(usuario['id'], dni, marcacion))
-
-            if cls.eliminar_logs_relojes:
-                logs2 = zk['api'].getAttLog()
-                if len(logs) > 0 and len(logs2) == len(logs):
-                    zk['api'].clearAttLogs()
-                    yield {'estado':'borrando_logs', 'mensaje':'eliminando {} logs'.format(len(logs2))}
-
-
-        except Exception as e:
-            logger.exception(e)
-            yield {'estado':'error', 'mensaje':str(e)}
-            raise e
+    
