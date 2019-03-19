@@ -637,12 +637,13 @@ class AssistanceModel:
                     #oficina = f"{c['lugar']['nombre']} {c['cargo']['nombre']}"
                     oficina = c['lugar']['nombre']
                     if oficina not in acc:
-                        acc.append(oficina)
+                        #acc.append(oficina)
+                        return [oficina]
             return acc
 
         justificaciones = []
         token = cls.api._get_token()
-        for j in session.query(FechaJustificada).order_by(FechaJustificada.fecha_inicio.desc()).limit(cantidad).options(joinedload('justificacion')).all():
+        for j in session.query(FechaJustificada).filter(FechaJustificada.eliminado == None).order_by(FechaJustificada.fecha_inicio.desc()).limit(cantidad).options(joinedload('justificacion')).all():
             r = j.__json__()
             c = cls.cache_usuarios.obtener_usuario_por_uid(j.usuario_id, token=token) if j.usuario_id else None
             if c:
