@@ -630,24 +630,36 @@ class AssistanceModel:
     def reporte_justificaciones_realizadas(cls, session, cantidad=10):
         justificaciones = []
         token = cls.api._get_token()
-        for j in session.query(FechaJustificada).order_by(FechaJustificada.fecha_inicio.desc()).limit(cantidad).all():
-            r = {
-                'justificacion': j.justificacion.nombre,
-                'fecha_inicio': j.fecha_inicio,
-                'fecha_fin': j.fecha_fin
-            }
+        for j in session.query(FechaJustificada).order_by(FechaJustificada.fecha_inicio.desc()).limit(cantidad).options(joinedload('justificacion')).all():
+            r = j.__json__()
             c = cls.cache_usuarios.obtener_usuario_por_uid(j.usuario_id, token=token) if j.usuario_id else None
             if c:
-                r['usuario'] = f"{c['nombre']} {c['apellido']} {c['dni']}"
+                r['usuario'] = {
+                    'nombre': c['nombre'],
+                    'apellido': c['apellido'],
+                    'dni': c['dni']
+                }
             c = cls.cache_usuarios.obtener_usuario_por_uid(j.creador_id, token=token) if j.creador_id else None
             if c:
-                r['creador'] = f"{c['nombre']} {c['apellido']} {c['dni']}"
+                r['creador'] = {
+                    'nombre': c['nombre'],
+                    'apellido': c['apellido'],
+                    'dni': c['dni']
+                }
             c = cls.cache_usuarios.obtener_usuario_por_uid(j.actualizador_id, token=token) if j.actualizador_id else None
             if c:
-                r['actualizador'] = f"{c['nombre']} {c['apellido']} {c['dni']}"
+                r['actualizador'] = {
+                    'nombre': c['nombre'],
+                    'apellido': c['apellido'],
+                    'dni': c['dni']
+                }
             c = cls.cache_usuarios.obtener_usuario_por_uid(j.eliminador_id, token=token) if j.eliminador_id else None
             if c:
-                r['eliminador'] = f"{c['nombre']} {c['apellido']} {c['dni']}"
+                r['eliminador'] = {
+                    'nombre': c['nombre'],
+                    'apellido': c['apellido'],
+                    'dni': c['dni']
+                }
             justificaciones.append(r)
 
         return justificaciones
