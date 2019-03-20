@@ -52,6 +52,7 @@ class RelojesModel:
                 log.tipo = mapeo_marcacion[l.ver_type] if l.ver_type in mapeo_marcacion else l.ver_type
                 log.marcacion = marcacion
                 session.add(log)
+                session.commit()
                 r = {'estado':'nueva', 'marcacion':json.dumps(log), 'dni':dni, 'nombre':usuario['nombre'], 'apellido':usuario['apellido']}
                 logger_marcacion.info(r)
                 estados.append(r)
