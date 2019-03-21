@@ -642,7 +642,8 @@ class AssistanceModel:
                     #oficina = f"{c['lugar']['nombre']} {c['cargo']['nombre']}"
                     oficina = c['lugar']['nombre']
                     if oficina not in acc:
-                        acc.append(oficina)
+                        #acc.append(oficina)
+                        return [oficina]
             return acc
 
         justificaciones = []
