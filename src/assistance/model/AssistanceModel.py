@@ -327,8 +327,13 @@ class AssistanceModel:
             usuarios = cls.cache_usuarios.obtener_usuarios_por_uids(uids)
             lugar = cls.cache_lugares.obtener_lugar_por_id(lid)
 
+            usuarios_unicos = []
+            for u in usuarios:
+                if u['id'] not in (u1['id'] for u1 in usuarios_unicos):
+                    usuarios_unicos.append(u)
+
             ''' genero el reporte para el lugar '''
-            rep = ReporteGeneral.generarReporte(session, lugar, usuarios, fecha, cls._obtenerHorarioHelper, tzone)
+            rep = ReporteGeneral.generarReporte(session, lugar, usuarios_unicos, fecha, cls._obtenerHorarioHelper, tzone)
             ret.append(rep)
         return ret
 
