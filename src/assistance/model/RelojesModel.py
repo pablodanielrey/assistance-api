@@ -37,30 +37,37 @@ class RelojesModel:
     def _insertar_marcaciones(cls, session, rid, mapeo_marcacion, cache_usuarios, token, marcaciones):
         logger_marcacion = logging.getLogger('assistance.model.zkSoftware.marcacion')
         logger_duplicada = logging.getLogger('assistance.model.zkSoftware.duplicada')
+        excepciones = []
         estados = []
         for l in marcaciones:
-            dni = l.user_id
-            usuario = cache_usuarios.obtener_usuario_por_dni(dni, token=token)
-            marcacion = l.att_time
+            try:
+                dni = l.user_id
+                usuario = cache_usuarios.obtener_usuario_por_dni(dni, token=token)
+                marcacion = l.att_time
 
-            ms = session.query(Marcacion).filter(and_(Marcacion.usuario_id == usuario['id'], Marcacion.marcacion == marcacion)).all()
-            if len(ms) <= 0:
-                log = Marcacion()
-                log.id = str(uuid.uuid4())
-                log.usuario_id = usuario['id']
-                log.dispositivo_id = rid
-                log.tipo = mapeo_marcacion[l.ver_type] if l.ver_type in mapeo_marcacion else l.ver_type
-                log.marcacion = marcacion
-                session.add(log)
-                session.commit()
-                r = {'estado':'nueva', 'marcacion':log, 'dni':dni, 'nombre':usuario['nombre'], 'apellido':usuario['apellido']}
-                logger_marcacion.info(r)
-                estados.append(r)
-            else:
-                for m in ms:
-                    r = {'estado':'duplicada', 'marcacion':m, 'dni':dni, 'nombre':usuario['nombre'], 'apellido':usuario['apellido']}
-                    logger_duplicada.info(r)
+                ms = session.query(Marcacion).filter(and_(Marcacion.usuario_id == usuario['id'], Marcacion.marcacion == marcacion)).all()
+                if len(ms) <= 0:
+                    log = Marcacion()
+                    log.id = str(uuid.uuid4())
+                    log.usuario_id = usuario['id']
+                    log.dispositivo_id = rid
+                    log.tipo = mapeo_marcacion[l.ver_type] if l.ver_type in mapeo_marcacion else l.ver_type
+                    log.marcacion = marcacion
+                    session.add(log)
+                    session.commit()
+                    r = {'estado':'nueva', 'marcacion':log, 'dni':dni, 'nombre':usuario['nombre'], 'apellido':usuario['apellido']}
+                    logger_marcacion.info(r)
                     estados.append(r)
+                else:
+                    for m in ms:
+                        r = {'estado':'duplicada', 'marcacion':m, 'dni':dni, 'nombre':usuario['nombre'], 'apellido':usuario['apellido']}
+                        logger_duplicada.info(r)
+                        estados.append(r)
+            except Exception as e:
+                excepciones.append(e)
+        if len(excepciones) > 0:
+            for e in excepciones:
+                raise e
         return estados
 
     @classmethod
