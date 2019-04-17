@@ -45,6 +45,16 @@ class RelojesModel:
                 usuario = cache_usuarios.obtener_usuario_por_dni(dni, token=token)
                 marcacion = l.att_time
 
+                """ 
+                    consultar cache 
+
+                    uid = usuario['id']
+                    if existe_en_cache_marcaciones(uid, fecha_hora):
+                        continue
+                
+                
+                """
+
                 ms = session.query(Marcacion).filter(and_(Marcacion.usuario_id == usuario['id'], Marcacion.marcacion == marcacion)).all()
                 if len(ms) <= 0:
                     log = Marcacion()
@@ -58,10 +68,13 @@ class RelojesModel:
                     r = {'estado':'nueva', 'marcacion':log, 'dni':dni, 'nombre':usuario['nombre'], 'apellido':usuario['apellido']}
                     logger_marcacion.info(r)
                     estados.append(r)
+
+                    """ agregar_en_cache_marcaciones(uid, log) """
+
                 else:
                     for m in ms:
                         r = {'estado':'duplicada', 'marcacion':m, 'dni':dni, 'nombre':usuario['nombre'], 'apellido':usuario['apellido']}
-                        logger_duplicada.info(r)
+                        """ logger_duplicada.info(r) """ 
                         estados.append(r)
             except Exception as e:
                 excepciones.append(e)
