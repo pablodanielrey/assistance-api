@@ -25,8 +25,10 @@ class MarcacionesGetters:
     def __init__(self, marcaciones_api):
         self.api = marcaciones_api
 
-    def obtener_marcaciones_por_uid(self, uid ,token=None):
-        return self.api._get_marcaciones_por_uid(uid, token)
+    def obtener_marcaciones_por_uid(self, uid, marcaciones=[],token=None):
+        with obtener_session() as session:
+            marcaciones = session.selecc...
+            return marcaciones
 
 
 class MarcacionesCache:
@@ -58,7 +60,7 @@ class MarcacionesCache:
         if (len(marcaciones) > 0) and (marcacion in marcaciones):
             return True
         else:
-            marcaciones = self.getters.obtener_marcaciones_por_uid(uid, token)
+            marcaciones = self.getters.obtener_marcaciones_por_uid(uid, marcaciones, token)
             if marcaccion in marcaciones:
                 self.setear_marcacion_por_usuario_id(uid, marcaciones)
                 return True
