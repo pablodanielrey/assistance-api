@@ -4,7 +4,7 @@ from pymongo.operations import IndexModel
 import datetime
 
 class MarcacionesAPI:
-
+    """Ver como acceder a la api directamente"""
     def __init__(self, api_url, api):
         self.url = api_url
         self.api = api
@@ -21,7 +21,7 @@ class MarcacionesAPI:
 
 
 class MarcacionesGetters:
-
+    """Ver si es necesario"""
     def __init__(self, marcaciones_api):
         self.api = marcaciones_api
 
