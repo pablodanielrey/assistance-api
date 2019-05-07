@@ -1,24 +1,7 @@
 import pymongo
 from pymongo.operations import IndexModel
-
 import datetime
-
-class MarcacionesAPI:
-    """Ver como acceder a la api directamente"""
-    def __init__(self, api_url, api):
-        self.url = api_url
-        self.api = api
-
-    def _get_marcaciones_por_uid(self, uid, token=None):
-        query = f"{self.url}/usuarios/{uid}/logs"
-        r = self.api.get(query, token=token)
-        if not r.ok:
-            return None
-        lid = r.json()
-        if lid:
-            return lid
-        return None
-
+from assistance.model.entities import Marcacion
 
 class MarcacionesGetters:
     """Ver si es necesario"""
@@ -26,8 +9,9 @@ class MarcacionesGetters:
         self.api = marcaciones_api
 
     def obtener_marcaciones_por_uid(self, uid, marcaciones=[],token=None):
+        fecha = datetime.datetime.now() - timedelta(days=2)
         with obtener_session() as session:
-            marcaciones = session.selecc...
+            marcaciones = session.query(Marcacion).filter(and_(Marcacion.usuario_id == uid, Marcacion.marcacion > fecha)).all()
             return marcaciones
 
 
@@ -46,8 +30,6 @@ class MarcacionesCache:
             self.mongo[c].create_index('insertadoEn',expireAfterSeconds=self.timeout)
 
     def setear_marcacion_por_usuario_id(self, uid, marcaciones):
-        ###TODO: Hacer drop de la coleccion de datos para al UID e insertar las nuevas marcaciones
-        
         fecha = datetime.datetime.utcnow()
         for m in marcaciones:
             m['usuario_id'] = uid
