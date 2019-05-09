@@ -25,6 +25,10 @@ class Marcacion(Base):
         timezone = pytz.timezone(tz)
         return self.marcacion.astimezone(timezone).date()
 
+    def obtenerFechaHoraRelativa(self, tz='America/Argentina/Buenos_Aires'):
+        timezone = pytz.timezone(tz)
+        return self.marcacion.astimezone(timezone)
+
     def esIgual(self, otra=None, tolerancia=None):
         ''' tiene en cuenta la tolerancia para decidir si representan la misma marcacion '''
         if not otra:

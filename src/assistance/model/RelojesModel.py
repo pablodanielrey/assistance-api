@@ -34,7 +34,7 @@ class RelojesModel:
     }
 
     @classmethod
-    def _insertar_marcaciones(cls, session, rid, mapeo_marcacion, cache_usuarios, token, marcaciones):
+    def _insertar_marcaciones(cls, session, rid, mapeo_marcacion, cache_usuarios, cache_marcaciones, token, marcaciones):
         logger_marcacion = logging.getLogger('assistance.model.zkSoftware.marcacion')
         logger_duplicada = logging.getLogger('assistance.model.zkSoftware.duplicada')
         excepciones = []
@@ -45,16 +45,10 @@ class RelojesModel:
                 usuario = cache_usuarios.obtener_usuario_por_dni(dni, token=token)
                 marcacion = l.att_time
 
-                """ 
-                    consultar cache 
-
-                    uid = usuario['id']
-                    if existe_en_cache_marcaciones(uid, fecha_hora):
-                        continue
+                uid = usuario['id']
+                if cache_marcaciones.existe_marcacion_de_usuario(uid, marcacion, token):
+                    continue
                 
-                
-                """
-
                 ms = session.query(Marcacion).filter(and_(Marcacion.usuario_id == usuario['id'], Marcacion.marcacion == marcacion)).all()
                 if len(ms) <= 0:
                     log = Marcacion()
@@ -92,7 +86,7 @@ class RelojesModel:
             l.att_time = zpDate
 
     @classmethod
-    def sincronizar(cls, session, rid, zona_horaria='America/Argentina/Buenos_Aires', borrar=False, cache_usuarios=None, token=None):
+    def sincronizar(cls, session, rid, zona_horaria='America/Argentina/Buenos_Aires', borrar=False, cache_usuarios=None, cache_marcaciones=None, token=None):
         reloj = session.query(Reloj).filter(Reloj.id == rid).one()
         zona_horaria = reloj.zona_horaria
         if not zona_horaria:
@@ -112,7 +106,8 @@ class RelojesModel:
                                             session=session,
                                             rid=reloj.id, 
                                             mapeo_marcacion=mapeo_marcaciones, 
-                                            cache_usuarios=cache_usuarios, 
+                                            cache_usuarios=cache_usuarios,
+                                            cache_marcaciones=cache_marcaciones, 
                                             token=token, 
                                             marcaciones=marcaciones)
                     z.borrar_marcaciones()
@@ -125,7 +120,8 @@ class RelojesModel:
                                         session=session,
                                         rid=reloj.id, 
                                         mapeo_marcacion=mapeo_marcaciones, 
-                                        cache_usuarios=cache_usuarios, 
+                                        cache_usuarios=cache_usuarios,
+                                        cache_marcaciones=cache_marcaciones, 
                                         token=token, 
                                         marcaciones=marcaciones)
 

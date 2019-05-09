@@ -30,6 +30,7 @@ from .RelojesModel import RelojesModel
 
 from .LugaresCache import LugaresCache, LugaresAPI, LugaresGetters
 from .CargosCache import CargosCache, CargosAPI, CargosGetters
+from .MarcacionesCache import MarcacionesCache
 from .entities import *
 from .AsientosModel import CompensatoriosModel
 
@@ -82,6 +83,8 @@ class AssistanceModel:
 
     cache_cargos = CargosCache(mongo_url=MONGO_URL,
                                 getters=_CARGOS_GETTER, timeout=60 * 60)
+
+    cache_marcaciones = MarcacionesCache(mongo_url=MONGO_URL, timeout=60 * 60* 24)
    
 
     @classmethod
@@ -997,7 +1000,8 @@ class AssistanceModel:
                                 rid=rid, 
                                 zona_horaria='America/Argentina/Buenos_Aires', 
                                 borrar=borrar, 
-                                cache_usuarios=cls.cache_usuarios, 
+                                cache_usuarios=cls.cache_usuarios,
+                                cache_marcaciones=cls.cache_marcaciones,
                                 token=token)
         for e in estados:
             yield e
