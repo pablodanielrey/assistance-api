@@ -46,7 +46,7 @@ class RelojesModel:
                 marcacion = l.att_time
 
                 uid = usuario['id']
-                if cache_marcaciones.existe_marcacion_de_usuario(uid, marcacion, token):
+                if cache_marcaciones.existe_marcacion_de_usuario(uid, marcacion):
                     continue
                 
                 ms = session.query(Marcacion).filter(and_(Marcacion.usuario_id == usuario['id'], Marcacion.marcacion == marcacion)).all()

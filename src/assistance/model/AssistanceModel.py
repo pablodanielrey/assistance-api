@@ -30,7 +30,7 @@ from .RelojesModel import RelojesModel
 
 from .LugaresCache import LugaresCache, LugaresAPI, LugaresGetters
 from .CargosCache import CargosCache, CargosAPI, CargosGetters
-from .MarcacionesCache import MarcacionesCache
+from .MarcacionesCache import MarcacionesCache, MarcacionesGetter
 from .entities import *
 from .AsientosModel import CompensatoriosModel
 
@@ -59,6 +59,8 @@ _LUGARES_GETTER = LugaresGetters(_LUGARES_API)
 _CARGOS_API = CargosAPI(api_url=SILEG_API, api=_API)
 _CARGOS_GETTER = CargosGetters(_CARGOS_API)
 
+_MARCACIONES_GETTER = MarcacionesGetter()
+
 class AssistanceModel:
 
 
@@ -84,7 +86,7 @@ class AssistanceModel:
     cache_cargos = CargosCache(mongo_url=MONGO_URL,
                                 getters=_CARGOS_GETTER, timeout=60 * 60)
 
-    cache_marcaciones = MarcacionesCache(mongo_url=MONGO_URL, timeout=60 * 60* 24)
+    cache_marcaciones = MarcacionesCache(mongo_url=MONGO_URL, marcaciones_getter=_MARCACIONES_GETTER,timeout=60 * 60* 24)
    
 
     @classmethod
