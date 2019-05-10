@@ -37,14 +37,17 @@ class MarcacionesCache:
         marcaciones['insertadoEn'] = fecha        
         self.mongo.marcaciones_por_usuario.insert_one(marcaciones)
 
-    def existe_marcacion_de_usuario(self, uid, marcacion, token=None):
-        tz='America/Argentina/Buenos_Aires'
-        mmarcaciones = self.mongo.marcaciones_por_usuario.find({'usuario_id':uid})
-        marcaciones = [m for m in mmarcaciones]
+    def existe_marcacion_de_usuario(self, uid, marcacion, token=None,tz='America/Argentina/Buenos_Aires'):
+        timezone =pytz.timezone(tz)
+        resultado = self.mongo.marcaciones_por_usuario.find({'usuario_id':uid})
+        marcaciones = []
+        for r in resultado:
+            for m in r['marcaciones']:
+                marcaciones.append((m.astimezone(timezone) - timedelta(hours=3)))
         if marcacion in marcaciones:
             return True
         else:
-            marcaciones = [m['marcacion'].astimezone(pytz.timezone(tz)) for m in self.obtener_marcaciones_por_uid(uid, token)]
+            marcaciones = [m['marcacion'].astimezone(timezone) for m in self.obtener_marcaciones_por_uid(uid, token)]
             if marcacion in marcaciones:
                 self.setear_marcacion_por_usuario_id(uid, marcaciones)
                 return True
