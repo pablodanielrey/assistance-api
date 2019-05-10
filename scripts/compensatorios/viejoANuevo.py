@@ -64,22 +64,20 @@ if __name__ == '__main__':
         }
     """
     with obtener_session() as session:
-        for u in cartera:
+        for uid, u in cartera.items():
             logging.info('procesando : {}'.format(u['id']))
             saldo = CompensatoriosModel.obtenerSaldo(session, u['id'])
             fecha = datetime.datetime.now()
-            reg_a_aplicar = None
-            for asiento in saldo['asientos']:
-                if asiento.fecha > fecha:
-                    fecha = asiento.fecha
-                    reg_a_aplicar = saldo
+            reg_a_aplicar = saldo
+            logging.debug(saldo)
 
             if reg_a_aplicar:
-                saldo_a_aplicar = u['stock'] - reg_a_aplicar['saldo']
+                #saldo_a_aplicar = u['stock'] - reg_a_aplicar['saldo']
+                saldo_a_aplicar = u['stock']
                 if saldo_a_aplicar > 0:
-                    CompensatoriosModel.cambiarSaldo(session, ID_DE_AUTORIZADOR, saldo_a_aplicar, notas='Importación del stock del sistema anterior')
+                    CompensatoriosModel.cambiarSaldo(session, ID_DE_AUTORIZADOR, u['id'], saldo_a_aplicar, notas='Importación del stock del sistema anterior')
 
-        #session.commit()
+        session.commit()
             
 
     
