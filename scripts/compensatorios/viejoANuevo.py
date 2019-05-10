@@ -3,7 +3,9 @@ from psycopg2.extras import DictCursor
 import os
 import sys
 import logging
+import datetime
 
+from assistance.model import obtener_session
 from assistance.model.AsientosModel import CompensatoriosModel
 
 """Script de migracion de Compensatorios"""
@@ -17,8 +19,7 @@ OLD_ASSISTANCE_DB_NAME = os.environ['OLD_ASSISTANCE_DB_NAME']
 CUENTA = '19544df3-2c33-4556-806f-07eaf0c7615b'
 JUSTIFICACION = '48773fd7-8502-4079-8ad5-963618abe725'
 
-
-ID_DE_AUTORIZADOR = 'sadsadsad'
+ID_DE_AUTORIZADOR = '1'
 
 def _id_de_cuenta(uid):
     return '{}_{}'.format(uid, CUENTA)
@@ -66,7 +67,7 @@ if __name__ == '__main__':
         for u in cartera:
             logging.info('procesando : {}'.format(u['id']))
             saldo = CompensatoriosModel.obtenerSaldo(session, u['id'])
-            fecha = u['fecha']
+            fecha = datetime.datetime.now()
             reg_a_aplicar = None
             for asiento in saldo['asientos']:
                 if asiento.fecha > fecha:
@@ -78,7 +79,7 @@ if __name__ == '__main__':
                 if saldo_a_aplicar > 0:
                     CompensatoriosModel.cambiarSaldo(session, ID_DE_AUTORIZADOR, saldo_a_aplicar, notas='Importación del stock del sistema anterior')
 
-        session.commit()
+        #session.commit()
             
 
     
