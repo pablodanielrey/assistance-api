@@ -1,6 +1,6 @@
 import os
-from dotenv import load_dotenv
-load_dotenv()
+#from dotenv import load_dotenv
+#load_dotenv()
 
 """
     ###############
@@ -59,7 +59,7 @@ token = api._get_token()
 #print("tipo {}".format(usuario["tipo"]))
 #print("telefonos {}".format(usuario["telefonos"]))
 
-usuarioBase = _USERS_API._get_user_dni(34928857, token=token)
+usuarioBase = _USERS_API._get_user_dni(23106377, token=token)
 
 print(usuarioBase)
 
