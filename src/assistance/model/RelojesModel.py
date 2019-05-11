@@ -36,7 +36,7 @@ class RelojesModel:
     @classmethod
     def _insertar_marcaciones(cls, session, rid, mapeo_marcacion, cache_usuarios, cache_marcaciones, token, marcaciones):
         logger_marcacion = logging.getLogger('assistance.model.zkSoftware.marcacion')
-        """logger_duplicada = logging.getLogger('assistance.model.zkSoftware.duplicada')"""
+        logger_persona_inexistente = logging.getLogger('assistance.model.zkSoftware.persona_inexistente')
         excepciones = []
         estados = []
         for l in marcaciones:
@@ -44,7 +44,13 @@ class RelojesModel:
                 dni = l.user_id
                 usuario = cache_usuarios.obtener_usuario_por_dni(dni, token=token)
                 marcacion = l.att_time
-
+                #Si no existe usuario logueo el DNI y la Marcacion
+                if not usuario:
+                    r = {'error':'No existe usuario para ese dni', 'dni':dni, 'marcacion': marcacion}
+                    logger_persona_inexistente.info(r)
+                    estados.append(r)
+                    continue
+                
                 uid = usuario['id']
                 if cache_marcaciones.existe_marcacion_de_usuario(uid, marcacion):
                     continue
@@ -66,7 +72,6 @@ class RelojesModel:
                 else:
                     for m in ms:
                         r = {'estado':'duplicada', 'marcacion':m.__json__(), 'dni':dni, 'nombre':usuario['nombre'], 'apellido':usuario['apellido']}
-                        """ logger_duplicada.info(r) """ 
                         estados.append(r)
             except Exception as e:
                 excepciones.append(e)
