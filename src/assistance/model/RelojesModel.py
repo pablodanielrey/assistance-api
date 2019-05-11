@@ -36,7 +36,7 @@ class RelojesModel:
     @classmethod
     def _insertar_marcaciones(cls, session, rid, mapeo_marcacion, cache_usuarios, cache_marcaciones, token, marcaciones):
         logger_marcacion = logging.getLogger('assistance.model.zkSoftware.marcacion')
-        logger_duplicada = logging.getLogger('assistance.model.zkSoftware.duplicada')
+        """logger_duplicada = logging.getLogger('assistance.model.zkSoftware.duplicada')"""
         excepciones = []
         estados = []
         for l in marcaciones:
@@ -59,15 +59,13 @@ class RelojesModel:
                     log.marcacion = marcacion
                     session.add(log)
                     session.commit()
-                    r = {'estado':'nueva', 'marcacion':log, 'dni':dni, 'nombre':usuario['nombre'], 'apellido':usuario['apellido']}
+                    r = {'estado':'nueva', 'marcacion':log.__json__(), 'dni':dni, 'nombre':usuario['nombre'], 'apellido':usuario['apellido']}
                     logger_marcacion.info(r)
                     estados.append(r)
 
-                    """ agregar_en_cache_marcaciones(uid, log) """
-
                 else:
                     for m in ms:
-                        r = {'estado':'duplicada', 'marcacion':m, 'dni':dni, 'nombre':usuario['nombre'], 'apellido':usuario['apellido']}
+                        r = {'estado':'duplicada', 'marcacion':m.__json__(), 'dni':dni, 'nombre':usuario['nombre'], 'apellido':usuario['apellido']}
                         """ logger_duplicada.info(r) """ 
                         estados.append(r)
             except Exception as e:

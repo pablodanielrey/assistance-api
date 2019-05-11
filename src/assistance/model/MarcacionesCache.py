@@ -10,6 +10,9 @@ import json
 class MarcacionesGetter:
 
     def obtener_marcaciones_por_uid_por_tiempo(self, uid, dias=2):
+        """
+        Obtiene de la DB las marcaciones hasta 2 dias atras (por defecto) para el usuario_id pasado como parametro
+        """
         fecha = datetime.datetime.now() - timedelta(days=dias)
         marcaciones = []
         with obtener_session() as session:
@@ -37,6 +40,9 @@ class MarcacionesCache:
             self.mongo[c].create_index('insertadoEn',expireAfterSeconds=self.timeout)
 
     def setear_marcacion_por_usuario_id(self, uid, marc):
+        """
+        Inserta en la cache los objetos marcacion enviados, si existe uid los actualiza. Sino lo inserta nuevos
+        """
         fecha = datetime.datetime.utcnow()
         marcaciones = {}
         marcaciones['marcaciones']= [m.__json__() for m in marc]
@@ -46,6 +52,9 @@ class MarcacionesCache:
             self.mongo.marcaciones_por_usuario.insert_one(marcaciones)
 
     def obtener_marcaciones_por_usuario(self, uid):
+        """
+        Obtiene de la cache las marcaciones para el usuario_id pasado como parametro
+        """
         resultado = self.mongo.marcaciones_por_usuario.find({'usuario_id':uid})
         ret = []
         for m in resultado:
@@ -53,6 +62,10 @@ class MarcacionesCache:
         return ret
 
     def existe_marcacion_de_usuario(self, uid, marcacion, tz='America/Argentina/Buenos_Aires'):
+        """
+        Comprueba si existe en la cache la marcacion pasada como parametro para el usuario_id pasado como parametro,
+        Si no existe la obtiene desde el getter y la inserta en la cache
+        """
         timezone = pytz.timezone(tz)
         marcaciones = self.obtener_marcaciones_por_usuario(uid)
 
