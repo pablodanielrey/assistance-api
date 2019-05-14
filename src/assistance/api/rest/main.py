@@ -8,6 +8,7 @@ logging.getLogger().setLevel(logging.DEBUG)
 
 import sys
 import os
+import datetime
 from dateutil import parser
 
 from werkzeug.contrib.fixers import ProxyFix
@@ -175,7 +176,7 @@ def usuarios_search(search, token=None):
         urn:assistance:users:read:one -- misma unidad organizativa
         urn:assistance:users:read:sub -- sub unidades organizativas (excluye la asociada a la persona)
         urn:assistance:users:read:many -- (one + sub)
-        urn:assistance:users:read:all  -- todo, no importa a que unidades organizativas pertenecen    
+        urn:assistance:users:read:any  -- todo, no importa a que unidades organizativas pertenecen    
 
 
         sistema:recurso:operación:scope:restriccion-modelo
@@ -184,9 +185,21 @@ def usuarios_search(search, token=None):
 
         assistance-super-admin 
             urn:assistance:users:read
+            urn:assistance:schedule:delete
+            urn:assistance:schedule:create
+            urn:assistance:logs:create
+            urn:assistance:logs:read
+            urn:assistance:devices:read
+            urn:assistance:justifications:read
+            urn:assistance:justifications:create
+            urn:assistance:justifications:delete
+            urn:assistance:justifications:update
+            urn:assistance:justification-date:create
+            urn:assistance:justification-date:delete
 
         assistance-admin
             urn:assistance:users:read
+            urn:assistance:schedule:delete
 
         assistance-operator
             urn:assistance:users:read
@@ -199,6 +212,14 @@ def usuarios_search(search, token=None):
             urn:assistance:users:read:self
             urn:assistance:places:read:many
             urn:assistance:assistance-report:read:many:restricted
+            urn:assistance:justifications-report:read:many:restricted
+            urn:assistance:general-assistance-report:read:many:restricted
+            urn:assistance:schedule:read:many:restricted
+            urn:assistance:schedule:read:self
+            urn:assistance:justifications:read:many:restricted
+            urn:assistance:justification-date:create:many:restricted
+            urn:assistance:justification-date:delete:many:restricted
+            urn:assistance:justification-date:read:self
 
     """
 
@@ -294,14 +315,12 @@ def reporte(uid, token):
 
     if warden.has_permision(token, ['urn:assistance:assistance-report:read:many:restricted']):
         usuario_logueado = token['sub']
-        if AssistanceModel.chequear_acceso(usuario_logueado, uid):
-            with obtener_session() as session:
-                    return AssistanceModel.reporte(session, uid, inicio, fin)
-
-    if warden.has_permision(token, ['urn:assistance:assistance-report:read:self']):
-        usuario_logueado = token['sub']
         if usuario_logueado == uid:
             with obtener_session() as session:
+                return AssistanceModel.reporte(session, uid, inicio, fin)
+        else:
+            if AssistanceModel.chequear_acceso(usuario_logueado, uid):
+                with obtener_session() as session:
                     return AssistanceModel.reporte(session, uid, inicio, fin)
 
     return ('no tiene los permisos suficientes', 403)
@@ -317,15 +336,17 @@ def reporte_justificaciones(uid, token):
     fecha_str = request.args.get('fin', None)
     fin = parser.parse(fecha_str).date() if fecha_str else None
 
-    prof = warden.has_one_profile(token, ['assistance-super-admin', 'assistance-admin','assistance-operator','assistance-user'])
-    if prof and prof['profile']:
+
+    if warden.has_permision(token, ['urn:assistance:justifications-report:read']):
         with obtener_session() as session:
             return AssistanceModel.reporteJustificaciones(session, uid, inicio, fin)
 
-    usuario_logueado = token['sub']
-    if AssistanceModel.chequear_acceso(usuario_logueado, uid):
-        with obtener_session() as session:
-                return AssistanceModel.reporteJustificaciones(session, uid, inicio, fin)
+    if warden.has_permision(token, ['urn:assistance:justifications-report:read:many:restricted']):
+        usuario_logueado = token['sub']
+        if AssistanceModel.chequear_acceso(usuario_logueado, uid):
+            with obtener_session() as session:
+                    return AssistanceModel.reporteJustificaciones(session, uid, inicio, fin)
+
     return ('no tiene los permisos suficientes', 403)
 
 @app.route(API_BASE + '/reportes', methods=['POST'])
@@ -338,14 +359,14 @@ def reporte_general(token):
 
     usuario_logueado = token['sub']
 
-    prof = warden.has_one_profile(token, ['assistance-super-admin','assistance-admin','assistance-operator','assistance-user'])
-    if prof and prof['profile'] == True:
+    if warden.has_permision(token, ['urn:assistance:general-assistance-report:read']):
         with obtener_session() as session:
             return AssistanceModel.reporteGeneralAdmin(session, lugares, fecha)
 
-    if AssistanceModel.chequear_acceso_lugares(usuario_logueado, lugares):
-        with obtener_session() as session:
-            return AssistanceModel.reporteGeneral(session, usuario_logueado, lugares, fecha)
+    if warden.has_permision(token, ['urn:assistance:general-assistance-report:read:many:restricted']):
+        if AssistanceModel.chequear_acceso_lugares(usuario_logueado, lugares):
+            with obtener_session() as session:
+                return AssistanceModel.reporteGeneral(session, usuario_logueado, lugares, fecha)
 
     return ('no tiene los permisos suficientes', 403)
 
@@ -357,29 +378,22 @@ def horario(uid,token):
     fecha_str = request.args.get('fecha', None)
     fecha = parser.parse(fecha_str).date() if fecha_str else None
 
-    prof = warden.has_one_profile(token, ['assistance-super-admin','assistance-admin','assistance-operator','assistance-user'])
-    if prof and prof['profile'] == True:
+    if warden.has_permision(token, ['urn:assistance:schedule:read']):
         with obtener_session() as session:
             return AssistanceModel.horario(session, uid, fecha)
 
-    usuario_logueado = token['sub']
-    if AssistanceModel.chequear_acceso(usuario_logueado, uid):        
-        with obtener_session() as session:
-            return AssistanceModel.horario(session, uid, fecha)
+    if warden.has_permision(token, ['urn:assistance:schedule:read:many:restricted']):
+        usuario_logueado = token['sub']
+        if AssistanceModel.chequear_acceso(usuario_logueado, uid):        
+            with obtener_session() as session:
+                return AssistanceModel.horario(session, uid, fecha)
 
     return ('no tiene los permisos suficientes', 403)
-
 
 @app.route(API_BASE + '/usuarios/<uid>/horario/<hid>', methods=['DELETE'])
 @warden.require_valid_token
 @jsonapi
 def eliminar_horarios(uid, hid, token):
-
-    prof = warden.has_one_profile(token, ['assistance-super-admin','assistance-admin'])
-    if not prof or prof['profile'] == False:
-        ''' como no soy admin, entonces chequea que se este consultando a si mismo '''
-        if not uid or uid != token['sub']:
-            return ('no tiene los permisos suficientes', 403)
 
     fecha_str = request.args.get('fecha_inicio', None)
     inicio = parser.parse(fecha_str).date() if fecha_str else None
@@ -387,22 +401,18 @@ def eliminar_horarios(uid, hid, token):
     fecha_str = request.args.get('fecha_fin', None)
     fin = parser.parse(fecha_str).date() if fecha_str else None
 
-    with obtener_session() as session:
-        h = AssistanceModel.eliminar_horario(session, uid, hid)
-        session.commit()
-    
-    return {'status':'ok', 'horario':h}
+    if warden.has_permision(token, ['urn:assistance:schedule:delete']):
+        with obtener_session() as session:
+            h = AssistanceModel.eliminar_horario(session, uid, hid)
+            session.commit()
+            return {'status':'ok', 'horario':h}
+
+    return ('no tiene los permisos suficientes', 403)
 
 @app.route(API_BASE + '/usuarios/<uid>/historial_horarios', methods=['GET'])
 @warden.require_valid_token
 @jsonapi
 def historial_horarios(uid, token):
-
-    prof = warden.has_one_profile(token, ['assistance-super-admin','assistance-admin'])
-    if not prof or prof['profile'] == False:
-        ''' como no soy admin, entonces chequea que se este consultando a si mismo '''
-        if not uid or uid != token['sub']:
-            return ('no tiene los permisos suficientes', 403)
 
     fecha_str = request.args.get('fecha_inicio', None)
     inicio = parser.parse(fecha_str).date() if fecha_str else None
@@ -412,60 +422,69 @@ def historial_horarios(uid, token):
 
     timezone = request.args.get('timezone', 'America/Argentina/Buenos_Aires')
 
-    with obtener_session() as session:
-        ret = AssistanceModel.historial_horarios(session, uid, inicio, fin, timezone)
-        return ret
+    if warden.has_permision(token, ['urn:assistance:schedule:read:self']):
+        uuid = token['sub']
+        if uid == uuid:
+            with obtener_session() as session:
+                ret = AssistanceModel.historial_horarios(session, uid, inicio, fin, timezone)
+                return ret
 
+    if warden.has_permision(token, ['urn:assistance:schedule:read']):
+        with obtener_session() as session:
+            ret = AssistanceModel.historial_horarios(session, uid, inicio, fin, timezone)
+            return ret
+
+    return ('no tiene los permisos suficientes', 403)
 
 
 @app.route(API_BASE + '/horario', methods=['PUT'])
 @warden.require_valid_token
 @jsonapi
 def crear_horario(token):
-    prof = warden.has_one_profile(token, ['assistance-super-admin','assistance-admin'])
-    if not prof or prof['profile'] == False:
-        return ('no tiene los permisos suficientes', 403)
+    
+    if warden.has_permision(token, ['urn:assistance:schedule:create']):
+        horarios = request.get_json()
+        logging.debug(horarios)
+        with obtener_session() as session:
+            AssistanceModel.crearHorario(session, horarios)
+            session.commit()
+            return  True
 
-    horarios = request.get_json()
-    logging.debug(horarios)
-    with obtener_session() as session:
-        AssistanceModel.crearHorario(session, horarios)
-        session.commit()
-        return  True
+    return ('no tiene los permisos suficientes', 403)
 
-import datetime
 
 @app.route(API_BASE + '/usuarios/<uid>/logs', methods=['GET'])
 @warden.require_valid_token
 @jsonapi
 def logs_por_usuario(uid,token):
    
-    prof = warden.has_one_profile(token, ['assistance-super-admin', 'assistance-admin', 'assistance-operator'])
-    if not prof or prof['profile'] == False:
-        return ('no tiene los permisos suficientes', 403)
+    if warden.has_permision(token, ['urn:assistance:logs:read']):
+        inicio = datetime.datetime.now()
+        fin = inicio + datetime.timedelta(days=1)
+        marcaciones = []
+        with obtener_session() as session:
+            reporte = AssistanceModel.reporte(session, uid=uid, inicio=inicio, fin=fin)
+            for r in reporte.reportes:
+                marcaciones.extend(r.marcaciones)
+                marcaciones.extend(r.duplicadas)
+        return marcaciones
 
-    inicio = datetime.datetime.now()
-    fin = inicio + datetime.timedelta(days=1)
-    marcaciones = []
-    with obtener_session() as session:
-        reporte = AssistanceModel.reporte(session, uid=uid, inicio=inicio, fin=fin)
-        for r in reporte.reportes:
-            marcaciones.extend(r.marcaciones)
-            marcaciones.extend(r.duplicadas)
-    return marcaciones
+    return ('no tiene los permisos suficientes', 403)
+
 
 @app.route(API_BASE + '/usuarios/<uid>/logs', methods=['POST'])
 @warden.require_valid_token
 @jsonapi
 def crear_log_por_usuario(uid, token=None):
-    prof = warden.has_one_profile(token, ['assistance-super-admin', 'assistance-admin'])
-    if not prof or prof['profile'] == False:
-        return ('no tiene los permisos suficientes', 403)
 
-    with obtener_session() as session:
-        r = AssistanceModel.crear_log_por_usuario(session, uid)
-        session.commit()
-        return r
+    if warden.has_permision(token, ['urn:assistance:logs:create']):
+        with obtener_session() as session:
+            r = AssistanceModel.crear_log_por_usuario(session, uid)
+            session.commit()
+            return r
+
+    return ('no tiene los permisos suficientes', 403)
+
 
 @app.route(API_BASE + '/logs/<fecha>', methods=['GET'])
 @warden.require_valid_token
@@ -478,12 +497,12 @@ def logs_por_fecha(fecha,token):
 @warden.require_valid_token
 @jsonapi
 def relojes(token):
-    prof = warden.has_one_profile(token, ['assistance-super-admin','assistance-admin'])
-    if not prof or prof['profile'] == False:
-        return ('no tiene los permisos suficientes', 403)
+    if warden.has_permision(token, ['urn:assistance:devices:read']):
+        with obtener_session() as session:
+            return AssistanceModel.relojes(session)
+            
+    return ('no tiene los permisos suficientes', 403)
 
-    with obtener_session() as session:
-        return AssistanceModel.relojes(session)
 
 @app.route(API_BASE + '/relojes/sincronizar', methods=['GET'])
 @jsonapi
@@ -498,14 +517,11 @@ def relojes_sincronizar():
 @jsonapi
 def reloj(rid,token):
     assert rid is not None
-
-    prof = warden.has_one_profile(token, ['assistance-super-admin','assistance-admin'])
-    if not prof or prof['profile'] == False:
-        return ('no tiene los permisos suficientes', 403)
-
-    with obtener_session() as session:
-        r = AssistanceModel.reloj(session, rid)
-        return r
+    if warden.has_permision(token, ['urn:assistance:devices:read']):
+        with obtener_session() as session:
+            r = AssistanceModel.reloj(session, rid)
+            return r
+    return ('no tiene los permisos suficientes', 403)
 
 @app.route(API_BASE + '/relojes/<rid>/sincronizar', methods=['GET'])
 #@jsonapi
@@ -532,98 +548,93 @@ def reloj_marcaciones(rid):
 @jsonapi
 def reloj_eliminar_huellas(rid, token):
 
-    prof = warden.has_one_profile(token, 'assistance-super-admin')
-    if not prof or prof['profile'] == False:
-        return ('no tiene los permisos suficientes', 403)
+    return ('no tiene los permisos suficientes', 403)
 
+    """
     assert rid is not None
     with obtener_session() as session:
         r = AssistanceModel.eliminar_huellas_reloj(session, rid)
         return r
+    """
+
 
 @app.route(API_BASE + '/relojes/<rid>/usuarios', methods=['DELETE'])
 @warden.require_valid_token
 @jsonapi
 def reloj_eliminar_usuarios(rid, token):
-    prof = warden.has_one_profile(token, 'assistance-super-admin')
-    if not prof or prof['profile'] == False:
-        return ('no tiene los permisos suficientes', 403)
-
+    return ('no tiene los permisos suficientes', 403)
+    """
     assert rid is not None
     with obtener_session() as session:
         r = AssistanceModel.eliminar_usuarios_reloj(session, rid)
         return r
+    """
 
 @app.route(API_BASE + '/relojes/<rid>/usuarios', methods=['GET'])
 @warden.require_valid_token
 @jsonapi
 def reloj_usuarios(rid, token):
-
-    prof = warden.has_one_profile(token, ['assistance-super-admin','assistance-admin'])
-    if not prof or prof['profile'] == False:
-        return ('no tiene los permisos suficientes', 403)
-
-    assert rid is not None
-    with obtener_session() as session:
-        r = AssistanceModel.usuarios_por_reloj(session, rid)
-        return r
+    if warden.has_permision(token, ['urn:assistance:devices:read']):
+        assert rid is not None
+        with obtener_session() as session:
+            r = AssistanceModel.usuarios_por_reloj(session, rid)
+            return r
+    return ('no tiene los permisos suficientes', 403)
 
 @app.route(API_BASE + '/relojes/<rid>/usuarios/<ruid>', methods=['GET'])
 @warden.require_valid_token
 @jsonapi
 def reloj_usuario(rid, ruid, token):
-    prof = warden.has_one_profile(token, ['assistance-super-admin','assistance-admin'])
-    if not prof or prof['profile'] == False:
-        return ('no tiene los permisos suficientes', 403)
-
     assert rid is not None
     assert ruid is not None
-    with obtener_session() as session:
-        u = AssistanceModel.usuario_por_reloj(session, rid, ruid)
-        t = AssistanceModel.templates_por_usuario_por_reloj(session, rid, ruid)
-        r = {
-            'usuario': u,
-            'huellas': t
-        }
-        return r
+    if warden.has_permision(token, ['urn:assistance:devices:read']):
+        with obtener_session() as session:
+            u = AssistanceModel.usuario_por_reloj(session, rid, ruid)
+            t = AssistanceModel.templates_por_usuario_por_reloj(session, rid, ruid)
+            r = {
+                'usuario': u,
+                'huellas': t
+            }
+            return r
+    return ('no tiene los permisos suficientes', 403)
 
 @app.route(API_BASE + '/relojes/<rid>/huellas', methods=['GET'])
 @warden.require_valid_token
 @jsonapi
 def reloj_huellas(rid, token):
-    prof = warden.has_one_profile(token, ['assistance-super-admin','assistance-admin'])
-    if not prof or prof['profile'] == False:
-        return ('no tiene los permisos suficientes', 403)
-
     assert rid is not None
-    with obtener_session() as session:
-        r = AssistanceModel.templates_por_reloj(session, rid)
-        return r
+    if warden.has_permision(token, ['urn:assistance:devices:read']):
+        with obtener_session() as session:
+            r = AssistanceModel.templates_por_reloj(session, rid)
+            return r
+    return ('no tiene los permisos suficientes', 403)
 
 
 @app.route(API_BASE + '/justificaciones/<jid>', methods=['GET'])
 @warden.require_valid_token
 @jsonapi
 def justificacion(jid, token):
-    with obtener_session() as session:
-        j = AssistanceModel.justificacion(session, jid)
-        if not j:
-            return (404, 'Justificacion No existente')
+    if warden.has_permision(token, ['urn:assistance:justifications:read']):
+        with obtener_session() as session:
+            j = AssistanceModel.justificacion(session, jid)
+            if not j:
+                return (404, 'Justificacion No existente')
+    return ('no tiene los permisos suficientes', 403)
 
 @app.route(API_BASE + '/justificaciones/<uid>/permitidas', methods=['GET'])
 @warden.require_valid_token
 @jsonapi
 def justificaciones(uid, token):
 
-    prof = warden.has_one_profile(token, ['assistance-super-admin','assistance-admin','assistance-operator'])
-    if prof and prof['profile'] == True:
+    if warden.has_permision(token, ['urn:assistance:justifications:read']):
         with obtener_session() as session:
             return AssistanceModel.justificaciones(session)
 
-    autorizador_id = token['sub']
-    if AssistanceModel.chequear_acceso(autorizador_id, uid):
-        with obtener_session() as session:
-            return AssistanceModel.justificacionesParaUsuario(session, uid)
+    if warden.has_permision(token, ['urn:assistance:justifications:read:many:restricted']):
+        autorizador_id = token['sub']
+        if AssistanceModel.chequear_acceso(autorizador_id, uid):
+            with obtener_session() as session:
+                return AssistanceModel.justificacionesParaUsuario(session, uid)
 
     return ('no tiene los permisos suficientes', 403)
         
@@ -632,39 +643,36 @@ def justificaciones(uid, token):
 @warden.require_valid_token
 @jsonapi
 def crear_justificacion(token):
-    prof = warden.has_one_profile(token, ['assistance-super-admin','assistance-admin'])
-    if not prof or prof['profile'] == False:
-        return ('no tiene los permisos suficientes', 403)
+    if warden.has_permision(token, ['urn:assistance:justifications:create']):
+        justificacion = request.get_json()
+        logging.debug(justificacion)
+        with obtener_session() as session:
+            jid = AssistanceModel.crear_justificacion(session, justificacion)
+            session.commit()
+            return jid
+    return ('no tiene los permisos suficientes', 403)
 
-    justificacion = request.get_json()
-    logging.debug(justificacion)
-    with obtener_session() as session:
-        jid = AssistanceModel.crear_justificacion(session, justificacion)
-        session.commit()
-        return jid
 
 @app.route(API_BASE + '/justificaciones/<jid>', methods=['DELETE'])
 @warden.require_valid_token
 @jsonapi
 def eliminar_justificacion(jid, token):
-    prof = warden.has_one_profile(token, ['assistance-super-admin','assistance-admin'])
-    if not prof or prof['profile'] == False:
-        return ('no tiene los permisos suficientes', 403)
-    with obtener_session() as session:
-        AssistanceModel.eliminarJustificacion(session, jid)
-        session.commit()
+    if warden.has_permision(token, ['urn:assistance:justifications:delete']):
+        with obtener_session() as session:
+            AssistanceModel.eliminarJustificacion(session, jid)
+            session.commit()
+    return ('no tiene los permisos suficientes', 403)
 
 @app.route(API_BASE + '/justificaciones/<jid>', methods=['POST'])
 @warden.require_valid_token
 @jsonapi
 def actualizar_justificacion(jid, token):
-    prof = warden.has_one_profile(token, ['assistance-super-admin', 'assistance-admin'])
-    if not prof or prof['profile'] == False:
-        return ('no tiene los permisos suficientes', 403)
-    datos = request.get_json()
-    with obtener_session() as session:
-        AssistanceModel.actualizar_justificacion(session, jid, datos)
-        session.commit()
+    if warden.has_permision(token, ['urn:assistance:justifications:update']):
+        datos = request.get_json()
+        with obtener_session() as session:
+            AssistanceModel.actualizar_justificacion(session, jid, datos)
+            session.commit()
+    return ('no tiene los permisos suficientes', 403)
 
 @app.route(API_BASE + '/justificar', methods=['PUT'])
 @warden.require_valid_token
@@ -672,28 +680,25 @@ def actualizar_justificacion(jid, token):
 def justificar(token):
     fechaJustificada = request.get_json()
 
-    prof = warden.has_one_profile(token, ['assistance-super-admin', 'assistance-admin','assistance-operator'])
-    if prof and prof['profile'] == True:
+    if warden.has_permision(token, ['urn:assistance:justification-date:create']):
         with obtener_session() as session:
             autorizador_id = token['sub']
             id = AssistanceModel.justificar(session, fechaJustificada, autorizador_id)
             session.commit()
             return id
 
-    autorizador_id = token['sub']
-    uid = fechaJustificada['usuario_id']
-    if autorizador_id == uid:
-        return ('no tiene los permisos suficientes', 403)
-
-    if AssistanceModel.chequear_acceso(autorizador_id, uid):
-        with obtener_session() as session:
-            id = AssistanceModel.justificar(session, fechaJustificada, autorizador_id)
-            session.commit()
-            return id
+    if warden.has_permision(token, ['urn:assistance:justification-date:create:many:restricted']):
+        autorizador_id = token['sub']
+        uid = fechaJustificada['usuario_id']
+        ''' chequea que el usuario no se este justificando a el mismo '''
+        if autorizador_id != uid:
+            if AssistanceModel.chequear_acceso(autorizador_id, uid):
+                with obtener_session() as session:
+                    id = AssistanceModel.justificar(session, fechaJustificada, autorizador_id)
+                    session.commit()
+                    return id
 
     return ('no tiene los permisos suficientes', 403)
-
-
 
 @app.route(API_BASE + '/usuarios/<uid>/justificaciones/<jid>', methods=['DELETE'])
 @warden.require_valid_token
@@ -701,21 +706,19 @@ def justificar(token):
 def eliminar_fecha_justificada(uid, jid, token):
     autorizador_id = token['sub']
 
-    prof = warden.has_one_profile(token, ['assistance-super-admin', 'assistance-admin'])
-    if prof or prof['profile'] == True:
+    if warden.has_permision(token, ['urn:assistance:justification-date:delete']):
         with obtener_session() as session:
             jid = AssistanceModel.eliminarFechaJustificada(session, jid, autorizador_id)
             session.commit()
             return jid
 
-    if autorizador_id == uid:
-        return ('no tiene los permisos suficientes', 403)
-
-    if AssistanceModel.chequear_acceso(autorizador_id, uid):
-        with obtener_session() as session:
-            id = AssistanceModel.eliminarFechaJustificadaJefe(session, jid, autorizador_id, uid)
-            session.commit()
-            return id
+    if warden.has_permision(token, ['urn:assistance:justification-date:delete:many:restricted']):
+        if autorizador_id != uid:
+            if AssistanceModel.chequear_acceso(autorizador_id, uid):
+                with obtener_session() as session:
+                    id = AssistanceModel.eliminarFechaJustificadaJefe(session, jid, autorizador_id, uid)
+                    session.commit()
+                    return id
 
     return ('no tiene los permisos suficientes', 403)
 
@@ -739,31 +742,32 @@ def reporte_justificaciones_realizadas(cantidad=10):
 def compensatorios(uid, token):
     assert uid is not None
 
-    prof = warden.has_one_profile(token, ['assistance-super-admin'])
-    if not prof or prof['profile'] == False:
-        ''' Como no es admin compruebo si es una autoconsulta '''
-        if uid != token['sub']:
-            return ('no tiene los permisos suficientes', 403)
+    usuario_logueado = token['sub']
+    if usuario_logueado == uid:
+        if warden.has_permision(token, ['urn:assistance:justification-date:read:self']):
+            with obtener_session() as session:
+                return AssistanceModel.compensatorios(session, uid)
 
-    with obtener_session() as session:
-        return AssistanceModel.compensatorios(session, uid)
+    if warden.has_permision(token, ['urn:assistance:justification-date:read']):
+        with obtener_session() as session:
+            return AssistanceModel.compensatorios(session, uid)
+
+    return ('no tiene los permisos suficientes', 403)
+
 
 @app.route(API_BASE + '/compensatorios', methods=['PUT'])
 @warden.require_valid_token
 @jsonapi
 def crear_compensatorio(token):
-    prof = warden.has_one_profile(token, ['assistance-super-admin'])
-    if not prof or prof['profile'] == False:
-        return ('no tiene los permisos suficientes', 403)
+    if warden.has_permision(token, ['urn:assistance:justification-date:create']):
+        id_creador_compensatorio = token['sub']
+        compensatorio = request.get_json()
+        with obtener_session() as session:
+            cid = AssistanceModel.crear_compensatorio(session, compensatorio, id_creador_compensatorio)
+            session.commit()
+            return cid
+    return ('no tiene los permisos suficientes', 403)
 
-    id_creador_compensatorio = token['sub']
-
-    compensatorio = request.get_json()
-    logging.debug(compensatorio)
-    with obtener_session() as session:
-        cid = AssistanceModel.crear_compensatorio(session, compensatorio, id_creador_compensatorio)
-        session.commit()
-        return cid
 
 @app.route(API_BASE + '*', methods=['OPTIONS'])
 def options():
