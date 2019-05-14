@@ -167,33 +167,72 @@ def telegram_activate(codigo, token=None):
 @jsonapi
 def usuarios_search(search, token=None):
 
-    prof = warden.has_one_profile(token, ['assistance-super-admin','assistance-admin','assistance-operator', 'assistance-user'])
-    if prof and prof['profile']:
+
+    """
+        chequear permisos limitados:
+
+        urn:assistance:users:read:self -- (el recurso del cual la persona es dueño. en este caso es el mismo usuario)
+        urn:assistance:users:read:one -- misma unidad organizativa
+        urn:assistance:users:read:sub -- sub unidades organizativas (excluye la asociada a la persona)
+        urn:assistance:users:read:many -- (one + sub)
+        urn:assistance:users:read:all  -- todo, no importa a que unidades organizativas pertenecen    
+
+
+        sistema:recurso:operación:scope:restriccion-modelo
+
+        ------------------------------------
+
+        assistance-super-admin 
+            urn:assistance:users:read
+
+        assistance-admin
+            urn:assistance:users:read
+
+        assistance-operator
+            urn:assistance:users:read
+
+        assistance-user
+            urn:assistance:users:read
+
+
+        permisos por defecto:
+            urn:assistance:users:read:self
+            urn:assistance:places:read:many
+            urn:assistance:assistance-report:read:many:restricted
+
+    """
+
+    if warden.has_permision(token, ['urn:assistance:users:read:many:restricted']):
+        autorizador_id = token['sub']
+        usuarios = AssistanceModel.sub_usuarios_search(autorizador_id, search)
+        return usuarios
+
+    if warden.has_permision(token, ['urn:assistance:users:read']):
         usuarios = AssistanceModel.usuarios_search(search)
         return usuarios
 
-    autorizador_id = token['sub']
-    usuarios = AssistanceModel.sub_usuarios_search(autorizador_id, search)
-    return usuarios
+    return ('no tiene los permisos suficientes', 403)
+ 
     
 @app.route(API_BASE + '/usuarios/<uid>', methods=['GET'])
 @warden.require_valid_token
 @jsonapi
 def usuarios(uid=None, token=None):
-    prof = warden.has_one_profile(token, ['assistance-super-admin','assistance-admin','assistance-operator', 'assistance-user'])
-    if prof and prof['profile'] == True:
+    if warden.has_permision(token, ['urn:assistance:users:read']):
         with obtener_session() as session:
             return AssistanceModel.usuario(session, uid, retornarClave=False)
 
-    autorizador_id = token['sub']
-    if AssistanceModel.chequear_acceso(autorizador_id, uid):
-        with obtener_session() as session:
-            return AssistanceModel.usuario(session, uid, retornarClave=False)
+    if warden.has_permision(token, ['urn:assistance:users:read:many:restricted']):
+        autorizador_id = token['sub']
+        if AssistanceModel.chequear_acceso(autorizador_id, uid):
+            with obtener_session() as session:
+                return AssistanceModel.usuario(session, uid, retornarClave=False)
 
     ''' como no soy admin, ni tengo cargo, entonces chequea que se este consultando a si mismo '''
-    if autorizador_id == uid:
-        with obtener_session() as session:
-            return AssistanceModel.usuario(session, autorizador_id, retornarClave=False)
+    if warden.has_permision(token, ['urn:assistance:users:read:self']):
+        if autorizador_id == uid:
+            with obtener_session() as session:
+                return AssistanceModel.usuario(session, autorizador_id, retornarClave=False)
 
     return ('no tiene los permisos suficientes', 403)
 
@@ -207,13 +246,15 @@ def lugares(token=None):
     if not search:
         search = ''
 
-    prof = warden.has_one_profile(token, ['assistance-super-admin','assistance-admin','assistance-operator', 'assistance-user'])
-    if prof and prof['profile'] == True:
+    if warden.has_permision(token, ['urn:assistance:places:read']):
         config = AssistanceModel._config()
         lid = config['api']['lugar_raiz']
         return AssistanceModel.sublugares_por_lugar_id(lugar_id=lid, search=search)
 
-    return AssistanceModel.lugares(session=None, autorizador_id=uid, search=search)
+    if warden.has_permision(token, ['urn:assistance:places:read:many']):
+        return AssistanceModel.lugares(session=None, autorizador_id=uid, search=search)
+
+    return ('no tiene los permisos suficientes', 403)        
 
 @app.route(API_BASE + '/usuarios/<uid>/perfil', methods=['GET'])
 @warden.require_valid_token
@@ -224,18 +265,17 @@ def perfil(uid, token):
     if not fecha:
         return ('fecha, parametro no encontrado',400)
 
-    prof = warden.has_one_profile(token, ['assistance-super-admin', 'assistance-admin'])
-    if prof and prof['profile']:
+    if warden.has_permision(token, ['urn:assistance:users:read']):
         with obtener_session() as session:
             return AssistanceModel.perfil(session, uid, fecha)
 
-    usuario_logueado = token['sub']
-    with obtener_session() as session:
-        #if AssistanceModel.chequear_acceso_reporte(session, usuario_logueado, uid):
-        if usuario_logueado == uid:
-            return AssistanceModel.perfil(session, uid, fecha)
-        else:
-            return ('no tiene los permisos suficientes', 403)
+    if warden.has_permision(token, ['urn:assistance:users:read:self']):
+        usuario_logueado = token['sub']
+        with obtener_session() as session:
+            if usuario_logueado == uid:
+                return AssistanceModel.perfil(session, uid, fecha)
+            
+    return ('no tiene los permisos suficientes', 403)
 
 
 @app.route(API_BASE + '/usuarios/<uid>/reporte', methods=['GET'])
@@ -248,17 +288,24 @@ def reporte(uid, token):
     fecha_str = request.args.get('fin', None)
     fin = parser.parse(fecha_str).date() if fecha_str else None
 
-    prof = warden.has_one_profile(token, ['assistance-super-admin', 'assistance-admin','assistance-operator','assistance-user'])
-    if prof and prof['profile']:
+    if warden.has_permision(token, ['urn:assistance:assistance-report:read']):
         with obtener_session() as session:
             return AssistanceModel.reporte(session, uid, inicio, fin)
 
-    usuario_logueado = token['sub']
-    if AssistanceModel.chequear_acceso(usuario_logueado, uid):
-        with obtener_session() as session:
-                return AssistanceModel.reporte(session, uid, inicio, fin)
-    else:
-        return ('no tiene los permisos suficientes', 403)
+    if warden.has_permision(token, ['urn:assistance:assistance-report:read:many:restricted']):
+        usuario_logueado = token['sub']
+        if AssistanceModel.chequear_acceso(usuario_logueado, uid):
+            with obtener_session() as session:
+                    return AssistanceModel.reporte(session, uid, inicio, fin)
+
+    if warden.has_permision(token, ['urn:assistance:assistance-report:read:self']):
+        usuario_logueado = token['sub']
+        if usuario_logueado == uid:
+            with obtener_session() as session:
+                    return AssistanceModel.reporte(session, uid, inicio, fin)
+
+    return ('no tiene los permisos suficientes', 403)
+
 
 @app.route(API_BASE + '/usuarios/<uid>/justificaciones', methods=['GET'])
 @warden.require_valid_token
