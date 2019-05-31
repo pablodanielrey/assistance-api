@@ -62,6 +62,12 @@ register_encoder(app)
 
 API_BASE = os.environ['API_BASE']
 
+
+permisos = {
+    USERS_READ: '',
+    USERS_READ_MANY: '',
+}
+
 @app.route(API_BASE + '/obtener_config', methods=['GET'])
 @jsonapi
 def retornar_config_ui():
@@ -223,7 +229,8 @@ def usuarios_search(search, token=None, original_token=None):
 
     """
 
-    if warden.has_permissions(original_token, ['urn:assistance:users:read:many:restricted']):
+    if warden.has_permissions(original_token, [permisos.USERS_READ_MANY]):
+    #if warden.has_permissions(original_token, ['urn:assistance:users:read:many:restricted']):
         autorizador_id = token['sub']
         usuarios = AssistanceModel.sub_usuarios_search(autorizador_id, search)
         return usuarios
