@@ -61,12 +61,61 @@ app.wsgi_app = ProxyFix(app.wsgi_app)
 register_encoder(app)
 
 API_BASE = os.environ['API_BASE']
+    """
+        Guia de Permisos:
+
+        urn:assistance:users:read:self -- (el recurso del cual la persona es dueño. en este caso es el mismo usuario)
+        urn:assistance:users:read:one -- misma unidad organizativa
+        urn:assistance:users:read:sub -- sub unidades organizativas (excluye la asociada a la persona)
+        urn:assistance:users:read:many -- (one + sub)
+        urn:assistance:users:read:any  -- todo, no importa a que unidades organizativas pertenecen    
 
 
+        sistema:recurso:operación:scope:restriccion-modelo
+    """
+     
 permisos = {
-    USERS_READ: '',
-    USERS_READ_MANY: '',
-}
+    USERS_READ:                                         'urn:assistance:users:read',
+    USERS_READ_MANY:                                    'urn:assistance:users:read:many',
+    USERS_READ_MANY_RESTRICTED:                         'urn:assistance:users:read:many:restricted',
+    USERS_READ_SELF:                                    'urn:assistance:users:read:self',
+
+    PLACES_READ:                                        'urn:assistance:places:read',
+    PLACES_READ_MANY:                                   'urn:assistance:places:read:many',
+        
+    ASSISTANCE-REPORT_READ:                             'urn:assistance:assistance-report:read',
+    ASSISTANCE-REPORT_READ_MANY_RESTRICTED:             'urn:assistance:assistance-report:read:many:restricted',
+
+    JUSTIFICATIONS-REPORT_READ:                         'urn:assistance:justifications-report:read',
+    JUSTIFICATIONS-REPORT_READ_MANY_RESTRICTED:         'urn:assistance:justifications-report:read:many:restricted',
+
+    GENERAL-ASSISTANCE-REPORT_READ:                     'urn:assistance:general-assistance-report:read',
+    GENERAL-ASSISTANCE-REPORT_READ_MANY_RESTRICTED:     'urn:assistance:general-assistance-report:read:many:restricted',
+
+    SCHEDULE_READ:                                      'urn:assistance:schedule:read',
+    SCHEDULE_READ_SELF:                                 'urn:assistance:schedule:read:self',
+    SCHEDULE_READ_MANY_RESTRICTED:                      'urn:assistance:schedule:read:many:restricted',
+    SCHEDULE_DELETE:                                    'urn:assistance:schedule:delete',
+    SCHEDULE_CREATE:                                    'urn:assistance:schedule:create',
+
+    LOGS_READ:                                          'urn:assistance:logs:read',
+    LOGS_CREATE:                                        'urn:assistance:logs:create',
+
+    DEVICES_READ:                                       'urn:assistance:devices:read',
+
+    JUSTIFICATIONS_READ:                                'urn:assistance:justifications:read',
+    JUSTIFICATIONS_READ_MANY_RESTRICTED:                'urn:assistance:justifications:read:many:restricted',
+    JUSTIFICATIONS_CREATE:                              'urn:assistance:justifications:create',
+    JUSTIFICATIONS_DELETE:                              'urn:assistance:justifications:delete',
+    JUSTIFICATIONS_UPDATE:                              'urn:assistance:justifications:update',
+        
+    JUSTIFICATION-DATE_READ:                            'urn:assistance:justification-date:read',
+    JUSTIFICATION-DATE_READ_SELF:                       'urn:assistance:justification-date:read:self',
+    JUSTIFICATION-DATE_CREATE:                          'urn:assistance:justification-date:create',
+    JUSTIFICATION-DATE_CREATE_MANY_RESTRICTED:          'urn:assistance:justification-date:create:many:restricted',
+    JUSTIFICATION-DATE_DELETE:                          'urn:assistance:justification-date:delete',
+    JUSTIFICATION-DATE_DELETE_MANY_RESTRICTED:          'urn:assistance:justification-date:delete:many:restricted',
+    }
 
 @app.route(API_BASE + '/obtener_config', methods=['GET'])
 @jsonapi
@@ -173,69 +222,13 @@ def telegram_activate(codigo, token=None, original_token=None):
 @warden.require_valid_token2
 @jsonapi
 def usuarios_search(search, token=None, original_token=None):
-
-
-    """
-        chequear permisos limitados:
-
-        urn:assistance:users:read:self -- (el recurso del cual la persona es dueño. en este caso es el mismo usuario)
-        urn:assistance:users:read:one -- misma unidad organizativa
-        urn:assistance:users:read:sub -- sub unidades organizativas (excluye la asociada a la persona)
-        urn:assistance:users:read:many -- (one + sub)
-        urn:assistance:users:read:any  -- todo, no importa a que unidades organizativas pertenecen    
-
-
-        sistema:recurso:operación:scope:restriccion-modelo
-
-        ------------------------------------
-
-        assistance-super-admin 
-            urn:assistance:users:read
-            urn:assistance:schedule:delete
-            urn:assistance:schedule:create
-            urn:assistance:logs:create
-            urn:assistance:logs:read
-            urn:assistance:devices:read
-            urn:assistance:justifications:read
-            urn:assistance:justifications:create
-            urn:assistance:justifications:delete
-            urn:assistance:justifications:update
-            urn:assistance:justification-date:create
-            urn:assistance:justification-date:delete
-
-        assistance-admin
-            urn:assistance:users:read
-            urn:assistance:schedule:delete
-
-        assistance-operator
-            urn:assistance:users:read
-
-        assistance-user
-            urn:assistance:users:read
-
-
-        permisos por defecto:
-            urn:assistance:users:read:self
-            urn:assistance:places:read:many
-            urn:assistance:assistance-report:read:many:restricted
-            urn:assistance:justifications-report:read:many:restricted
-            urn:assistance:general-assistance-report:read:many:restricted
-            urn:assistance:schedule:read:many:restricted
-            urn:assistance:schedule:read:self
-            urn:assistance:justifications:read:many:restricted
-            urn:assistance:justification-date:create:many:restricted
-            urn:assistance:justification-date:delete:many:restricted
-            urn:assistance:justification-date:read:self
-
-    """
-
     if warden.has_permissions(original_token, [permisos.USERS_READ_MANY]):
     #if warden.has_permissions(original_token, ['urn:assistance:users:read:many:restricted']):
         autorizador_id = token['sub']
         usuarios = AssistanceModel.sub_usuarios_search(autorizador_id, search)
         return usuarios
 
-    if warden.has_permissions(original_token, ['urn:assistance:users:read']):
+    if warden.has_permissions(original_token, [permisos.USERS_READ]):
         usuarios = AssistanceModel.usuarios_search(search)
         return usuarios
 
@@ -246,18 +239,18 @@ def usuarios_search(search, token=None, original_token=None):
 @warden.require_valid_token2
 @jsonapi
 def usuarios(uid=None, token=None, original_token=None):
-    if warden.has_permissions(original_token, ['urn:assistance:users:read']):
+    if warden.has_permissions(original_token, [permisos.USERS_READ]):
         with obtener_session() as session:
             return AssistanceModel.usuario(session, uid, retornarClave=False)
 
-    if warden.has_permissions(original_token, ['urn:assistance:users:read:many:restricted']):
+    if warden.has_permissions(original_token, [permisos.USERS_READ_MANY_RESTRICTED]):
         autorizador_id = token['sub']
         if AssistanceModel.chequear_acceso(autorizador_id, uid):
             with obtener_session() as session:
                 return AssistanceModel.usuario(session, uid, retornarClave=False)
 
     ''' como no soy admin, ni tengo cargo, entonces chequea que se este consultando a si mismo '''
-    if warden.has_permissions(original_token, ['urn:assistance:users:read:self']):
+    if warden.has_permissions(original_token, [permisos.USERS_READ_SELF]):
         if autorizador_id == uid:
             with obtener_session() as session:
                 return AssistanceModel.usuario(session, autorizador_id, retornarClave=False)
@@ -274,12 +267,12 @@ def lugares(token=None, original_token=None):
     if not search:
         search = ''
 
-    if warden.has_permissions(original_token, ['urn:assistance:places:read']):
+    if warden.has_permissions(original_token, [permisos.PLACES_READ]):
         config = AssistanceModel._config()
         lid = config['api']['lugar_raiz']
         return AssistanceModel.sublugares_por_lugar_id(lugar_id=lid, search=search)
 
-    if warden.has_permissions(original_token, ['urn:assistance:places:read:many']):
+    if warden.has_permissions(original_token, [permisos.PLACES_READ_MANY]):
         return AssistanceModel.lugares(session=None, autorizador_id=uid, search=search)
 
     return ('no tiene los permisos suficientes', 403)        
@@ -293,11 +286,11 @@ def perfil(uid, token=None, original_token=None):
     if not fecha:
         return ('fecha, parametro no encontrado',400)
 
-    if warden.has_permissions(original_token, ['urn:assistance:users:read']):
+    if warden.has_permissions(original_token, [permisos.USERS_READ]):
         with obtener_session() as session:
             return AssistanceModel.perfil(session, uid, fecha)
 
-    if warden.has_permissions(original_token, ['urn:assistance:users:read:self']):
+    if warden.has_permissions(original_token, [permisos.USERS_READ_SELF]):
         usuario_logueado = token['sub']
         with obtener_session() as session:
             if usuario_logueado == uid:
@@ -316,11 +309,11 @@ def reporte(uid, token, original_token=None):
     fecha_str = request.args.get('fin', None)
     fin = parser.parse(fecha_str).date() if fecha_str else None
 
-    if warden.has_permissions(original_token, ['urn:assistance:assistance-report:read']):
+    if warden.has_permissions(original_token, [permisos.ASSISTANCE-REPORT_READ]):
         with obtener_session() as session:
             return AssistanceModel.reporte(session, uid, inicio, fin)
 
-    if warden.has_permissions(original_token, ['urn:assistance:assistance-report:read:many:restricted']):
+    if warden.has_permissions(original_token, [permisos.ASSISTANCE-REPORT_READ_MANY_RESTRICTED]):
         usuario_logueado = token['sub']
         if usuario_logueado == uid:
             with obtener_session() as session:
@@ -344,11 +337,11 @@ def reporte_justificaciones(uid, token, original_token=None):
     fin = parser.parse(fecha_str).date() if fecha_str else None
 
 
-    if warden.has_permissions(original_token, ['urn:assistance:justifications-report:read']):
+    if warden.has_permissions(original_token, [permisos.JUSTIFICATIONS-REPORT_READ]):
         with obtener_session() as session:
             return AssistanceModel.reporteJustificaciones(session, uid, inicio, fin)
 
-    if warden.has_permissions(original_token, ['urn:assistance:justifications-report:read:many:restricted']):
+    if warden.has_permissions(original_token, [permisos.JUSTIFICATIONS-REPORT_READ_MANY_RESTRICTED]):
         usuario_logueado = token['sub']
         if AssistanceModel.chequear_acceso(usuario_logueado, uid):
             with obtener_session() as session:
@@ -366,11 +359,11 @@ def reporte_general(token, original_token=None):
 
     usuario_logueado = token['sub']
 
-    if warden.has_permissions(original_token, ['urn:assistance:general-assistance-report:read']):
+    if warden.has_permissions(original_token, [permisos.GENERAL-ASSISTANCE-REPORT_READ]):
         with obtener_session() as session:
             return AssistanceModel.reporteGeneralAdmin(session, lugares, fecha)
 
-    if warden.has_permissions(original_token, ['urn:assistance:general-assistance-report:read:many:restricted']):
+    if warden.has_permissions(original_token, [permisos.GENERAL-ASSISTANCE-REPORT_READ_MANY_RESTRICTED]):
         if AssistanceModel.chequear_acceso_lugares(usuario_logueado, lugares):
             with obtener_session() as session:
                 return AssistanceModel.reporteGeneral(session, usuario_logueado, lugares, fecha)
@@ -385,11 +378,11 @@ def horario(uid,token, original_token=None):
     fecha_str = request.args.get('fecha', None)
     fecha = parser.parse(fecha_str).date() if fecha_str else None
 
-    if warden.has_permissions(original_token, ['urn:assistance:schedule:read']):
+    if warden.has_permissions(original_token, [permisos.SCHEDULE_READ]):
         with obtener_session() as session:
             return AssistanceModel.horario(session, uid, fecha)
 
-    if warden.has_permissions(original_token, ['urn:assistance:schedule:read:many:restricted']):
+    if warden.has_permissions(original_token, [permisos.SCHEDULE_READ_MANY_RESTRICTED]):
         usuario_logueado = token['sub']
         if AssistanceModel.chequear_acceso(usuario_logueado, uid):        
             with obtener_session() as session:
@@ -408,7 +401,7 @@ def eliminar_horarios(uid, hid, token, original_token=None):
     fecha_str = request.args.get('fecha_fin', None)
     fin = parser.parse(fecha_str).date() if fecha_str else None
 
-    if warden.has_permissions(original_token, ['urn:assistance:schedule:delete']):
+    if warden.has_permissions(original_token, [permisos.SCHEDULE_DELETE]):
         with obtener_session() as session:
             h = AssistanceModel.eliminar_horario(session, uid, hid)
             session.commit()
@@ -429,14 +422,14 @@ def historial_horarios(uid, token, original_token=None):
 
     timezone = request.args.get('timezone', 'America/Argentina/Buenos_Aires')
 
-    if warden.has_permissions(original_token, ['urn:assistance:schedule:read:self']):
+    if warden.has_permissions(original_token, [permisos.SCHEDULE_READ_SELF]):
         uuid = token['sub']
         if uid == uuid:
             with obtener_session() as session:
                 ret = AssistanceModel.historial_horarios(session, uid, inicio, fin, timezone)
                 return ret
 
-    if warden.has_permissions(original_token, ['urn:assistance:schedule:read']):
+    if warden.has_permissions(original_token, [permisos.SCHEDULE_READ]):
         with obtener_session() as session:
             ret = AssistanceModel.historial_horarios(session, uid, inicio, fin, timezone)
             return ret
@@ -449,7 +442,7 @@ def historial_horarios(uid, token, original_token=None):
 @jsonapi
 def crear_horario(token, original_token=None):
     
-    if warden.has_permissions(original_token, ['urn:assistance:schedule:create']):
+    if warden.has_permissions(original_token, [permisos.SCHEDULE_CREATE]):
         horarios = request.get_json()
         logging.debug(horarios)
         with obtener_session() as session:
@@ -465,7 +458,7 @@ def crear_horario(token, original_token=None):
 @jsonapi
 def logs_por_usuario(uid,token, original_token=None):
    
-    if warden.has_permissions(original_token, ['urn:assistance:logs:read']):
+    if warden.has_permissions(original_token, [permisos.LOGS_READ]):
         inicio = datetime.datetime.now()
         fin = inicio + datetime.timedelta(days=1)
         marcaciones = []
@@ -484,7 +477,7 @@ def logs_por_usuario(uid,token, original_token=None):
 @jsonapi
 def crear_log_por_usuario(uid, token=None, original_token=None):
 
-    if warden.has_permissions(original_token, ['urn:assistance:logs:create']):
+    if warden.has_permissions(original_token, [permisos.LOGS_CREATE]):
         with obtener_session() as session:
             r = AssistanceModel.crear_log_por_usuario(session, uid)
             session.commit()
@@ -504,7 +497,7 @@ def logs_por_fecha(fecha,token, original_token=None):
 @warden.require_valid_token2
 @jsonapi
 def relojes(token, original_token=None):
-    if warden.has_permissions(original_token, ['urn:assistance:devices:read']):
+    if warden.has_permissions(original_token, [permisos.DEVICES_READ]):
         with obtener_session() as session:
             return AssistanceModel.relojes(session)
             
@@ -524,7 +517,7 @@ def relojes_sincronizar():
 @jsonapi
 def reloj(rid,token, original_token=None):
     assert rid is not None
-    if warden.has_permissions(original_token, ['urn:assistance:devices:read']):
+    if warden.has_permissions(original_token, [permisos.DEVICES_READ]):
         with obtener_session() as session:
             r = AssistanceModel.reloj(session, rid)
             return r
@@ -581,7 +574,7 @@ def reloj_eliminar_usuarios(rid, token, original_token=None):
 @warden.require_valid_token2
 @jsonapi
 def reloj_usuarios(rid, token, original_token=None):
-    if warden.has_permissions(original_token, ['urn:assistance:devices:read']):
+    if warden.has_permissions(original_token, [permisos.DEVICES_READ]):
         assert rid is not None
         with obtener_session() as session:
             r = AssistanceModel.usuarios_por_reloj(session, rid)
@@ -594,7 +587,7 @@ def reloj_usuarios(rid, token, original_token=None):
 def reloj_usuario(rid, ruid, token, original_token=None):
     assert rid is not None
     assert ruid is not None
-    if warden.has_permissions(original_token, ['urn:assistance:devices:read']):
+    if warden.has_permissions(original_token, [permisos.DEVICES_READ]):
         with obtener_session() as session:
             u = AssistanceModel.usuario_por_reloj(session, rid, ruid)
             t = AssistanceModel.templates_por_usuario_por_reloj(session, rid, ruid)
@@ -610,7 +603,7 @@ def reloj_usuario(rid, ruid, token, original_token=None):
 @jsonapi
 def reloj_huellas(rid, token, original_token=None):
     assert rid is not None
-    if warden.has_permissions(original_token, ['urn:assistance:devices:read']):
+    if warden.has_permissions(original_token, [permisos.DEVICES_READ]):
         with obtener_session() as session:
             r = AssistanceModel.templates_por_reloj(session, rid)
             return r
@@ -621,7 +614,7 @@ def reloj_huellas(rid, token, original_token=None):
 @warden.require_valid_token2
 @jsonapi
 def justificacion(jid, token, original_token=None):
-    if warden.has_permissions(original_token, ['urn:assistance:justifications:read']):
+    if warden.has_permissions(original_token, [permisos.JUSTIFICATIONS_READ]):
         with obtener_session() as session:
             j = AssistanceModel.justificacion(session, jid)
             if not j:
@@ -633,11 +626,11 @@ def justificacion(jid, token, original_token=None):
 @jsonapi
 def justificaciones(uid, token, original_token=None):
 
-    if warden.has_permissions(original_token, ['urn:assistance:justifications:read']):
+    if warden.has_permissions(original_token, [permisos.JUSTIFICATIONS_READ]):
         with obtener_session() as session:
             return AssistanceModel.justificaciones(session)
 
-    if warden.has_permissions(original_token, ['urn:assistance:justifications:read:many:restricted']):
+    if warden.has_permissions(original_token, [permisos.JUSTIFICATIONS_READ_MANY_RESTRICTED]):
         autorizador_id = token['sub']
         if AssistanceModel.chequear_acceso(autorizador_id, uid):
             with obtener_session() as session:
@@ -650,7 +643,7 @@ def justificaciones(uid, token, original_token=None):
 @warden.require_valid_token2
 @jsonapi
 def crear_justificacion(token, original_token=None):
-    if warden.has_permissions(original_token, ['urn:assistance:justifications:create']):
+    if warden.has_permissions(original_token, [permisos.JUSTIFICATIONS_CREATE]):
         justificacion = request.get_json()
         logging.debug(justificacion)
         with obtener_session() as session:
@@ -664,7 +657,7 @@ def crear_justificacion(token, original_token=None):
 @warden.require_valid_token2
 @jsonapi
 def eliminar_justificacion(jid, token, original_token=None):
-    if warden.has_permissions(original_token, ['urn:assistance:justifications:delete']):
+    if warden.has_permissions(original_token, [permisos.JUSTIFICATIONS_DELETE]):
         with obtener_session() as session:
             AssistanceModel.eliminarJustificacion(session, jid)
             session.commit()
@@ -674,7 +667,7 @@ def eliminar_justificacion(jid, token, original_token=None):
 @warden.require_valid_token2
 @jsonapi
 def actualizar_justificacion(jid, token, original_token=None):
-    if warden.has_permissions(original_token, ['urn:assistance:justifications:update']):
+    if warden.has_permissions(original_token, [permisos.JUSTIFICATIONS_UPDATE]):
         datos = request.get_json()
         with obtener_session() as session:
             AssistanceModel.actualizar_justificacion(session, jid, datos)
@@ -687,14 +680,14 @@ def actualizar_justificacion(jid, token, original_token=None):
 def justificar(token, original_token=None):
     fechaJustificada = request.get_json()
 
-    if warden.has_permissions(original_token, ['urn:assistance:justification-date:create']):
+    if warden.has_permissions(original_token, [permisos.JUSTIFICATION-DATE_CREATE]):
         with obtener_session() as session:
             autorizador_id = token['sub']
             id = AssistanceModel.justificar(session, fechaJustificada, autorizador_id)
             session.commit()
             return id
 
-    if warden.has_permissions(original_token, ['urn:assistance:justification-date:create:many:restricted']):
+    if warden.has_permissions(original_token, [permisos.JUSTIFICATION-DATE_CREATE_MANY_RESTRICTED]):
         autorizador_id = token['sub']
         uid = fechaJustificada['usuario_id']
         ''' chequea que el usuario no se este justificando a el mismo '''
@@ -713,13 +706,13 @@ def justificar(token, original_token=None):
 def eliminar_fecha_justificada(uid, jid, token, original_token=None):
     autorizador_id = token['sub']
 
-    if warden.has_permissions(original_token, ['urn:assistance:justification-date:delete']):
+    if warden.has_permissions(original_token, [permisos.JUSTIFICATION-DATE_DELETE]):
         with obtener_session() as session:
             jid = AssistanceModel.eliminarFechaJustificada(session, jid, autorizador_id)
             session.commit()
             return jid
 
-    if warden.has_permissions(original_token, ['urn:assistance:justification-date:delete:many:restricted']):
+    if warden.has_permissions(original_token, [permisos.JUSTIFICATION-DATE_DELETE_MANY_RESTRICTED]):
         if autorizador_id != uid:
             if AssistanceModel.chequear_acceso(autorizador_id, uid):
                 with obtener_session() as session:
@@ -751,11 +744,11 @@ def compensatorios(uid, token, original_token=None):
 
     usuario_logueado = token['sub']
     if usuario_logueado == uid:
-        if warden.has_permissions(original_token, ['urn:assistance:justification-date:read:self']):
+        if warden.has_permissions(original_token, [permisos.JUSTIFICATION-DATE_READ_SELF]):
             with obtener_session() as session:
                 return AssistanceModel.compensatorios(session, uid)
 
-    if warden.has_permissions(original_token, ['urn:assistance:justification-date:read']):
+    if warden.has_permissions(original_token, [permisos.JUSTIFICATION-DATE_READ]):
         with obtener_session() as session:
             return AssistanceModel.compensatorios(session, uid)
 
@@ -766,7 +759,7 @@ def compensatorios(uid, token, original_token=None):
 @warden.require_valid_token2
 @jsonapi
 def crear_compensatorio(token, original_token=None):
-    if warden.has_permissions(original_token, ['urn:assistance:justification-date:create']):
+    if warden.has_permissions(original_token, [permisos.JUSTIFICATION-DATE_CREATE]):
         id_creador_compensatorio = token['sub']
         compensatorio = request.get_json()
         with obtener_session() as session:
