@@ -14,15 +14,17 @@ machine_port = 4370
 
 z = ZKSoftware(ip_address, machine_port)
 #z = pyzk.ZKSS()
-try:    
-    z.connect_net(ip_address, machine_port)
+try:
+    z.connect()    
+    #z.connect_net(ip_address, machine_port)
     z.disable_device()
 
     #La funcion read_att_log da error cuando no puede obtener marcaciones por lo tanto creé una "Contencion" del error
     try:
-        z.read_att_log()
-    except:
-        pass
+        z.obtener_marcaciones()
+    except Exception as e:
+        logging.warn(e)
+        #pass
 
     datos = {}
     datos['logs'] = []
