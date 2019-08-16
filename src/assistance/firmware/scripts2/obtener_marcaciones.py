@@ -1,7 +1,8 @@
 import time
 import os.path
-import pyzk.pyzk as pyzk
-from pyzk.zkmodules.defs import *
+#import pyzk.pyzk as pyzk
+#from pyzk.zkmodules.defs import *
+from ZKSoftware import ZKSoftware
 import logging
 import json
 logging.getLogger().setLevel(logging.INFO)
@@ -11,7 +12,8 @@ logging.getLogger().setLevel(logging.INFO)
 ip_address = '163.10.56.204'
 machine_port = 4370
 
-z = pyzk.ZKSS()
+z = ZKSoftware(ip_address, machine_port)
+#z = pyzk.ZKSS()
 try:    
     z.connect_net(ip_address, machine_port)
     z.disable_device()
