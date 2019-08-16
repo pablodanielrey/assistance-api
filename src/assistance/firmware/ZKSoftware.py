@@ -440,14 +440,20 @@ class ZKSoftware:
         :return: Datetime object, with the extracted date.
         """
         enc_t = struct.unpack('<I', enc_t_arr)[0]  # extracts the time value
+
+        """
         secs = int(enc_t % 60)  # seconds
         mins = int((enc_t / 60.) % 60)  # minutes
         hour = int((enc_t / 3600.) % 24)  # hours
         day = int(((enc_t / (3600. * 24.)) % 31)) + 1  # day
         month = int(((enc_t / (3600. * 24. * 31.)) % 12)) + 1  # month
         year = int((enc_t / (3600. * 24.)) / 365) + 2000  # year
-
         return datetime.datetime(year, month, day, hour, mins, secs)
+        """
+        fecha_inicio = datetime.datetime(1999, 8, 21, 0, 0)
+        delta = datetime.timedelta(seconds=enc_t)
+        resultado = fecha_inicio + delta
+        return resultado
 
     def _decodificar_str(self, s):
         """Retorna la cadena hasta el primer valor invalido"""
