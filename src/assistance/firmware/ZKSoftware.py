@@ -450,7 +450,7 @@ class ZKSoftware:
         year = int((enc_t / (3600. * 24.)) / 365) + 2000  # year
         return datetime.datetime(year, month, day, hour, mins, secs)
         """
-        fecha_inicio = datetime.datetime(1999, 8, 21, 0, 0)
+        fecha_inicio = datetime.datetime(1999, 8, 20, 0, 0)
         delta = datetime.timedelta(seconds=enc_t)
         resultado = fecha_inicio + delta
         return resultado
