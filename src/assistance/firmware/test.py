@@ -1,7 +1,7 @@
 from ZKSoftware import *
 
 
-ip_address = '163.10.8.196'
+ip_address = '163.10.56.25'
 machine_port = 4370
 
 z = ZKSoftware(ip_address,machine_port)
