@@ -2,7 +2,7 @@ import socket
 import struct
 import datetime
 import pytz
-from defs import *
+from .defs import *
 
 class AttLog:
     def __init__(self,user_id,att_time,ver_type,ver_state):
