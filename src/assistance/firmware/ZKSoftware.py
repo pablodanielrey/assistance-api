@@ -2,7 +2,7 @@ import socket
 import struct
 import datetime
 import pytz
-from .defs import *
+from defs import *
 
 class AttLog:
     def __init__(self,user_id,att_time,ver_type,ver_state):
@@ -439,9 +439,10 @@ class ZKSoftware:
         :param enc_t_arr: Bytearray, with the time field stored in little endian.
         :return: Datetime object, with the extracted date.
         """
-        enc_t = struct.unpack('<I', enc_t_arr)[0]  # extracts the time value
-
+        
         """
+        ------------------- Libreria Original ------------------------------
+        enc_t = struct.unpack('<I', enc_t_arr)[0]  # extracts the time value
         secs = int(enc_t % 60)  # seconds
         mins = int((enc_t / 60.) % 60)  # minutes
         hour = int((enc_t / 3600.) % 24)  # hours
@@ -449,11 +450,33 @@ class ZKSoftware:
         month = int(((enc_t / (3600. * 24. * 31.)) % 12)) + 1  # month
         year = int((enc_t / (3600. * 24.)) / 365) + 2000  # year
         return datetime.datetime(year, month, day, hour, mins, secs)
-        """
+        ------------------- Correccion Temporal ----------------------------
+        enc_t = struct.unpack('<I', enc_t_arr)[0]  # extracts the time value
         fecha_inicio = datetime.datetime(1999, 8, 19, 0, 0)
         delta = datetime.timedelta(seconds=enc_t)
         resultado = fecha_inicio + delta
-        return resultado
+        -------------------- Ultima Correccion -----------------------------
+        """
+        t = struct.unpack("<I", enc_t_arr)[0]
+        second = t % 60
+        t = t // 60
+
+        minute = t % 60
+        t = t // 60
+
+        hour = t % 24
+        t = t // 24
+
+        day = t % 31 + 1
+        t = t // 31
+
+        month = t % 12 + 1
+        t = t // 12
+
+        year = t + 2000
+
+        d = datetime.datetime(year, month, day, hour, minute, second)
+        return d
 
     def _decodificar_str(self, s):
         """Retorna la cadena hasta el primer valor invalido"""
