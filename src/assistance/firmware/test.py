@@ -1,7 +1,7 @@
 from ZKSoftware import *
 
 
-ip_address = '163.10.56.25'
+ip_address = '163.10.8.196'
 machine_port = 4370
 
 z = ZKSoftware(ip_address,machine_port)
@@ -11,7 +11,7 @@ try:
     try:
         marcaciones = z.obtener_marcaciones()
         print(marcaciones)
-        z.borrar_marcaciones()
+        #z.borrar_marcaciones()
     finally:
         z.enable_device()
 finally:
