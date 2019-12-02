@@ -453,7 +453,7 @@ class ZKSoftware:
         fecha_inicio = datetime.datetime(1999, 8, 20, 0, 0)
         delta = datetime.timedelta(seconds=enc_t)
         resultado = fecha_inicio + delta
-        print(f'Crudo {enc_t} ---> {resultado}')
+        print('Crudo', enc_t,' --->',resultado)
         return resultado
 
     def _decodificar_str(self, s):
