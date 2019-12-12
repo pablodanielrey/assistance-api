@@ -450,13 +450,14 @@ class ZKSoftware:
         month = int(((enc_t / (3600. * 24. * 31.)) % 12)) + 1  # month
         year = int((enc_t / (3600. * 24.)) / 365) + 2000  # year
         return datetime.datetime(year, month, day, hour, mins, secs)
+        """
         ------------------- Correccion Temporal ----------------------------
         enc_t = struct.unpack('<I', enc_t_arr)[0]  # extracts the time value
         fecha_inicio = datetime.datetime(1999, 8, 19, 0, 0)
         delta = datetime.timedelta(seconds=enc_t)
-        resultado = fecha_inicio + delta
-        -------------------- Ultima Correccion -----------------------------
+        d = fecha_inicio + delta
         """
+        -------------------- Ultima Correccion -----------------------------
         t = struct.unpack("<I", enc_t_arr)[0]
         second = t % 60
         t = t // 60
@@ -476,6 +477,7 @@ class ZKSoftware:
         year = t + 2000
 
         d = datetime.datetime(year, month, day, hour, minute, second)
+        """
         return d
 
     def _decodificar_str(self, s):
