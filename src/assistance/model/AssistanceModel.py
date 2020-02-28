@@ -248,17 +248,20 @@ class AssistanceModel:
         oficinas = []
         if r.ok:
             desig = r.json()
-            oficinas = [
-                {
-                    'id_oficina': d['lugar']['id'],
-                    'oficina': d['lugar']['nombre'],
-                    'cargo': d['cargo']['nombre'],
-                    'tipo_cargo': d['cargo']['tipo'],
-                    'desde': d['desde'],
-                    'hasta': d['hasta']
-                }
-                for d in desig if not d['historico']
-            ]
+            oficinas = []
+            for d in desig:
+                if 'historico' in d and not d['historico']:               
+                    try:
+                        oficinas.append({
+                            'id_oficina': d['lugar']['id'],
+                            'oficina': d['lugar']['nombre'],
+                            'cargo': d['cargo']['nombre'],
+                            'tipo_cargo': d['cargo']['tipo'],
+                            'desde': d['desde'],
+                            'hasta': d['hasta']
+                        })
+                    except Exception as e:
+                        print(e)
 
         perfil = {
             'usuario': usr,
