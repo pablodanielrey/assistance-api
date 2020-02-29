@@ -35,7 +35,10 @@ class API:
         }
         logging.debug(api)
         logging.debug(params)
-        r = requests.get(api, verify=self.verify_ssl, headers=headers, params=params)
+        if params:
+            r = requests.get(api, verify=self.verify_ssl, headers=headers, params=params)
+        else:
+            r = requests.get(api, verify=self.verify_ssl, headers=headers)
         logging.debug(r)
         return r
 
