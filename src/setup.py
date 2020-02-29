@@ -12,7 +12,7 @@
 from setuptools import setup, find_packages
 
 setup(name='assistance-api',
-          version='1.0.1.a4',
+          version='1.0.1.5',
           description='Proyecto que implementa la api de asistencia',
           url='https://github.com/pablodanielrey/assistance-api',
           author='Desarrollo DiTeSi, FCE',
@@ -41,7 +41,8 @@ setup(name='assistance-api',
                             'gunicorn',
                             'microservices_common>=2.0.5a4',
                             'warden-api',
-                            'python-telegram-bot'],
+                            'python-telegram-bot',
+                            'Flask-OIDC'],
           entry_points={
             'console_scripts': [
                 'rest=assistance.api.rest.main:main'

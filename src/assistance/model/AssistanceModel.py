@@ -20,7 +20,8 @@ from oidc.oidc import ClientCredentialsGrant
     ###############
     para la cache de usuarios
 """
-from model_utils.API import API
+#from model_utils.API import API
+from .API import API
 from model_utils.UserCache import UserCache
 from model_utils.UsersAPI import UsersAPI
 """
