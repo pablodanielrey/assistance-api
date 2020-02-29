@@ -22,8 +22,8 @@ from oidc.oidc import ClientCredentialsGrant
 """
 #from model_utils.API import API
 from .API import API
-from model_utils.UserCache import UserCache
-from model_utils.UsersAPI import UsersAPI
+from .UserCache import UserCache
+from .UsersAPI import UsersAPI
 """
     ###############
 """
