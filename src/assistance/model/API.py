@@ -38,7 +38,7 @@ class API:
         if params:
             r = requests.get(api, verify=self.verify_ssl, headers=headers, params=params)
         else:
-            r = requests.get(api, verify=self.verify_ssl, headers=headers)
+            r = requests.get(api, verify=self.verify_ssl, headers=headers, allow_redirects=False)
         logging.debug(r)
         return r
 
