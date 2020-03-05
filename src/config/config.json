@@ -1,0 +1,78 @@
+{
+	"ui": {
+		"mostrar_tipo_marcacion": true,
+		"mostrar_detalle_reporte": true,
+		"mostrar_detalle_avanzado_reporte": false,
+		"mostrar_detalle_horas_reporte": false,
+		"mostrar_detalle_entrada_salida_reporte": false,
+		"mostrar_creador_justificaciones": true,
+        "mostrar_eliminador_justificaciones": true
+	},
+	"api":{
+		"perfiles": [
+			{
+				"perfil": "assistance-super-admin",
+				"funciones": ["super-admin"]
+			},
+			{
+				"perfil": "assistance-admin",
+				"funciones": [
+					"inicio_personal",
+					"reporte_personal",
+					"reporte_general",
+					"reporte_detalles_avanzados",
+					"justificacion_personal_abm",
+					"justificacion_general_abm",
+					"justificacion_tipo_abm",
+					"justificacion_reporte",
+					"horario_vista",
+					"horario_abm"
+				]
+			},
+			{
+				"perfil": "assistance-operator",
+				"funciones": [
+					"inicio_personal",
+					"reporte_personal",
+					"reporte_general",
+					"reporte_detalles_avanzados",
+					"justificacion_personal_a",
+					"justificacion_general_a",
+					"justificacion_reporte",
+					"horario_vista"				
+				]
+			},
+			{
+				"perfil": "assistance-user",
+				"funciones": [
+					"inicio_personal",
+					"reporte_personal",
+					"reporte_general",
+					"reporte_detalles_avanzados",
+					"justificacion_reporte",
+					"horario_vista"
+				]
+			},
+			{
+				"perfil":"default",
+				"funciones": [
+					"inicio_personal",
+					"justificacion_reporte"
+				]
+			},
+			{
+				"perfil":"default-authority",
+				"funciones": [
+					"inicio_personal",
+					"reporte_personal",
+					"reporte_general",
+					"justificacion_reporte",
+					"horario_vista",
+					"justificacion_personal_abm",
+					"justificacion_personal_a"					
+				]
+			}
+		],
+		"lugar_raiz": "06b1159e-8a83-4e4e-b8af-a8ad3dd47258"
+	}
+}

@@ -12,7 +12,7 @@
 from setuptools import setup, find_packages
 
 setup(name='assistance-api',
-          version='1.0.1.alpha2',
+          version='1.0.1.5',
           description='Proyecto que implementa la api de asistencia',
           url='https://github.com/pablodanielrey/assistance-api',
           author='Desarrollo DiTeSi, FCE',
@@ -26,20 +26,23 @@ setup(name='assistance-api',
             'Programming Language :: Python :: 3.5'
           ],
           packages=find_packages(exclude=['contrib', 'docs', 'test*']),
-          install_requires=['psycopg2',
+          install_requires=['psycopg2-binary',
                             'dateutils>=0.6.6',
                             'requests',
-                            'redis',
+                            'redis==2.10.6',
+                            'pymongo',
                             'SQLAlchemy',
                             'httplib2',
-                            'pyjwt',
+                            'pyjwt',  
                             'Flask',
                             'flask_jsontools',
                             'xmltodict',
                             'pytz',
                             'gunicorn',
-                            'microservices_common',
-                            'warden-api'],
+                            'microservices_common>=2.0.5a4',
+                            'warden-api',
+                            'python-telegram-bot',
+                            'Flask-OIDC'],
           entry_points={
             'console_scripts': [
                 'rest=assistance.api.rest.main:main'

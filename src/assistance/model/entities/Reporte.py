@@ -20,7 +20,11 @@ class JustificacionReporte:
         self.id = fj.id
         self.nombre = fj.justificacion.nombre
         self.codigo = fj.justificacion.codigo
+        self.tipo = fj.justificacion.id
         self.descripcion = fj.justificacion.descripcion
+        self.notas = fj.notas
+        self.creador_id = fj.creador_id
+        self.eliminador_id = fj.eliminador_id
 
     def __json__(self):
         return self.__dict__
@@ -85,7 +89,7 @@ class Detalle:
 
         return minutos_extra, minutos_extra_descartados
 
-    def calcular(self, reporte, minutos_minimos_para_hora_extra=30, bloque_de_minutos_para_hora_extra=30):
+    def calcular(self, reporte, minutos_minimos_para_hora_extra=30, bloque_de_minutos_para_hora_extra=30, tzone='America/Argentina/Buenos_Aires'):
         '''
             minutos_minimos_para_hora_extra == los minutos necesarios minimos adicionales -- si es 0 entnoces cada minuto extra ya contabiliza
             bloque_de_minutos_para_hora_extra == minutos necesarios para contabilizar para hora extra -- si es None cada minuto cuenta para hora extra.
@@ -137,7 +141,7 @@ class Detalle:
                         self.faltas_injustificadas = self.faltas_injustificadas + 1
 
 
-                inicio, fin = renglon.horario.obtenerInicioFin(renglon.fecha)
+                inicio, fin = renglon.horario.obtenerInicioFin(renglon.fecha, tzone)
 
                 ''' salidas '''
                 salida = renglon.salida.marcacion if renglon.salida else None
@@ -194,7 +198,7 @@ class RenglonReporte:
     entrada: Marcacion;
     salida: Marcacion;
     cantidad_horas_trabajadas: number;
-    justifcacion: FechaJustificada;
+    justificacion: FechaJustificada;
     '''
     def __init__(self, fecha, horario, marcaciones, duplicadas, justificaciones, usuario=None):
         self.fecha = fecha
@@ -298,7 +302,7 @@ class Reporte:
 
 
     @classmethod
-    def generarReporte(cls, session, usuario, inicio, fin, tzone='America/Argentina/Buenos_Aires'):
+    def generarReporte(cls, session, usuario, inicio, fin, obtenerHorario, tzone='America/Argentina/Buenos_Aires'):
         if inicio > fin:
             return []
 
@@ -306,10 +310,7 @@ class Reporte:
         for i in range(0, int((fin - inicio).days + 1)):
             actual = inicio + timedelta(days=i)
 
-            q = session.query(Horario)
-            q = q.filter(Horario.usuario_id == usuario['id'], Horario.dia_semanal == actual.weekday(), Horario.fecha_valido <= actual)
-            q = q.order_by(Horario.fecha_valido.desc())
-            horario = q.limit(1).one_or_none()
+            horario = obtenerHorario(session, usuario['id'], actual)
 
             marcaciones, duplicadas = Marcacion.obtenerMarcaciones(session, horario, usuario['id'], actual, tzone)
             marcaciones = [] if marcaciones is None else marcaciones
@@ -323,7 +324,7 @@ class Reporte:
         rep.reportes = cls._agregar_marcaciones_sin_horario(session, reportes, usuario['id'], inicio, fin, tzone)
 
         rep.detalle = Detalle()
-        rep.detalle.calcular(rep)
+        rep.detalle.calcular(rep, tzone=tzone)
 
         return rep
 
@@ -349,13 +350,11 @@ class ReporteGeneral:
         return self.__dict__
 
     @classmethod
-    def generarReporte(cls, session, lugar, usuarios, fecha, tzone='America/Argentina/Buenos_Aires'):
+    def generarReporte(cls, session, lugar, usuarios, fecha, obtenerHorario, tzone='America/Argentina/Buenos_Aires'):
         reportes = []
         for u in usuarios:
-            q = session.query(Horario)
-            q = q.filter(Horario.usuario_id == u["id"], Horario.dia_semanal == fecha.weekday(), Horario.fecha_valido <= fecha)
-            q = q.order_by(Horario.fecha_valido.desc())
-            horario = q.limit(1).one_or_none()
+
+            horario = obtenerHorario(session, u['id'], fecha)
 
             if horario is None:
                 marcaciones = session.query(Marcacion).filter(Marcacion.usuario_id == u["id"], Marcacion.marcacion >= fecha, Marcacion.marcacion <= fecha).all()
@@ -371,3 +370,92 @@ class ReporteGeneral:
 
         rep = ReporteGeneral(fecha, lugar, reportes)
         return rep
+
+class ReporteJustificaciones:
+
+    '''
+    usuario: Usuario;
+    fecha_inicial: Date;
+    fecha_final: Date;
+    justificaciones: JustificacionRenglon[] = [];
+    '''
+
+    def __init__(self, u, inicio, fin):
+        self.usuario = u
+        self.fecha_inicial = inicio
+        self.fecha_final = fin
+        self.suma_justificaciones = []
+        self.suma_justificaciones_generales = []
+        self.justificaciones = []
+        self.justificaciones_eliminadas = []
+
+    @classmethod
+    def _obtenerJustificaciones(cls, session, inicio, fin, tzone, uid):
+        # convierto la fecha a datetime para compararlo en la base
+        #timezone = tzlocal() if tzone is None else pytz.timezone(tzone)
+        timezone = tzlocal()
+        fi = datetime.combine(inicio, time(0), timezone)
+        ff = datetime.combine(fin, time(23,59,59,999999), timezone)
+
+        q = session.query(FechaJustificada)
+        q = q.filter(or_(FechaJustificada.usuario_id == uid, FechaJustificada.usuario_id == None))
+        q = q.filter(or_(and_(FechaJustificada.fecha_inicio >= fi, FechaJustificada.fecha_inicio <= ff),and_(FechaJustificada.fecha_inicio <= ff, FechaJustificada.fecha_fin >= fi)))
+        q = q.options(joinedload('justificacion'))
+        q = q.order_by(FechaJustificada.fecha_inicio)
+        return q.all()
+
+    @classmethod
+    def _procesarDias(cls, j, inicio, fin):
+        if j.fecha_inicio.date() < inicio:
+            comienzo = inicio
+        else:
+            comienzo = j.fecha_inicio.date()
+        if j.fecha_fin.date() > fin:
+            final = fin
+        else:
+            final = j.fecha_fin.date()
+        return (final - comienzo).days + 1
+
+    @classmethod
+    def generarReporte(cls, session, usuario, inicio, fin, tzone='America/Argentina/Buenos_Aires'):
+        if inicio > fin:
+            return []
+
+        rep = ReporteJustificaciones(usuario, inicio, fin)
+        busqueda_jus = []
+        busqueda_jus = rep._obtenerJustificaciones(session, inicio, fin, tzone, usuario['id'])
+        aux = {}
+        justificaciones = []
+        justificaciones_eliminadas = []
+        for j in busqueda_jus:
+            if j.eliminado:
+                justificaciones_eliminadas.append(j)
+                continue
+            justificaciones.append(j)
+            jid = j.justificacion.id
+            nombre = j.justificacion.nombre
+            codigo = j.justificacion.codigo
+            general = j.justificacion.general
+            if j.fecha_fin:
+                cantidad = cls._procesarDias(j,inicio,fin)
+            else:
+                cantidad = 1
+            if not jid in aux:
+                aux[jid] = {
+                    'nombre': nombre,
+                    'codigo': codigo,
+                    'general': general,
+                    'cantidad': cantidad,
+                }
+            else:
+                aux[jid]['cantidad'] += cantidad
+
+        rep.suma_justificaciones_generales = [j for k,j in aux.items() if j["general"]]
+        rep.suma_justificaciones = [j for k,j in aux.items() if not j["general"]]
+        rep.justificaciones = justificaciones
+        rep.justificaciones_eliminadas = justificaciones_eliminadas
+               
+        return rep
+
+    def __json__(self):
+        return self.__dict__
