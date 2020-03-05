@@ -86,6 +86,49 @@ class MongoUserCache:
         return uids
 
 
+from .Utils import map_user_from_model
+from users.model.UsersModel import UsersModel
+from users.model import open_session
+
+class UserCache:
+    
+    def __init__(self, host, port, user_getter, users_getter, user_getter_dni, timeout=60 * 60 * 24 * 7):
+        """ ahora no hago nada ya que uso el modelo de usuarios directo hasta solucionar el problema """
+        pass
+
+    def obtener_usuario_por_uid(self, uid, token=None):
+        usr = None
+        with open_session() as session:
+            users = UsersModel.get_users(session, [uid])
+            if len(users) <= 0:
+                return None
+            usr = map_user_from_model(users[0])
+        return usr
+
+    def obtener_usuarios_por_uids(self, uids=[], token=None):
+        usuarios = []
+        with open_session() as session:
+            users = UsersModel.get_users(session, uids)
+            if len(users) <= 0:
+                return None
+            usuarios = [map_user_from_model(u) for u in users]
+        return usuarios
+
+    def obtener_usuario_por_dni(self, dni, token=None):
+        usr = None
+        with open_session() as session:
+            uid = UsersModel.get_uid_person_number(session, dni)
+            users = UsersModel.get_users(session, [uid])
+            if len(users) <= 0:
+                return None
+            usr = map_user_from_model(users[0])
+        return usr
+
+    def obtener_uids(self, token=None):
+        return []
+
+
+"""
 class UserCache:
     
     def __init__(self, host, port, user_getter, users_getter, user_getter_dni, timeout=60 * 60 * 24 * 7):
@@ -149,3 +192,4 @@ class UserCache:
 
     def obtener_uids(self, token=None):
         return []
+"""

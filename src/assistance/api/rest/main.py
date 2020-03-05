@@ -17,7 +17,7 @@ from flask import Flask, Response, abort, make_response, jsonify, url_for, reque
 from flask_jsontools import jsonapi
 from dateutil import parser
 
-VERIFY_SSL = bool(int(os.environ.get('VERIFY_SSL',0)))
+VERIFY_SSL = bool(int(os.environ.get('VERIFY_SSL',1)))
 
 from rest_utils import register_encoder
 

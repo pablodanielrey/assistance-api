@@ -42,7 +42,8 @@ setup(name='assistance-api',
                             'microservices_common>=2.0.5a4',
                             'warden-api',
                             'python-telegram-bot',
-                            'Flask-OIDC'],
+                            'Flask-OIDC',
+                            'users-model'],
           entry_points={
             'console_scripts': [
                 'rest=assistance.api.rest.main:main'

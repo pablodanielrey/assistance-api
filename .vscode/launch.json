@@ -21,6 +21,7 @@
             "type": "python",
             "request": "launch",
             "module": "flask",
+            "justMyCode": false,
             "env": {
                 "FLASK_APP": "assistance.api.rest.main",
                 "LC_ALL": "es_AR.utf-8",
