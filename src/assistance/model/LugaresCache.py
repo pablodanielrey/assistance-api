@@ -78,6 +78,85 @@ class LugaresGetters:
         return self.api._get_arbol_por_lid(lid, token)
 
 
+
+from sileg_model.model.SilegModel import SilegModel
+from sileg_model.model import open_session
+
+class LugaresCache:
+    
+    def __init__(self, mongo_url, getters, prefijo='_assistance_', timeout=60 * 15):
+        """ no se necesita mas ya que uso el modelo directo """
+        self.silegModel = SilegModel()
+
+    def obtener_lugar_por_id(self, lid, token=None):
+        lugar = self.mongo.lugares.find_one({'id':lid})
+        if not lugar:
+            lugar = self.getters.obtener_lugar_por_id(lid, token)
+            if not lugar:
+                return None
+            self.setear_lugar(lugar)
+        if '_id' in lugar:
+            del lugar['_id']
+        return lugar
+
+    def obtener_arbol_por_lugar_id(self, lid, token=None):
+        arbol = self.mongo.arboles.find_one({'id':lid})
+        if not arbol:
+            arbol = self.getters.obtener_arbol_por_lugar(lid, token)
+            if not arbol:
+                return None
+            self.setear_arbol_por_lugar_id(lid, arbol)
+        if '_id' in arbol:
+            del arbol['_id']
+        return arbol
+
+    def obtener_sublugares_por_lugar_id(self, lid, token=None):
+        parametros = {
+            'padre_id': lid
+        }
+        lugares = self.mongo.sublugares_lugar.find(parametros)
+        lids = [l['id'] for l in lugares]
+        if len(lids) > 0:
+            return lids
+        lids = self.getters.obtener_sublugares_por_lugar(lid, token)
+        if not lids or len(lids) <= 0:
+            return []
+        self.setear_sublugares_por_lugar_id(lid, lids)
+        return lids
+
+
+    def _obtener_arbol_de_lugares(self, session, lid, places=[]):
+        """ genera dentro de places todos los ids de lugares del subarbol con raiz lid """
+        if lid in places:
+            return
+        places.append(lid)
+        ps = self.silegModel.get_places(session, [lid])
+        if len(ps) <= 0:
+            raise Exception('No se encuentra el lugar indicado')
+        for p in ps[0].children:
+            self._obtener_arbol_de_lugares(session, p.id, places)
+
+    def obtener_subusuarios_por_lugar_id(self, lid, token=None):
+        pids = []
+        with open_session() as session:
+            self._obtener_arbol_de_lugares(session, lid, pids)
+            dids = self.silegModel.get_designations_by_places(session, pids)
+            designations = SilegModel.get_designations(session, dids)
+            users = [d.user_id for d in designations]
+        return users
+
+    def obtener_lugares_por_usuario_id(self, uid, token=None):
+        lugares = self.mongo.sublugares_usuario.find({'usuario_id':uid})
+        lids = [l['id'] for l in lugares]
+        if len(lids) > 0:
+            return lids
+        lids = self.getters.obtener_lugares_por_usuario(uid, token)
+        if not lids:
+            return []
+        self.setear_lugares_por_usuario_id(uid, lids)
+        return lids
+
+"""
 class LugaresCache:
 
     def __init__(self, mongo_url, getters, prefijo='_assistance_', timeout=60 * 15):
@@ -192,3 +271,4 @@ class LugaresCache:
             return []
         self.setear_lugares_por_usuario_id(uid, lids)
         return lids
+"""        

@@ -43,7 +43,8 @@ setup(name='assistance-api',
                             'warden-api',
                             'python-telegram-bot',
                             'Flask-OIDC',
-                            'users-model'],
+                            'users-model',
+                            'sileg-model'],
           entry_points={
             'console_scripts': [
                 'rest=assistance.api.rest.main:main'
