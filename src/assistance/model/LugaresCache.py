@@ -141,8 +141,13 @@ class LugaresCache:
         with open_session() as session:
             self._obtener_arbol_de_lugares(session, lid, pids)
             dids = self.silegModel.get_designations_by_places(session, pids)
-            designations = SilegModel.get_designations(session, dids)
-            users = [d.user_id for d in designations]
+            designations = self.silegModel.get_designations(session, dids)
+            users = [
+                {
+                    'usuario': d.user_id,
+                    'cargo': d.function_id
+                } for d in designations
+            ]
         return users
 
     def obtener_lugares_por_usuario_id(self, uid, token=None):
