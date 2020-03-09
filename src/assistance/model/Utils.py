@@ -22,3 +22,12 @@ def map_user_from_model(user):
 
 
     return u
+
+
+def map_place_from_model(place):
+    p = {
+        'id': place.id,
+        'nombre': place.name,
+        'padre_id': place.parent_id
+    }
+    return p

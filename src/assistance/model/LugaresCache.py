@@ -79,6 +79,7 @@ class LugaresGetters:
 
 
 
+from .Utils import map_place_from_model
 from sileg_model.model.SilegModel import SilegModel
 from sileg_model.model import open_session
 
@@ -89,15 +90,11 @@ class LugaresCache:
         self.silegModel = SilegModel()
 
     def obtener_lugar_por_id(self, lid, token=None):
-        lugar = self.mongo.lugares.find_one({'id':lid})
-        if not lugar:
-            lugar = self.getters.obtener_lugar_por_id(lid, token)
-            if not lugar:
+        with open_session() as session:
+            places = self.silegModel.get_places(session, [lid])
+            if len(places) <= 0:
                 return None
-            self.setear_lugar(lugar)
-        if '_id' in lugar:
-            del lugar['_id']
-        return lugar
+            return map_place_from_model(places[0])
 
     def obtener_arbol_por_lugar_id(self, lid, token=None):
         arbol = self.mongo.arboles.find_one({'id':lid})
@@ -111,20 +108,11 @@ class LugaresCache:
         return arbol
 
     def obtener_sublugares_por_lugar_id(self, lid, token=None):
-        parametros = {
-            'padre_id': lid
-        }
-        lugares = self.mongo.sublugares_lugar.find(parametros)
-        lids = [l['id'] for l in lugares]
-        if len(lids) > 0:
-            return lids
-        lids = self.getters.obtener_sublugares_por_lugar(lid, token)
-        if not lids or len(lids) <= 0:
-            return []
-        self.setear_sublugares_por_lugar_id(lid, lids)
+        lids = []
+        with open_session() as session:
+            self._obtener_arbol_de_lugares(session, lid, lids)
         return lids
-
-
+        
     def _obtener_arbol_de_lugares(self, session, lid, places=[]):
         """ genera dentro de places todos los ids de lugares del subarbol con raiz lid """
         if lid in places:

@@ -12,7 +12,7 @@
 from setuptools import setup, find_packages
 
 setup(name='assistance-api',
-          version='1.0.1.5',
+          version='1.0.1.6',
           description='Proyecto que implementa la api de asistencia',
           url='https://github.com/pablodanielrey/assistance-api',
           author='Desarrollo DiTeSi, FCE',

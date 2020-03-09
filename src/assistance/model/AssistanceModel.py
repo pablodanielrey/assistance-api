@@ -487,13 +487,12 @@ class AssistanceModel:
 
     @classmethod
     def sublugares_por_lugar_id(cls, lugar_id, search=''):
-        tk = cls.api._get_token()
-        lids = cls.cache_lugares.obtener_sublugares_por_lugar_id(lugar_id, tk)
+        lids = cls.cache_lugares.obtener_sublugares_por_lugar_id(lugar_id, None)
         if not lids:
             return []
         lugares = []
         for lid in lids:
-            lugar = cls.cache_lugares.obtener_lugar_por_id(lid, tk)
+            lugar = cls.cache_lugares.obtener_lugar_por_id(lid, None)
             lugares.append(lugar)
 
         ''' mejoro un poco el texto de search para que matchee la cadena de nombre apellido dni'''
