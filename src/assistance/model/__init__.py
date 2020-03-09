@@ -13,7 +13,7 @@ def obtener_session():
         os.environ['ASSISTANCE_DB_HOST'],
         os.environ.get('ASSISTANCE_DB_PORT', 5432),
         os.environ['ASSISTANCE_DB_NAME']
-    ), echo=True)
+    ), echo=False)
 
     Session = sessionmaker(bind=engine, autoflush=False, autocommit=False, expire_on_commit=False)
     session = Session()

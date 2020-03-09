@@ -1,5 +1,5 @@
 {
-    "python.pythonPath": "/mnt/datos/src/github/assistance-api/env/bin/python3",
+    "python.pythonPath": "env/bin/python",
     "python.autoComplete.extraPaths": ["/src/github/microservices_common/src"],
     "python.venvPath": "${workspaceFolder}/env",
     "python.linting.pylintEnabled": false
