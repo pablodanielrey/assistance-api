@@ -45,8 +45,8 @@ class RelojesModel:
                 try:
                     usuario = cache_usuarios.obtener_usuario_por_dni(dni, token=token)
                 except Exception as ex:
-                    logger_persona_inexistente.warn(f"{dni} no existe como persona")
-                    raise ex
+                    usuario = None
+                    
                 marcacion = l.att_time
                 #Si no existe usuario logueo el DNI y la Marcacion
                 if not usuario:
