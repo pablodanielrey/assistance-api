@@ -32,7 +32,12 @@ with open(archivo) as f:
                 uid = UsersModel.get_uid_person_number(users, dni)
                 print(f"dni: {dni} -- uid: {uid}")
 
-                if assis.query(Marcacion).filter(Marcacion.marcacion == marcacion).count() > 0:
+                marcaciones_existentes = assis.query(Marcacion).filter(Marcacion.user_id == uid, Marcacion.marcacion == marcacion).all()
+                for m in marcaciones_existentes:
+                    print(m.marcacion)
+                    print(m.usuario_id)
+                    print(m)
+                if len(marcaciones_existentes) > 0:
                     continue
 
                 print(f"agregando {uid} {marcacion}")
