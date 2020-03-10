@@ -42,7 +42,11 @@ class RelojesModel:
         for l in marcaciones:
             try:
                 dni = l.user_id
-                usuario = cache_usuarios.obtener_usuario_por_dni(dni, token=token)
+                try:
+                    usuario = cache_usuarios.obtener_usuario_por_dni(dni, token=token)
+                except Exception as ex:
+                    logger_persona_inexistente.warn(f"{dni} no existe como persona")
+                    raise ex
                 marcacion = l.att_time
                 #Si no existe usuario logueo el DNI y la Marcacion
                 if not usuario:
