@@ -3,11 +3,32 @@ import logging
 import uuid
 import json
 
+
+"""
+    //////////////////////////////////////////////////////
+    ESQUEMA DE IMPORTACION DINAMICA DEL RELOJ SELECCIONADO
+    //////////////////////////////////////////////////////
+"""
+
+import os
+zkmodule = os.environ['ZKSOFTWARE_DEVICE_MODULE']
+zkdevice = os.environ['ZKSOFTWARE_DEVICE_CLASS']
+
+import importlib
+module = importlib.import_module(zkmodule)
+ZKSOFTWAREDEVICE_ = getattr(module, zkdevice)
+
+"""
+    /////////////////////////////////////////
+"""
+
+
 from sqlalchemy import or_, and_
 from sqlalchemy.orm import joinedload, with_polymorphic
 from datetime import datetime, date, timedelta
 
-from assistance.firmware.ZKSoftware import ZKSoftware
+from assistance.firmware.ZKSoftware import ZkSoftwareDevice
+from assistance.firmware.PyZKDevice import PyZKDevice
 from assistance.model.entities import Reloj, Marcacion
 
 class RelojesModel:
@@ -100,7 +121,9 @@ class RelojesModel:
             zona_horaria = 'America/Argentina/Buenos_Aires'
 
         estados = []
-        z = ZKSoftware(reloj.ip,reloj.puerto)
+        #z = ZKSoftware(reloj.ip,reloj.puerto)
+        #z = PyZKDevice(reloj.ip, reloj.puerto)
+        z = ZKSOFTWAREDEVICE_(reloj.ip, reloj.puerto)
         mapeo_marcaciones = cls.MAPEOS_TIPO_MARCACION[reloj.modelo]
         z.connect()
         try:
