@@ -45,7 +45,7 @@ with open(archivo) as f:
                 m.id = str(uuid.uuid4())
                 m.dispositivo_id = reloj_id
                 m.marcacion = marcacion
-                m.tipo = 1
+                m.tipo = 3
                 m.usuario_id = uid
                 assis.add(m)
                 assis.commit()
