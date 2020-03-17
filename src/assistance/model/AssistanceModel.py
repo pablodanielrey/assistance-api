@@ -554,7 +554,20 @@ class AssistanceModel:
         lid = config['api']['lugar_raiz']
         usuarios_cargo = cls.cache_lugares.obtener_subusuarios_por_lugar_id(lid)
         uids = list(set((u['usuario'] for u in usuarios_cargo)))
-        usuarios = cls.cache_usuarios.obtener_usuarios_por_uids(uids)
+
+        """
+            para evir el problea del curso de la base que expira traigo de a tramos de usuarios.
+            no mas de 100
+        """
+        usuarios = []
+        inicio = 0
+        fin = inicio + 50
+        for uids_to_get in uids[inicio:fin]:
+            usuarios.extend(cls.cache_usuarios.obtener_usuarios_por_uids(uids_to_get))
+            fin = inicio
+            fin = inicio + 100
+
+        #usuarios = cls.cache_usuarios.obtener_usuarios_por_uids(uids)
 
         ''' mejoro un poco el texto de search para que matchee la cadena de nombre apellido dni'''
         rsearch = '.*{}.*'.format(search.replace('.','').replace(' ', '.*'))
