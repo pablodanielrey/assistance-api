@@ -564,6 +564,7 @@ class AssistanceModel:
             para evir el problea del curso de la base que expira traigo de a tramos de usuarios.
             no mas de 100
         """
+        usuarios = []
         for uids_to_get in divide_chunks(uids, 50):
             usuarios.extend(cls.cache_usuarios.obtener_usuarios_por_uids(uids_to_get))
 
