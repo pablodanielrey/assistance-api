@@ -10,7 +10,12 @@ from assistance.model import obtener_session
 from assistance.model.entities.Marcacion import Marcacion
 
 archivo = sys.argv[1]
+tipo = sys.argv[2]
 
+if tipo == 'R':
+    marcacion_tipo = 3
+else:
+    marcacion_tipo = 1
 
 reloj_id = '0a609b5a-5e22-41fc-b9df-17429933ac50'
 
@@ -45,7 +50,7 @@ with open(archivo) as f:
                 m.id = str(uuid.uuid4())
                 m.dispositivo_id = reloj_id
                 m.marcacion = marcacion
-                m.tipo = 3
+                m.tipo = marcacion_tipo
                 m.usuario_id = uid
                 assis.add(m)
                 assis.commit()
