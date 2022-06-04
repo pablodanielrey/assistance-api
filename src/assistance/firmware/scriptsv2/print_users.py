@@ -24,6 +24,9 @@ try:
 
     print("Voice Test ...")
     conn.test_voice()
+
+    print(input())
+
     print('Enabling device ...')
     conn.enable_device()
 except Exception as e:
