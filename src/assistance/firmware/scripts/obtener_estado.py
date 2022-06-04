@@ -3,7 +3,7 @@ import pyzk.zkmodules.defs as defs
 
 """Obtiene los datos de las variables internas del dispositivo"""
 
-ip_address = '163.10.56.25'
+ip_address = '172.25.110.29'
 machine_port = 4370
 
 z = pyzk.ZKSS()
