@@ -73,35 +73,51 @@ def create_attlog_file(drive, parent_id: str) -> str:
     return data['id']
 
 
-SCOPES = [
-    'https://www.googleapis.com/auth/spreadsheets',
-    # 'https://www.googleapis.com/auth/drive.metadata.readonly',
-    'https://www.googleapis.com/auth/drive'
-]
-SERVICE_ACCOUNT_FILE = 'credentials/credentials.json'
+    
+def get_credentials():
+    SCOPES = [
+        'https://www.googleapis.com/auth/spreadsheets',
+        # 'https://www.googleapis.com/auth/drive.metadata.readonly',
+        'https://www.googleapis.com/auth/drive'
+    ]
+    SERVICE_ACCOUNT_FILE = 'credentials/credentials.json'
 
 
-creds = service_account.Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=SCOPES)
-credentials = creds.with_subject('sistemas@econo.unlp.edu.ar')
+    creds = service_account.Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=SCOPES)
+    credentials = creds.with_subject('sistemas@econo.unlp.edu.ar')
+
+    return credentials
 
 
+def add_log_to_file(sheets, sid:str):
+    now = datetime.datetime.now()
+    body = {
+        'values': [
+            [str(now.date()),str(now.time()),'27294557']
+        ]
+    }
+    sheets.spreadsheets().values().append(spreadsheetId=sid,
+                             range="A:D",
+                             valueInputOption="USER_ENTERED",
+                             insertDataOption="INSERT_ROWS",
+                             body=body).execute()
 
-# credentials = impersonated_credentials.Credentials(
-#     source_credentials=creds,
-#     target_principal='sistemas@econo.unlp.edu.ar',
-#     target_scopes=SCOPES,
-#     lifetime=500)
 
-# service = build('sheets', 'v4', credentials=credentials)
-drive = build('drive', 'v3', credentials=credentials)
+if __name__ == '__main__':
 
-folder_id = get_attlogs_folder_id(drive)
-try:
-    sid = get_attlog_file(drive, folder_id)
-except Exception as e:
-    sid = create_attlog_file(drive, folder_id)
+    credentials = get_credentials()
+    sheets = build('sheets', 'v4', credentials=credentials)
+    drive = build('drive', 'v3', credentials=credentials)
 
-print(sid)
+    folder_id = get_attlogs_folder_id(drive)
+    try:
+        sid = get_attlog_file(drive, folder_id)
+    except Exception as e:
+        sid = create_attlog_file(drive, folder_id)
+
+
+    add_log_to_file(sheets, sid)
+    print(sid)
 
 
 
