@@ -2,5 +2,8 @@
     "python.pythonPath": "env/bin/python",
     "python.autoComplete.extraPaths": ["/src/github/microservices_common/src"],
     "python.venvPath": "${workspaceFolder}/env",
-    "python.linting.pylintEnabled": false
+    "python.linting.pylintEnabled": false,
+    "python.analysis.extraPaths": [
+        "/src/github/microservices_common/src"
+    ]
 }

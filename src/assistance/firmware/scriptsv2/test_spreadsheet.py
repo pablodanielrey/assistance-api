@@ -5,25 +5,30 @@ import datetime
 import os.path
 
 from google.oauth2 import service_account
-from google.auth import impersonated_credentials
 from googleapiclient.discovery import build
 
 
 SCOPES = [
     'https://www.googleapis.com/auth/spreadsheets',
-    'https://www.googleapis.com/auth/drive.metadata.readonly'
+    # 'https://www.googleapis.com/auth/drive.metadata.readonly',
+    'https://www.googleapis.com/auth/drive'
 ]
 SERVICE_ACCOUNT_FILE = 'credentials/credentials.json'
 
+
 creds = service_account.Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=SCOPES)
-credentials = impersonated_credentials.Credentials(
-    source_credentials=creds,
-    target_principal='sistemas@econo.unlp.edu.ar',
-    target_scopes=SCOPES,
-    lifetime=500)
+credentials = creds.with_subject('sistemas@econo.unlp.edu.ar')
+
+
+
+# credentials = impersonated_credentials.Credentials(
+#     source_credentials=creds,
+#     target_principal='sistemas@econo.unlp.edu.ar',
+#     target_scopes=SCOPES,
+#     lifetime=500)
 
 try:
-    service = build('sheets', 'v4', credentials=credentials)
+    # service = build('sheets', 'v4', credentials=credentials)
     drive = build('drive', 'v3', credentials=credentials)
 
     # Call the Drive v3 API
