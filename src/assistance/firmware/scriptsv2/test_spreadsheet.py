@@ -93,7 +93,7 @@ def add_log_to_file(sheets, sid:str):
     now = datetime.datetime.now()
     body = {
         'values': [
-            [str(now.date()),str(now.time()),'27294557']
+            [str(now.date()),str(now.time().replace(microsecond=0)),'27294557']
         ]
     }
     sheets.spreadsheets().values().append(spreadsheetId=sid,
