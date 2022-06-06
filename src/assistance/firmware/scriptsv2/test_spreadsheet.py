@@ -92,9 +92,7 @@ def get_credentials():
 def add_log_to_file(sheets, sid:str):
     now = datetime.datetime.now()
     body = {
-        'values': [
-            [str(now.date()),str(now.time().replace(microsecond=0)),'27294557']
-        ]
+        'values':  [[str(now.date()),str(now.time().replace(microsecond=0)),'27294557'] for _ in range(0,10)]
     }
     sheets.spreadsheets().values().append(spreadsheetId=sid,
                              range="A:D",
