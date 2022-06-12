@@ -1,15 +1,20 @@
 import logging
+import datetime
+
+from typing import Iterator
 
 from ...application.add_logs_from_clock import AddLogsFromClock
 from ..google import GoogleDriveFactory, GoogleRepo
+
+from ...domain.entities import AttLog
 from ...domain.repo import AttLogClock
 
 from .settings import CronSettings
 
 class ExampleLogs(AttLogClock):
 
-    def get(self) -> list[AttLogClock]:
-        ...
+    def get(self) -> Iterator[AttLog]:
+        return (AttLog(date=datetime.datetime.now().date(), time=datetime.datetime.now().time(), dni='27294557') for _ in range(0,10))
 
 
 def execute_crons():

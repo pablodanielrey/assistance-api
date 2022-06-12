@@ -9,7 +9,7 @@ from syslog import LOG_DEBUG
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 
-from typing import Any
+from typing import Any, Iterator
 
 
 from assistance.domain.entities import AttLog
@@ -24,7 +24,7 @@ class Spreadsheet:
         self.sheets = build('sheets', 'v4', credentials=self.credentials.get_credentials())
 
 
-    def add_recods(self, spreadsheet_id: str, records: list[AttLog]):
+    def add_recods(self, spreadsheet_id: str, records: Iterator[AttLog]):
         body = {
             'values':  [
                 [str(log.date), str(log.time.replace(microsecond=0)), log.dni] 

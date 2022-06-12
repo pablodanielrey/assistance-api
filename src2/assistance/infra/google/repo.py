@@ -1,3 +1,5 @@
+from typing import Iterator
+
 from ...domain.repo import RepoFactory, AttLogRepo
 from ...domain.entities import AttLog
 
@@ -23,7 +25,7 @@ class GoogleRepo(AttLogRepo):
             file_id = dr.create_file(folder_id, self.file_name)
         return file_id
 
-    def save(self, logs: list[AttLog]):
+    def save(self, logs: Iterator[AttLog]):
         sid = self._get_spreadsheet_id()
         self.spreadsheet_api.add_recods(sid, logs)
 

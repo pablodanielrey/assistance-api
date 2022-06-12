@@ -1,9 +1,9 @@
-from typing import Protocol
+from typing import Protocol, Iterator
 from .entities import AttLog
 
 class AttLogRepo(Protocol):
 
-    def save(self, logs: list[AttLog]):
+    def save(self, logs: Iterator[AttLog]):
         ...
 
 
@@ -14,5 +14,5 @@ class RepoFactory(Protocol):
 
 class AttLogClock(Protocol):
 
-    def get(self) -> list[AttLog]:
+    def get(self) -> Iterator[AttLog]:
         ...
