@@ -12,10 +12,6 @@ from googleapiclient.discovery import build
 from typing import Any
 
 
-import logging
-logging.basicConfig(level=logging.DEBUG)
-
-
 from assistance.domain.entities import AttLog
 
 from .google import Credentials

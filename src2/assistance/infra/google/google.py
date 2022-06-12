@@ -1,5 +1,6 @@
 
 from __future__ import print_function
+import logging
 
 import datetime
 from mimetypes import MimeTypes
@@ -11,11 +12,7 @@ from pydantic import BaseSettings
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 
-
-class GoogleSettings(BaseSettings):
-    user: str = 'sistemas@econo.unlp.edu.ar'
-    credentials_file: str = 'credentials/credentials.json'
-
+from .settings import GoogleSettings
 
 class Credentials:
 
@@ -30,6 +27,5 @@ class Credentials:
         ]
 
         creds = service_account.Credentials.from_service_account_file(self.config.credentials_file, scopes=SCOPES)
-        credentials = creds.with_subject(self.config.user)
-
+        credentials = creds.with_subject(self.config.google_user)
         return credentials    

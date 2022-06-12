@@ -20,7 +20,7 @@ class GoogleRepo(AttLogRepo):
         try:
             file_id = dr.get_file_id(folder_id, self.file_name)
         except Exception as e:
-            file_id = dr.create_file(self.repo_name, self.file_name)
+            file_id = dr.create_file(folder_id, self.file_name)
         return file_id
 
     def save(self, logs: list[AttLog]):
