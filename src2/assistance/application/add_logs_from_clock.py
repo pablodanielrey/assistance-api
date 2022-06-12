@@ -20,8 +20,8 @@ class AddLogsFromClock:
 
     def execute(self):
         name = self._get_attlog_file_name()
-        repo = self.repos.create(self.parent, name)
+        repo = self.repos.create(self.parent)
 
-        logs = self.clock.get()        
+        logs = self.clock.get()
         repo.save(logs)
         

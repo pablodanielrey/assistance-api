@@ -8,7 +8,7 @@ class AttLogRepo(Protocol):
 
 
 class RepoFactory(Protocol):
-    def create(self, parent: str, name: str) -> AttLogRepo:
+    def create(self, parent: str) -> AttLogRepo:
         ...
 
 

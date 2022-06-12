@@ -10,11 +10,12 @@ from ...domain.entities import AttLog
 from ...domain.repo import AttLogClock
 
 from .settings import CronSettings
+import random
 
 class ExampleLogs(AttLogClock):
 
     def get(self) -> Iterator[AttLog]:
-        return (AttLog(date=datetime.datetime.now().date(), time=datetime.datetime.now().time(), dni='27294557') for _ in range(0,10))
+        return (AttLog(date=(datetime.datetime.now() + datetime.timedelta(days=random.randint(1,2))).date(), time=datetime.datetime.now().time(), dni='27294557') for _ in range(0,10))
 
 
 def execute_crons():
