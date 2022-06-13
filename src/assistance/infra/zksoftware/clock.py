@@ -13,7 +13,7 @@ class ZkSoftwareClock(AttLogClock):
 
     def __init__(self):
         self.conf = ZkSettings()
-        self.zk = ZK(self.conf.ip, self.conf.port, self.conf.timeout)
+        self.zk = ZK(ip=self.conf.ip, port=self.conf.port, timeout=self.conf.timeout, force_udp=self.conf.force_udp, ommit_ping=self.conf.ommit_ping, verbose=self.conf.verbose)
 
     def get(self) -> Iterator[AttLog]:
         """Get's the logs from the clock and maps it to a domain AttLog
