@@ -1,6 +1,6 @@
 
 from __future__ import print_function
-
+import logging
 import datetime
 from mimetypes import MimeTypes
 import os.path
@@ -31,6 +31,7 @@ class Spreadsheet:
                 for log in records
             ]
         }
+        logging.debug(f"Adding {body['values']}")
         self.sheets.spreadsheets().values().append(spreadsheetId=spreadsheet_id,
                                 range="A:D",
                                 valueInputOption="USER_ENTERED",
