@@ -10,11 +10,11 @@ services:
     #   - indexer_mongo_db
     command: python3 -m http.server 1026
     environment:
-      LOG_LEVEL: INFO
+      LOG_LEVEL: DEBUG
       LOG_FORMAT: "%(asctime)s :: %(levelname)s :: %(funcName)s :: %(message)s"
-      IP: 172.25.0.70
-      credentials_file: /credentials/credentials.json
-      ommit_ping: "False"
+      IP: "172.25.0.70"
+      credentials_file: /src/credentials/credentials.json
+      ommit_ping: "True"
       verbose: "True"
       force_udp: "False"
     volumes:
