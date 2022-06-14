@@ -27,7 +27,7 @@ class Spreadsheet:
     def add_recods(self, spreadsheet_id: str, records: Iterator[AttLog]):
         body = {
             'values':  [
-                [str(log.date), str(log.time.replace(microsecond=0)), log.dni] 
+                [str(log.date), str(log.time.replace(microsecond=0)), log.dni, f"@{log.dni}"] 
                 for log in records
             ]
         }
