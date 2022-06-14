@@ -1,15 +1,15 @@
-from typing import Iterator
+from typing import Iterator, Optional
 import logging
 
 from zk import ZK, const
 
-from ...domain.repo import AttLogClock
+from ...domain.repo import AttLogRepo
 from ...domain.entities import AttLog
 
 from .settings import ZkSettings
 from .entities import AttLog as ZkAttLog
 
-class ZkSoftwareClock(AttLogClock):
+class ZkSoftwareClock(AttLogRepo):
 
     def __init__(self):
         self.conf = ZkSettings()
@@ -40,3 +40,9 @@ class ZkSoftwareClock(AttLogClock):
 
         finally:
             conn.disconnect()
+
+    def save(self, logs: Iterator[AttLog]):
+        raise NotImplementedError()
+
+    def find(self, log: AttLog) -> Optional[AttLog]:
+        raise NotImplementedError()

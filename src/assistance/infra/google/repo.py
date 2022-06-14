@@ -1,4 +1,4 @@
-from typing import Iterator
+from typing import Iterator, Optional
 
 from ...domain.repo import RepoFactory, AttLogRepo
 from ...domain.entities import AttLog
@@ -50,6 +50,12 @@ class GoogleRepo(AttLogRepo):
         for date, dlogs in keyed_data.items():
             sid = self._get_spreadsheet_id(f"logs_{date}")
             self.spreadsheet_api.add_recods(sid, (l for l in dlogs))
+
+    def get(self) -> Iterator[AttLog]:
+        raise NotImplementedError()
+
+    def find(self, log: AttLog) -> Optional[AttLog]:
+        raise NotImplementedError()
 
 
 class GoogleDriveFactory(RepoFactory):
