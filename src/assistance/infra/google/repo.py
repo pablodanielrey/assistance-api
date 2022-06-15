@@ -76,10 +76,13 @@ class GoogleDriveFactory(RepoFactory):
 
     def __init__(self):
         self.config = GoogleSettings()
-        # self.credentials = Credentials(self.config)
-        # self.drive_api = Drive(credentials=self.credentials)
-        # self.spreadsheet_api = Spreadsheet(credentials=self.credentials)
+        if self.config.google_repo != "MOCK":
+            self.credentials = Credentials(self.config)
+            self.drive_api = Drive(credentials=self.credentials)
+            self.spreadsheet_api = Spreadsheet(credentials=self.credentials)
 
     def create(self, parent: str) -> AttLogRepo:
-        # return GoogleRepo(parent, self.drive_api, self.spreadsheet_api)
-        return MockedGoogleRepo()
+        if self.config.google_repo == "MOCK":
+            return MockedGoogleRepo()
+        return GoogleRepo(parent, self.drive_api, self.spreadsheet_api)
+        
