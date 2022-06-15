@@ -1,4 +1,5 @@
 
+import logging
 import datetime
 from typing import Iterator
 
@@ -22,7 +23,7 @@ class BufferIterator(Iterator):
         return self
 
     def _find_log_in_buffer(self, log: AttLog) -> bool:
-        return False
+        return self.buffer.find(log) is not None
 
 
     def __next__(self) -> AttLog:
@@ -33,9 +34,18 @@ class BufferIterator(Iterator):
         assert self.logs_iterator is not None
         log = None
         while not log:
-            log = self.logs_iterator.__next__()
-            if not self._find_log_in_buffer(log):
+            try:
+                log = self.logs_iterator.__next__()
+            except StopIteration as st:
+                logging.debug(f"fin del source")
+                raise st
+            logging.debug(f"Log que viene de source : {log}")
+            if self._find_log_in_buffer(log):
+                log = None
+            else:
+                logging.debug(f"Salvando log {log}")
                 self.buffer.save((l for l in [log]))
+                logging.debug(f"Retornando log {log}")
                 return log
         raise StopIteration()
 
@@ -55,9 +65,13 @@ class AddLogsFromClock:
         return BufferIterator(self.clock, self.buffer)
 
     def execute(self):
+        logging.debug("Generando repo de google")
         repo = self.repos.create(parent=self.parent)
 
         # logs = self.clock.get()
+        logging.debug("Generando iterador de buffer")
         iterator = self._get_buffer_iterator()
+
+        logging.debug("Salvando los logs en google")
         repo.save(iterator)
         

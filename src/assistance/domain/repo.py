@@ -9,7 +9,7 @@ class AttLogRepo(Protocol):
     def get(self) -> Iterator[AttLog]:
         ...
 
-    def find(self, lid: str) -> Optional[AttLog]:
+    def find(self, log: AttLog) -> Optional[AttLog]:
         ...
 
 class RepoFactory(Protocol):

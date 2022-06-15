@@ -14,8 +14,7 @@ class ZkSoftwareClock(AttLogRepo):
     def __init__(self):
         self.conf = ZkSettings()
         logging.debug(self.conf.dict())
-        logging.debug(self.conf)
-        self.zk = ZK(ip=self.conf.ip, port=self.conf.port, timeout=self.conf.timeout, force_udp=self.conf.force_udp, ommit_ping=self.conf.ommit_ping, verbose=self.conf.verbose)
+        self.zk = ZK(ip=self.conf.ip, port=self.conf.port, timeout=self.conf.timeout, force_udp=self.conf.force_udp, ommit_ping=self.conf.ommit_ping, verbose=False)
         # self.zk = ZK(ip="172.25.0.70", port=4370, timeout=5, force_udp=False, ommit_ping=True, verbose=True)
 
     def get(self) -> Iterator[AttLog]:

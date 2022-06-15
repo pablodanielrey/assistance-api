@@ -11,7 +11,6 @@ class AttLog(BaseModel):
 
     @validator('timestamp', pre=True)
     def timestamp_conversion(cls, t):
-        print(type(t))
         return t
 
     class Config:

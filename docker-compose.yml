@@ -2,7 +2,13 @@ version: "3.7"
 name: assistance-cron
 services:
 
- assistance-cron:
+  redis:
+    image: redis
+    ports:
+        - 6379:6379
+    networks:
+      - frontend
+  assistance-cron:
     build: 
       context: .
       dockerfile: Dockerfile
@@ -15,12 +21,13 @@ services:
       IP: "172.25.0.70"
       credentials_file: /src/credentials/credentials.json
       ommit_ping: "True"
-      verbose: "True"
+      verbose: "False"
       force_udp: "False"
     volumes:
       - ./:/src      
     networks:
       - frontend
+
 
 networks:
   frontend:

@@ -1,3 +1,4 @@
+import logging
 from typing import Iterator, Optional
 
 from ...domain.repo import RepoFactory, AttLogRepo
@@ -6,6 +7,19 @@ from ...domain.entities import AttLog
 from .google import GoogleSettings, Credentials
 from .drive import Drive, DriveResource
 from .spreadsheet import Spreadsheet
+
+
+class MockedGoogleRepo(AttLogRepo):
+
+    def save(self, logs: Iterator[AttLog]):
+        for log in logs:
+            logging.debug(f"salvando -> {log}")
+
+    def get(self) -> Iterator[AttLog]:
+        raise NotImplementedError()
+
+    def find(self, log: AttLog) -> Optional[AttLog]:
+        raise NotImplementedError()
 
 
 class GoogleRepo(AttLogRepo):
@@ -62,9 +76,10 @@ class GoogleDriveFactory(RepoFactory):
 
     def __init__(self):
         self.config = GoogleSettings()
-        self.credentials = Credentials(self.config)
-        self.drive_api = Drive(credentials=self.credentials)
-        self.spreadsheet_api = Spreadsheet(credentials=self.credentials)
+        # self.credentials = Credentials(self.config)
+        # self.drive_api = Drive(credentials=self.credentials)
+        # self.spreadsheet_api = Spreadsheet(credentials=self.credentials)
 
-    def create(self, parent: str) -> GoogleRepo:
-        return GoogleRepo(parent, self.drive_api, self.spreadsheet_api)
+    def create(self, parent: str) -> AttLogRepo:
+        # return GoogleRepo(parent, self.drive_api, self.spreadsheet_api)
+        return MockedGoogleRepo()
