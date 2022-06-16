@@ -20,7 +20,7 @@ RUN pip install -U pip && pip install -U build
 ENV GIT_SSH_COMMAND='ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -i /src/id_rsa_github'
 # ENV GIT_SSH_COMMAND='ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no'
 # ADD ssh-private-key /src/id_rsa_github
-RUN git clone https://github.com/pablodanielrey/assistance-api.git /src/assistance && echo "2022061402"
+RUN git clone https://github.com/pablodanielrey/assistance-api.git /src/assistance && echo "2022061501"
 
 # genero los packages de las libs
 
@@ -41,12 +41,12 @@ ENV PYTHONUNBUFFERED 1
 
 WORKDIR /src
 
-COPY --from=0 /src/assistance/dist/assistance_api-2.0.4-py3-none-any.whl ./
+COPY --from=0 /src/assistance/dist/assistance_api-2.0.5-py3-none-any.whl ./
 
 # instalo el sistema.
 
 RUN pip install -U pip
-RUN pip install /src/assistance_api-2.0.4-py3-none-any.whl
+RUN pip install /src/assistance_api-2.0.5-py3-none-any.whl
 
 
 CMD ["python3", "-m", "assistance.infra.cron"]
