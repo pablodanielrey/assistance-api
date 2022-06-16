@@ -15,11 +15,13 @@ from typing import Any, Iterator
 from assistance.domain.entities import AttLog
 
 from .google import Credentials
+from .settings import GoogleSettings
 
 
 class Spreadsheet:
 
     def __init__(self, credentials : Credentials):
+        self.conf = GoogleSettings()
         self.credentials = credentials
         self.sheets = build('sheets', 'v4', credentials=self.credentials.get_credentials())
 
@@ -27,7 +29,7 @@ class Spreadsheet:
     def add_recods(self, spreadsheet_id: str, records: Iterator[AttLog]):
         body = {
             'values':  [
-                [str(log.date), str(log.time.replace(microsecond=0)), log.dni, f"@{log.dni}"] 
+                [str(log.date), str(log.time.replace(microsecond=0)), log.dni, f"{log.dni}@{self.conf.google_domain}"] 
                 for log in records
             ]
         }

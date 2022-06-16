@@ -3,6 +3,7 @@ from pydantic import BaseSettings
 
 class GoogleSettings(BaseSettings):
     google_user: str = 'sistemas@econo.unlp.edu.ar'
+    google_domain: str = 'econo.unlp.edu.ar'
     credentials_file: str = 'credentials/credentials.json'
     google_repo: str = "MOCK"
 
