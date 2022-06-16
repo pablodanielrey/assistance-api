@@ -20,7 +20,7 @@ RUN pip install -U pip && pip install -U build
 ENV GIT_SSH_COMMAND='ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -i /src/id_rsa_github'
 # ENV GIT_SSH_COMMAND='ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no'
 # ADD ssh-private-key /src/id_rsa_github
-RUN git clone https://github.com/pablodanielrey/assistance-api.git /src/assistance && echo "2022061501"
+RUN git clone https://github.com/pablodanielrey/assistance-api.git /src/assistance && echo "2022061502"
 
 # genero los packages de las libs
 
