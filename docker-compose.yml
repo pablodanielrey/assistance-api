@@ -2,7 +2,7 @@ version: "3.7"
 name: assistance-cron
 services:
 
-  redis:
+  assistance_redis:
     image: redis
     ports:
         - 6379:6379
