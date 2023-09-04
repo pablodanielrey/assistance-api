@@ -72,6 +72,9 @@ class AddLogsFromClock:
         logging.debug("Generando iterador de buffer")
         iterator = self._get_buffer_iterator()
 
-        logging.debug("Salvando los logs en google")
-        repo.save(iterator)
+        logs = [l for l in iterator]
         
+        logging.debug("Salvando los logs en google")
+        repo.save(logs)
+        
+        email_repo.save(logs)
