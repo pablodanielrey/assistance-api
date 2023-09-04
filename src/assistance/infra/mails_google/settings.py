@@ -5,3 +5,4 @@ class MailsSettings(BaseSettings):
     from_email: str
     message: str
     subject_prefix: str
+    google_domain: str
